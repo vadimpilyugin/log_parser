@@ -55,7 +55,7 @@ class Parser
 		@table.each { |line|
 			# Распределение кодов ошибок
 			codes_distrib[line[:code]] += 1
-			codes_distrib["sum"] += 1
+			codes_distrib["not OK"] += 1
 			
 			# Подсчет числа запросов страниц
 			unique_pages[line[:path]][line[:code]] += 1 # распределение по кодам
@@ -82,7 +82,7 @@ class Parser
 				#o.increment(line[:path])
 			#}
 		}
-		good_pages = unique_pages.count { |elem| elem[1]["200"] > 0 if elem[1].has_key? ("200") }
+		good_pages = unique_pages.count { |elem| elem[1].has_key? ("200") }
 		
 		# Основной отчет
 		File.open("./report/summary.txt", "w", 0644) { |summary|
@@ -93,21 +93,20 @@ class Parser
 			summary << "\n----------------------\n\n"
 			summary << "Ошибки на страницах:\n"
 			(unique_pages.to_a.sort_by{ |elem| -(elem[1]["sum"] - elem[1].at("200"))})[0..9].each{ |elem|
-				#summary << "#{elem[0]}: #{elem[1]["sum"] - elem[1].at("200")} ошибок, из них #{elem[1].at("404")} 404-ых\n"
 				summary << "#{elem[0]}: 404: #{elem[1].at("404")}; другие: #{elem[1]["sum"] - elem[1].at("200") - elem[1].at("404")}\n"
 			}
-			summary << "Еще #{unique_pages.size-10} записи(ей)...\n" if unique_pages.size>10
+			summary << "Еще #{unique_pages.size-good_pages-10} записей...\n" if unique_pages.size>10
 			summary << "\n----------------------\n\n"
 			summary << "Распределение по кодам:\n"
 			(codes_distrib.to_a.sort_by{ |elem| -elem[1] }).each{ |elem|
-				summary << "CODE #{elem[0]}: #{elem[1]} раз(а)\n"
+				summary << "CODE #{elem[0]}: #{elem[1]} раз(а)\n" unless elem == "sum"
 			}
 			summary << "\n----------------------\n\n"
 			summary << "Самые активные пользователи: \n"
 			(ip_table.sort_by { |v| -v[1]["sum"] })[0..9].each{ |elem|
 				summary << "#{elem[0]}: #{elem[1]["sum"]} запрос(ов), из них #{elem[1]["sum"] - elem[1].at("200")} неудачных\n"
 			}
-			summary << "Еще #{ip_table.size-10} записи(ей)...\n" if ip_table.size>10
+			summary << "Еще #{ip_table.size-10} записей...\n" if ip_table.size>10
 		}
 		
 		# Отчет по самым активным пользователям
@@ -125,7 +124,7 @@ class Parser
 			f << "\t\t\t\t\t\tОтчет по пользователям\n"
 			user_table.each{ |key, value|
 				f << "User: #{key}\n"
-				f << "Успешных/неуспешных попыток: #{value
+				f << "Успешных/неуспешных попыток: #{value.at("OK")}/#{value["sum"] - value.at("OK")
 				f << "Посещенные страницы:\n"
 				value.each{ |key, value|
 					f << "#{key}: #{value["sum"]} раз, с кодами "
