@@ -51,10 +51,10 @@ y=x=1.0
 		y=x
 		x/=i
 	end
-	puts "For i=#{i} min num is #{y}"
+	#puts "For i=#{i} min num is #{y}"
 	x=y
 }
-puts "Between 0 and 1 are #{(1/y - 1)} numbers"
+#puts "Between 0 and 1 are #{(1/y - 1)} numbers"
 ##file.each do |line|
 	##print line if line =~ /^192./..line =~ /^$/
 ##end
@@ -68,29 +68,54 @@ puts "Between 0 and 1 are #{(1/y - 1)} numbers"
 		#puts line.reverse
 	#end
 #end
-ar=[]
-File.open("matrix1.txt") do |f|
-	f.each { |line| ar << line.split.map {|num| num.to_f} unless /^[fd]/ === line}
+#ar=[]
+#File.open("matrix1.txt") do |f|
+	#f.each { |line| ar << line.split.map {|num| num.to_f} unless /^[fd]/ === line}
+#end
+#print ar, "\n"
+words = %w(how much wood would a wood chuck chuck)
+words.each_with_object(Hash.new(0)) { |word,counts| counts[word] += 1 }
+# {"how"=>1, "much"=>1, "wood"=>2, "could"=>1, "a"=>1, "chuck"=>2}
+
+class Hash
+	alias square_braces []
+	def [] (key)
+		puts "Hash::[](#{key})"
+		if key.class == "String".class
+			self.update(key => {}) unless self.square_braces(key)
+		end
+		square_braces(key)
+	end
+	alias assignment_braces []=
+	def []= (key, value)
+		puts "Hash::[]=(#{key}, #{value})"
+		if key.class == "String".class
+			self.update(key => {}) unless self.square_braces(key)
+		end
+		assignment_braces(key, value)
+	end
+	def +(val)
+		return val if self.empty?
+		raise "Нельзя использовать + на непустом хэше!"
+	end
 end
-print ar, "\n"
-#{
-	#block = /\b(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\b/
-	#date = /\[[\d\w\s\:\/\+]+\]/
-	#date = /\b\[.*\]\b/ # пока не парсим, просто пропускаем
-	#name = /[^\\\/\?%\*:"<>\ ]+/ # все, что валидно в UNIX
-	#path = 	/\A \/ ( #{name} (\g<0>)? )? \Z/x
-	#path = /\A(\/|(\/[^\\\/\?%\*:"<>\ ]+)+\/?)\Z/
-	#path = / \b ( \/ (#{name})? )+/x
-	#path = / \b ( \/ #{name} )+ \/?/x
-	#puts "#{$~.to_s}" if "/home/vadim/Documents/papi_5.5.0/src/libpapi.a" =~ path
-	#puts "#{$~.to_s}" if "/home/" =~ path
-	#args = /#{name}=#{name}(;#{name}=#{name})*/
-	#args = /#{name}=#{name}(;\g<0>)?/
-	#printf "Yes!\n" if "C=N;O=A" =~ args
-	#printf "No!\n" if "C=N;O=A;" =~ path
-	#log = /#{ip} - - #{date} "(A-Z)+ #{path}(?:\?#{args})? .*" ([0-9]+) .+ "-" ".*" - - .*/
-	#puts "IP = #{$~.to_s}" if real_line =~ ip
-	#puts "Path = #{Regexp.last_match[1]}" if real_line =~ /.*GET (#{path}).*/
-	#puts real_line =~ /.*GET #{path}.*/
-	#puts real_line =~ /.*GET #{path}.*/
-	#puts "/apple-touch-icon.png?hello=world" =~ path
+a = {}
+a["192.168.0.1"]["/robots.txt"]["404"] += 1
+a["192.168.0.1"]["/robots.txt"]["404"] += 1
+a["192.168.0.1"]["/robots.txt"]["404"] += 1
+a["192.168.0.1"]["/robots.txt"]["404"] += 1
+a["255.255.255.0"]["/robots.txt"]["404"] += 1
+a["255.255.255.0"]["/forum"]["300"] += 1
+a["255.255.255.0"]["sum"] += 1
+
+puts a
+
+	#def access(*keys_sequence)
+		#return nil if keys_sequence.is_empty?
+		#hsh = self
+		#keys_sequence[0..-2].each{ |key|
+			#hsh.update(key => {}) unless hsh[key]
+			#hsh = hsh[key]
+		#}
+		#hsh[keys_sequence.last]
+	#end
