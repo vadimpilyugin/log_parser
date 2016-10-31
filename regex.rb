@@ -158,7 +158,7 @@ public
 							@misses << {file: filename, service: hsh[:service], line: cnt, content: msg}
 						end
 					end
-					@table.add(pid: cnt, service: hsh[:service], data: data, meta: meta) if add_to != 0
+					@table.add(pid: hsh[:pid], service: hsh[:service], data: data, meta: meta) if add_to != 0
 				else
 					puts "syslog = #{s}"
 					@misses << {file: @filename, service: "syslog", line: cnt, content: s}
@@ -180,6 +180,8 @@ public
 	end
 end	
 
-p = Parser.new("logs/access-parallel_ru_log")
+# p = Parser.new("logs/access-parallel_ru_log")
+p = Parser.new("logs/auth.log")
 p.parse!
-p.store("archive/access_log.store")
+# p.store("archive/access_log.store")
+p.store("archive/auth_log.store")
