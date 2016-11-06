@@ -1,163 +1,179 @@
-class Hash
-	def increment(key)
-        self.update(key => 1) {|k, o, n| o+n}
-    end
-    def at(key)
-		if self.has_key?(key)
-			self[key]
-		else
-			0
-		end
+require 'yaml/store'
+
+class Record < Hash
+public
+	def add(hsh)
+		self.update(hsh) {|k,o,n| n}
 	end
-	alias square_braces []
-	def [] (key)
-		#puts "Hash::[](#{key})"
-		if key.class == "String".class
-			self.update(key => {}) unless self.square_braces(key)
-		end
-		square_braces(key)
-	end
-	alias assignment_braces []=
-	def []= (key, value)
-		#puts "Hash::[]=(#{key}, #{value})"
-		if key.class == "String".class
-			self.update(key => {}) unless self.square_braces(key)
-		end
-		assignment_braces(key, value)
-	end
-	def +(val)
-		return val if self.empty?
-		raise "Нельзя использовать + на непустом хэше!"
+	def values=(hsh)
+		raise "Can't assign value to Record" unless hsh.class == {}.class
+		self.clear.update(hsh)
 	end
 end
-
+class Table < Array
+public
+	def add(hsh)
+		self << {pid: hsh[:pid], service: hsh[:service], data: hsh[:data], meta: hsh[:meta]}
+	end
+end
+class MatchData
+public
+	def to_h
+		self.names.zip(self.captures).to_h
+	end
+end
 class Parser
-	def initialize
-		@ip_addr = /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/
-		pathname = /(\/[^\/\?]*)+/
-		@format = /^(?<ip>#{@ip_addr}) - - \[[^\]]*\] "(?<method>[A-Z]+) (?<path>#{pathname}).* HTTP\/1\.[01]" (?<code>\d{1,3})/
-		@table = []
+	
+	def initialize(filename)
+		@table = Table.new
+		@log_type = case filename
+					when /auth\d*\.log/ then "syslog"
+					when /access-/ then "apache"
+					else "unidentified"
+					end
+		@filename = filename
 		@misses = []
 	end
-	def parse(filename)
-		File.open(filename) { |f|
-			f.each{ |line|
-				if line =~ @format
-					@table << {ip: $~[:ip], path: $~[:path], method: $~[:method], code: $~[:code]}
+public
+	def parse!()
+		cnt = 0
+		case @log_type
+		when "apache"
+			
+			IO.readlines(@filename).each{ |s|
+				cnt += 1
+				data = Record.new
+				if s =~ /^(?<ip>#{ip})[^"]+"(?<method>#{word}) (?<path>#{path})[^"]*" (?<code>#{code})/
+					data.values = $~.to_h
+					@table.add(service: "apache", data: data)
 				else
-					@misses << line
+					@misses << {file: filename, service: "apache", line: cnt, content: s}
 				end
 			}
-		}
+		when "syslog"
+			IO.readlines(@filename).each{ |s|
+				cnt += 1
+				data = Record.new
+				meta = Record.new
+				case s
+				when /^#{date}\s+(?<server>#{word})\s+(?<service>#{word})(\[(?<pid>#{pid})\])?:\s+(?<msg>.*)/
+					hsh = $~
+					msg = $~[:msg]
+					data.clear
+					meta.clear
+					add_to = 1
+					case hsh[:service]
+					when "sshd"
+						case msg
+						when /Connection from (?<user-ip>#{ip}) port (?<user-port>#{port}) on (?<server-ip>#{ip}) port (?<server-port>#{port})/
+							data.values = $~.to_h
+							meta.values = {type: "New connection"}
+						when 	/Received disconnect from (?<user-ip>#{ip})/, 
+								/Disconnected from (?<user-ip>#{ip})/, 
+								/Connection closed by (?<user-ip>#{ip})/, 
+								/Connection reset by (?<user-ip>#{ip})/
+							data.values = {"user-ip" => $~["user-ip"]}
+							meta.values = {type: "Disconnect"}
+							if msg =~ /Auth fail/
+								meta.add(reason: "Auth fail")
+							elsif msg =~ /disconnected by (?<username>#{username})/
+								data.add("username" => $~["username"])
+								meta.add(reason: "by user")
+							end
+							meta.add(login: "preauth") if msg =~ /\[preauth\]/
+						when /Accepted publickey for (?<username>#{username}) from (?<user-ip>#{ip}) port (?<user-port>#{port}) #{word}: (?<protocol>#{word}) (?<hashing-alg>#{word}):(?<publickey>#{word})/
+							data.values = $~.to_h
+							meta.values = {type: "Accepted publickey"}
+						when /pam_unix\(sshd:session\): session (?<action>#{word}) for user (?<username>#{username})/
+							data.values = {"username" => $~["username"]}
+							meta.values = {type: "pam_unix", action: "Session #{$~[:action]}", father: "sshd"}
+						when /^Failed (?<what>#{word})/
+							data.values = {"type" => $~["what"]}
+							meta.values = {type: "Auth fail"}
+							case msg
+							when 	/for invalid user (?<username>#{username})/, 
+									/for (?<username>#{username})/
+								data.add("username" => $~["username"])
+							end
+							if msg =~ /from (?<user-ip>#{ip}) port (?<user-port>#{port})/
+								data.add($~.to_h)
+							end
+						when /Invalid user (?<username>#{username}) from (?<user-ip>#{ip})/
+							data.values = $~.to_h
+							meta.values = {type: "Invalid user"}
+						when /Postponed publickey for (?<username>#{username}) from (?<user-ip>#{ip}) port (?<user-port>#{port})/
+							data.values = $~.to_h
+							meta.values = {type: "Postponed publickey"}
+						when 	/pam_unix\(sshd:auth\): check pass; user unknown/,
+								/pam_unix\(sshd:auth\): authentication failure|PAM \d+ more authentication failures|PAM: Authentication failure/,
+								/PAM 1 more authentication failure/,
+								/(Failed|Postponed) keyboard-interactive\b/,
+								/User child is on pid \d+/,
+								/input_userauth_request:/ ,
+								/Did not receive identification string/,
+								/Too many authentication failures/,
+								/ignoring max retries/,
+								/maximum authentication attempts exceeded/,
+								/Unable to negotiate with/,
+								/^Starting session/,
+								/Server listening|Received SIGHUP|Bad protocol version/
+							add_to = 0
+						else
+							add_to = 0
+							puts "#{hsh[:service]} = #{msg}"
+							@misses << {file: @filename, service: hsh[:service], line: cnt, content: msg}
+						end
+					when "CRON"
+						case msg
+						when /pam_unix\(cron:session\): session (?<action>#{word}) for user (?<username>#{username})/
+							data.values = {"username" => $~["username"]}
+							meta.values = {type: "pam_unix", action: "Session #{$~[:action]}", father: "CRON"}
+						else
+							add_to = 0
+							puts "#{hsh[:service]} = #{msg}"
+							@misses << {file: filename, service: hsh[:service], line: cnt, content: msg}
+						end
+					when "systemd", "systemd-logind"
+						case msg
+						when /New session (?<pid>\d+) of user (?<username>#{username})/
+							data.values = $~.to_h
+							meta.values = {type: "Session", action: "new"}
+						when /pam_unix\(systemd-user:session\): session (?<action>#{word}) for user (?<username>#{username})/
+							data.values = $~.to_h
+							meta.values = {type: "Session", action: $~[:action]}
+						when /Removed session (?<pid>\d+)/
+							data.values = $~.to_h
+							meta.values = {type: "Session", action: "removed"}
+						else
+							add_to = 0
+							puts "#{hsh[:service]} = #{msg}"
+							@misses << {file: filename, service: hsh[:service], line: cnt, content: msg}
+						end
+					end
+					@table.add(pid: hsh[:pid], service: hsh[:service], data: data, meta: meta) if add_to != 0
+				else
+					puts "syslog = #{s}"
+					@misses << {file: @filename, service: "syslog", line: cnt, content: s}
+				end
+			}
+		when "unidentified"
+			puts "Warning! Log type is unknown"
+		end
+		puts "Success #{@table.size}/#{@misses.size+@table.size}"
+		puts "Table = #{@table.size} elements"
+		puts "Misses = #{@misses.size} elements"
 	end
-	def write_to_file
-		unique_pages = {}
-		ip_table = {}
-		codes_distrib = {}
-		codes_detail_users = {}
-		codes_detail_page = {}
-		@table.each { |line|
-			# Распределение кодов ошибок
-			codes_distrib[line[:code]] += 1
-			codes_distrib["not OK"] += 1 if line[:code] != "200"
-			
-			# Подсчет числа запросов страниц
-			unique_pages[line[:path]][line[:code]] += 1 # распределение по кодам
-			unique_pages[line[:path]]["not OK"] += 1 if line[:code] != "200" # число ошибочных запросов конкретной страницы
-			
-			# Подсчет числа запросов пользователей
-			ip_table[line[:ip]][line[:code]] += 1 # распределение по кодам
-			ip_table[line[:ip]]["not OK"] += 1 if line[:code] != "200" # ошибочные запросы пользователя
-			ip_table[line[:ip]]["sum"] += 1 # число всех запросов пользователя
-			
-			# Детализированный отчет по каждому коду
-			codes_detail_users[line[:code]][line[:ip]] += 1 # по пользователям
-			codes_detail_page[line[:code]][line[:path]] += 1 # по страницам
-		}
-		good_pages = unique_pages.count { |elem| elem[1].has_key? ("200") }
-		
-		# Основной отчет
-		File.open("./report/summary.txt", "w", 0644) { |summary|
-			summary << "\t\t\t\t\t\tОсновной отчет\n\n"
-			summary << "----------------------\n\n"
-			summary << "Число запросов (OK/не ОК): #{codes_distrib.at("200")}/#{codes_distrib.at("not OK")}\n"
-			summary << "Число IP(уникальных): #{ip_table.size}\n"
-			summary << "Число уникальных страниц (OK/не ОК): #{good_pages}/#{unique_pages.size - good_pages}\n"
-			summary << "\n----------------------\n\n"
-			summary << "Ошибки на страницах:\n"
-			(unique_pages.to_a.sort_by{ |elem| -(elem[1].at("not OK"))})[0..9].each{ |elem|
-				summary << "#{elem[0]}: 404: #{elem[1].at("404")}; другие: #{elem[1].at("not OK") - elem[1].at("404")}\n"
-			}
-			summary << "Еще #{unique_pages.size-good_pages-10} записей...\n" if unique_pages.size>10
-			summary << "\n----------------------\n\n"
-			summary << "Распределение по кодам:\n"
-			(codes_distrib.to_a.sort_by{ |elem| -elem[1] }).each{ |elem|
-				summary << "CODE #{elem[0]}: #{elem[1]} раз(а)\n" if elem[0] =~ /^\d/
-			}
-			summary << "\n----------------------\n\n"
-			summary << "Самые активные пользователи: \n"
-			(ip_table.sort_by { |v| -v[1]["sum"] })[0..9].each{ |elem|
-				summary << "#{elem[0]}: #{elem[1]["sum"]} запрос(ов), из них #{elem[1].at("not OK")} неудачных\n"
-			}
-			summary << "Еще #{ip_table.size-10} записей...\n" if ip_table.size>10
-			summary << "\n----------------------\n\n"
-		}
-		
-		# Отчет по самым активным пользователям
-		most_active = (ip_table.to_a.sort_by { |v| -v[1]["sum"] })[0..9].map{ |val| val[0] }
-		user_table = {}
-		@table.each{ |line|
-			if most_active.member? line[:ip]
-				user_table[line[:ip]][line[:path]][line[:code]] += 1 # какие страницы с какими кодами
-				user_table[line[:ip]][line[:path]]["sum"] += 1 # сколько всего запросов к конкретной странице
-				user_table[line[:ip]]["sum"] += 1 # сколько всего сделал запросов
-				user_table[line[:ip]]["OK"] += 1 if line[:code] == "200" # сколько из них успешных
-			end
-		}
-		File.open("./report/users/most_active.txt", "w", 0644) { |f|
-			f << "\t\t\t\t\t\tОтчет по пользователям\n"
-			user_table.sort_by{ |val| -val[1]["sum"]}.each{ |val|
-				key = val[0]
-				value = val[1]
-				f << "\n----------------------\n\n"
-				f << "User: #{key}\n"
-				f << "Успешных/неуспешных попыток: #{value.at("OK")}/#{value["sum"] - value.at("OK")}\n"
-				f << "Посещенные страницы:\n"
-				((value.delete_if{ |key| key == "OK" || key == "sum"}).sort_by{ |val| -val[1]["sum"] })[0..9].each{ |val|
-					f << "#{val[0]}: #{val[1]["sum"]} раз(а), с кодами: "
-					val[1].each{ |key, val|
-						f << "#{key} - #{val}; " if key =~ /^\d/
-					}
-					f << "\n"
-				}
-				f << "Еще #{value.size-10-2} страниц(а)...\n" if value.size>12
-			}
-		}
-		
-		# Отчет по каждому коду ошибки, по страницам
-		basename = "./report/codes/pages"
-		codes_detail_page.to_a.each{ |elem|
-			File.open("#{basename}/code_#{elem[0]}.txt", "w", 0644) { |f|
-				f << "\t\t\t\t\t\Отчет по #{elem[0]} коду\n"
-				(elem[1].to_a.sort_by{ |val| -val[1] }).each{ |val| 
-					f << "#{val[0]}: #{val[1]} раз(а)\n"
-				}
-			}
-		}
-		
-		# А это по пользователям
-		basename = "./report/codes/users"
-		codes_detail_users.to_a.each{ |elem|
-			File.open("#{basename}/code_#{elem[0]}.txt", "w", 0644) { |f|
-				f << "\t\t\t\t\t\Отчет по #{elem[0]} коду\n"
-				(elem[1].to_a.sort_by{ |val| -val[1] }).each{ |val| 
-					f << "#{val[0]}: #{val[1]} раз(а)\n"
-				}
-			}
-		}
+	def store(filename)
+		storage = YAML::Store.new filename
+		storage.transaction do
+	  		storage["Hits"] = @table
+	  		storage["Misses"] = @misses
+	  	end
 	end
-end
+end	
 
-p = Parser.new()
-p.parse("./logs/access-parallel_ru_log")
-p.write_to_file
+# p = Parser.new("logs/access-parallel_ru_log")
+p = Parser.new("logs/auth.log")
+p.parse!
+# p.store("archive/access_log.store")
+p.store("archive/auth_log.store")
