@@ -12,7 +12,7 @@ module Regexes
 		^(?<ip>\S+)									# 141.8.142.23
 		[^"]+"										# - - [09/Oct/2016:06:35:46 +0300]"
 		(?<method>\S+)\s (?<path>#{Path})			# GET /images/logos/russia/vmk.gif
-		[^"]+"\s (?<code>\S+)					# HTTP/1.0" 404
+		[^"]+"\s (?<code>\S+)						# HTTP/1.0" 404
 	}x
 	Syslog = %r{
 		^#{Date}	 								# Oct  9 06:36:12 - три первых слова

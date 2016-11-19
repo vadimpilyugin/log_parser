@@ -16,7 +16,7 @@ class Parser
 	
 	def include?(array, line)
 		if array.index {|rxp| line =~ rxp}		# дан массив регулярок и строка. Определить вхождение или не вхождение	
-			printf "#{$~.to_h}\n"
+			# printf "#{$~.to_h}\n"
 			@md = $~
 		else
 			nil
@@ -30,7 +30,7 @@ class Parser
 		@filename = hsh[:filename] ? hsh[:filename] : @config["log_file"]							# по умолчанию из конфига, можно указать свой
 		@log_template = case @filename
 						when /auth\d*\.log/ then Syslog												# определяем тип лога на основе имени файла
-						when /access-/ then Apache
+						when /access/ then Apache
 						else
 							@error_log.puts "Неопознанный формат лога: имя файла #{@filename}\n"
 							puts "Неопознанный формат лога: имя файла #{@filename}\n"
@@ -94,8 +94,6 @@ public
 				end
 			end
 		}
+		self
 	end
 end
-
-p = Parser.new filename: "logs/access-parallel_ru_log"
-p.parse!
