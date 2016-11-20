@@ -2,12 +2,7 @@ require 'yaml'
 require 'yaml/store'
 require_relative 'regex.rb'
 
-class MatchData
-public
-	def to_h
-		self.names.zip(self.captures).to_h			# представление в виде хэша {<named_group_1> => "data_1", ...}
-	end
-end
+module Parser
 
 class Parser
 	include Regexes
@@ -23,11 +18,15 @@ class Parser
 		end
 	end
 
-	def initialize(hsh = {})
+	def md_h(md)
+		md.names.zip(md.captures).to_h			# представление в виде хэша {<named_group_1> => "data_1", ...}
+	end
+
+	def initialize(config = {})
 		Dir.chdir(File.expand_path("../../", __FILE__))												# переходим в корень проекта
-		@config = YAML.load_file('default.conf/parser.cfg')											# это конфиг самого парсера
-		@error_log = File.new(@config["error_log"], File::CREAT|File::TRUNC|File::RDWR, 0644)		# сюда пишем ошибки
-		@filename = hsh[:filename] ? hsh[:filename] : @config["log_file"]							# по умолчанию из конфига, можно указать свой
+		@error_log = File.new(config[:error_log], File::CREAT|File::TRUNC|File::RDWR, 0644)			# сюда пишем ошибки
+		@filename = config[:filename]																# отсюда читаем лог
+		@Services_dir = config[:services_dir]														# здесь храним описания сервисов
 		@log_template = case @filename
 						when /auth\d*\.log/ then Syslog												# определяем тип лога на основе имени файла
 						when /access/ then Apache
@@ -43,8 +42,7 @@ class Parser
 
 	# подгрузка сервиса по имени
 	def load_service(service, f)
-		filename = "#{@config["services_dir"]}/#{service.downcase}"			# имя файла это путь до директории плюс
-																			# имя сервиса в lowercase
+		filename = "#{@services_dir}/#{service.downcase}"			# имя файла это путь до директории плюс имя сервиса в lowercase
 		unless File.exists?(filename)
 			@error_log.puts "Неопознанный сервис: #{service}, строка #{f.lineno}, файл #{@filename}\n"
 			puts "Неопознанный сервис: #{service}, строка #{f.lineno}, файл #{@filename}\n"
@@ -66,14 +64,14 @@ public
 				puts "Строка не соответствует шаблону(in #{@filename}) #{f.lineno}:1): #{line}\n"
 			end
 			if @log_template == Apache 													# для апача просто сбрасываем в таблицу все именованные группы из регулярки
-				@table << [@filename, f.lineno, $~.to_h, {"service" => "apache"}]
+				@table << [@filename, f.lineno, md_h($~), {"service" => "apache"}]
 			elsif @log_template == Syslog
 				service = $~[:service]
 				msg = $~[:msg]
 				server = $~[:server]
 				unless @thing.has_key?(service)											# подгружаем сервисы по мере надобности, изначально нет ни одного
 					if hsh = load_service(service, f)									# проверяем, что файл с шаблонами существует
-						@thing.store(service, hsh)										# и включаем хэш регулярок в "штуку" по всем сервисам
+						@thing.store(service, hsh)										# и включаем хэш регулярок в хэш по всем сервисам
 					else																# если набора шаблонов для такого сервиса не существует
 						next															# пропускаем эту строку
 					end
@@ -82,11 +80,11 @@ public
 					include?(ar[1], msg)												# описывается ли данное сообщение какой-нибудь регуляркой?
 				}
 				$~ = @md
-				# printf "#{$~.to_h}\n"
+				# printf "#{md_h($~)}\n"
 				if i
 					elem = @thing[service].to_a[i]										# если описывается, то MatchData из него выгружаем целиком
 																						# плюс описание, из какой команды мы ее получили
-					@table << [@filename, f.lineno, $~.to_h, {"service" => service, "server" => server, "type" => elem[0]}] unless elem[0] == "Ignore" 
+					@table << [@filename, f.lineno, md_h($~), {"service" => service, "server" => server, "type" => elem[0]}] unless elem[0] == "Ignore" 
 				else
 																						# все сообщения сервиса, для которых не нашлось
 																						# регулярки, идут в таблицу с типом undefined
@@ -96,4 +94,5 @@ public
 		}
 		self
 	end
+end
 end

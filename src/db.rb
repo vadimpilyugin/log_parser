@@ -43,8 +43,7 @@ end
 
 class Database
 	def initialize(hsh = {})
-		drop = hsh[:drop]														# нужно ли очищать базу
-		filename = hsh[:filename] ? hsh[:filename] : "archive/mydb.sqlite3"		# это имя базы данных по умолчанию
+		drop = hsh[:drop] ? hsh[:drop] : false									# нужно ли очищать базу
 		Dir.chdir(File.expand_path("../../", __FILE__))							# переход в корень проекта
 		DataMapper.setup(:default, "sqlite3://#{Dir.pwd}/#{filename}")			# подключаемся к базе
 		DataMapper.finalize

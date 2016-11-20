@@ -1,5 +1,6 @@
 gem "minitest"     # ensures you"re using the gem, and not the built-in MT
 require "minitest/autorun"
+require "yaml"
 
 require_relative "../db.rb"
 require_relative "../parser.rb"
@@ -61,12 +62,12 @@ class TestSaving < Minitest::Test
 	end
 
 	def test_look_for_local
-		skip "all works"
-		a = (Database::Logline.all datas: {:name => "ip", :value => "192.168.0.1"}) & (Database::Logline.all datas: {:name => "code", :value => "404"})
+		# skip "all works"
+		a = (Database::Logline.all datas: {:name => "ip", :value => "217.69.133.29"}) & (Database::Logline.all datas: {:name => "code", :value => "404"})
 		assert !a.empty? 
-		# a.each_with_index do | line, i|
-		# 	print_line line: line, i: i
-		# end
+		a.each_with_index do | line, i|
+			print_line line: line, i: i
+		end
 	end
 
 	def test_count
@@ -98,6 +99,7 @@ class TestSaving < Minitest::Test
 	end
 
 	def test_aggregate_column
+		skip "all works"
 		key = "code"
 		printf "Все возможные коды и их частота: \n" if key == "code"
 		# a = Database::Data.all(name: "code").aggregate(:all.count, :fields => [ :value ])
@@ -115,6 +117,7 @@ class TestSaving < Minitest::Test
 
 
 	def test_aggregate_double
+		skip "all works"
 		key = "ip"
 		sec_key = "path"
 		count = 15
@@ -130,4 +133,61 @@ class TestSaving < Minitest::Test
 			print_kv p[0..count].to_h
 		end
 	end
+
+	def test_range
+		field = "code"
+		printf "#{Database::Data.all(name: field).aggregate(:value)}\n"
+	end
+
+	def test_aggregate_by_field
+		field = "code"
+		keys_hash = {"ip" => "217.69.133.29", "path" => "/ftp/computers/compaq/"}
+		a = Database::Logline.all
+		keys_hash.each_pair do |key, value|
+			a = a & Database::Logline.all(datas: {:name => key, :value => value})
+		end
+		print_kv a.datas.all(name: field).aggregate(:value, :all.count).sort{|a, b| b[1] <=> a[1]}.to_h
+	end
+
+	def aggregate_by_field(field, keys_hash = {})
+		a = Database::Logline.all
+		count = 15
+		keys_hash.each_pair do |key, value|
+			a = a & Database::Logline.all(datas: {:name => key, :value => value})
+		end
+		return a.datas.all(name: field).aggregate(:value, :all.count).sort{|a, b| b[1] <=> a[1]}[0..count-1].to_h
+	end
+
+	# alias values_range aggregate_by_field
+
+	def test_aggregate_by_keys
+			keys = ["ip", "path", "code", "method"]
+			result = aggregate_by_field(keys[0])
+			printf "First level:\n"
+			printf "#{result.to_yaml}\n"
+
+			result.update(result) do |k,o,n|
+				aggregate_by_field(keys[1], {keys[0] => k})
+			end
+			printf "Second level:\n"
+			printf "#{result.to_yaml}\n"
+
+			result.update(result) do |k,o,n|
+				o.update(o) do |k1,o1,n1|
+					aggregate_by_field(keys[2], {keys[0] => k, keys[1] => k1})
+				end
+			end
+			printf "Third level:\n"
+			printf "#{result.to_yaml}\n"
+
+			result.update(result) do |k,o,n|
+				o.update(o) do |k1,o1,n1|
+					o1.update(o1) do |k2,o2,n2|
+						aggregate_by_field(keys[3], {keys[0] => k, keys[1] => k1, keys[2] => k2})
+					end
+				end
+			end
+			printf "Fourth level:\n"
+			printf "#{result.to_yaml}\n"
+		end
 end
