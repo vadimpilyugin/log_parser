@@ -5,7 +5,7 @@ require_relative "../db.rb"
 require_relative "../parser.rb"
 
 class TestSaving < Minitest::Test
-	@db = Database::Database.new(filename: "archive/test.sqlite3", drop: false)
+	@db = Database::Database.new(filename: "archive/access.sqlite3", drop: false)
 	#@p = Parser.new(filename: "logs/access-big_log")
 	#@db.save(@p.parse!.table)
 
@@ -54,7 +54,7 @@ class TestSaving < Minitest::Test
 
 	def test_first_line
 		# skip "all works"
-		a = Database::Logline.get("logs/access-big_log", 1)
+		a = Database::Logline.first line: 1
 		assert a
 		puts a.datas.class
 		# print_line line: a, i: 1
@@ -116,7 +116,7 @@ class TestSaving < Minitest::Test
 
 	def test_aggregate_double
 		key = "ip"
-		sec_key = "code"
+		sec_key = "path"
 		count = 15
 		printf "\t\t\t#{key.upcase} - #{sec_key.upcase} DISTRIBUTION: \n"
 		a = Database::Data.all(name: key)											# выбрать все айпишники из базы
@@ -127,7 +127,7 @@ class TestSaving < Minitest::Test
 			p = Database::Logline.all datas: {:name => key, :value => elem}			# из всех строк выбрать с нужным айпишником
 			p = p.datas.all name: sec_key 											# для этих строк взять их данные и выбрать из них пути
 			p = aggregate_by_field coll: p, field: :value 							# просуммировать по значениям путей
-			print_kv p.to_h
+			print_kv p[0..count].to_h
 		end
 	end
 end
