@@ -6,7 +6,7 @@ require_relative "../db.rb"
 require_relative "../parser.rb"
 
 class TestSaving < Minitest::Test
-	@db = Database::Database.new(filename: "archive/access.sqlite3", drop: false)
+	@db = Database::Database.new(filename: "archive/test.sqlite3")
 	#@p = Parser.new(filename: "logs/access-big_log")
 	#@db.save(@p.parse!.table)
 

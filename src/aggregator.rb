@@ -3,9 +3,8 @@ require "yaml/store"
 
 module Aggregator
 class Aggregator
-	def initialize(db)
-		@db = db
-		@result = {}
+	def initialize(filename)
+		@db = Database::Database.new filename: filename
 	end
 	# def aggregate_by_field(hsh = {})
 	# 	field = hsh[:field]
@@ -50,6 +49,8 @@ class Aggregator
 	end
 public
 	def aggregate_by_keys(*keys)
+		@result = {}
+		max = 15
 		if keys.size > 3
 			printf "Max aggregation keys = 3\n"
 			return
@@ -57,7 +58,7 @@ public
 		return if keys == nil || keys.size == 0
 
 		@keys = keys
-		@result = aggregate_by_field(keys[0])
+		@result = aggregate_by_field(keys[0]).to_a[0..(max-1)].to_h
 		return self if keys.size == 1
 
 		@result.update(@result) do |k,o,n|
@@ -74,6 +75,7 @@ public
 	end
 
 	def save(filename)
+		File.delete filename if File.exists? filename
 		store = YAML::Store.new filename
 		name = ""
 		@keys.each {|e| name << e.upcase << " - "}
