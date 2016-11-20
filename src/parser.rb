@@ -26,7 +26,7 @@ class Parser
 		Dir.chdir(File.expand_path("../../", __FILE__))												# переходим в корень проекта
 		@error_log = File.new(config[:error_log], File::CREAT|File::TRUNC|File::RDWR, 0644)			# сюда пишем ошибки
 		@filename = config[:filename]																# отсюда читаем лог
-		@Services_dir = config[:services_dir]														# здесь храним описания сервисов
+		@services_dir = config[:services_dir]														# здесь храним описания сервисов
 		@log_template = case @filename
 						when /auth\d*\.log/ then Syslog												# определяем тип лога на основе имени файла
 						when /access/ then Apache

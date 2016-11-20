@@ -78,6 +78,7 @@ public
 		name = ""
 		@keys.each {|e| name << e.upcase << " - "}
 		name[-3..-1] = ""
+		name << " DISTRIBUTION"
 		store.transaction do
 			store["Report Name"] = name
 			store["Data"] = @result

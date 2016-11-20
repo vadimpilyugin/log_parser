@@ -1,0 +1,66 @@
+---
+Report Name: IP - PATH
+Data:
+  126.247.7.5:
+    "/apple-touch-icon-120x120-precomposed.png": 2
+    "/apple-touch-icon-120x120.png": 2
+    "/apple-touch-icon-precomposed.png": 2
+    "/apple-touch-icon.png": 2
+    "/favicon.ico": 2
+    "/v-ray/index_e.html": 1
+  217.69.133.59:
+    "/computers/top500.list11.html": 1
+    "/info/VVV/15.pdf": 1
+    "/parallel/info/VVV/08.pdf": 1
+    "/parallel/parallel/russia/map/data/project09.html": 1
+    "/parallel/tech/norma/lexem.htm": 1
+    "/russia/people/tolstykh.html": 1
+  210.72.19.222:
+    "/parallel/info/ci_v5.pdf": 3
+    "/favicon.ico": 2
+  217.69.133.192:
+    "/ftp/": 1
+    "/ftp/mpi/doc/mpeman.pdf": 1
+    "/parallel/parallel/russia/map/data/project06.html": 1
+    "/parallel/parallel/russia/map/data/project12.html": 1
+    "/russia/people/minin.html": 1
+  217.69.133.72:
+    "/computers/companies/qsw_e.html": 1
+    "/parallel/info/education/msu_grid-intro.doc": 1
+    "/parallel/info/parallel/voevodin/lec4.pdf": 1
+    "/robots.txt": 1
+    "/tech/engineering/": 1
+  217.69.133.29:
+    "/ftp/computers/compaq/": 1
+    "/ftp/computers/header.koi.html": 1
+    "/ftp/computers/intel/": 1
+    "/ftp/storage/": 1
+  217.69.133.31:
+    "/ftp/computers/scali/Scali-or-WulfKit-Perf.pdf": 1
+    "/info/VVV/10.pdf": 1
+    "/info/parallel/openmp/OpenMP.pdf": 1
+    "/reference/": 1
+  157.55.39.40:
+    "/": 1
+    "/robots.txt": 1
+    "/russia/": 1
+  217.69.133.30:
+    "/info/journals/acm_journals.html": 1
+    "/meta/conferences.html": 1
+  217.69.133.60:
+    "/ftp/beowulf/": 1
+    "/ftp/computers/raid/raidbsic.pdf": 1
+  178.185.43.184:
+    "/cluster/images/lomonosov/lomonosov_45s.jpg": 1
+  180.76.15.13:
+    "/system/11057": 1
+  180.76.15.141:
+    "/ftp/libs/superlu/superlu_dist_1.0.tar.gz": 1
+  180.76.15.152:
+    "/system/10769": 1
+  180.76.15.33:
+    "/info/parallel/cluster/appendix6.pdf": 1
+  217.69.133.28:
+    "/parallel/vvv/mpi.html": 1
+  40.77.167.51:
+    "/parallel/russia/people/burtsev.html": 1

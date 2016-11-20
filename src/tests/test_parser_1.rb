@@ -5,7 +5,7 @@ require_relative "../parser.rb"
 
 class TestParser < Minitest::Test
   def setup
-    @parser = Parser.new(filename: "logs/access-test_log")
+    @parser = Parser::Parser.new(filename: "logs/auth.log", error_log: "/tmp/parser", services_dir: "default.conf/services")
   end
 
   def test_output

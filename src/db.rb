@@ -45,7 +45,7 @@ class Database
 	def initialize(hsh = {})
 		drop = hsh[:drop] ? hsh[:drop] : false									# нужно ли очищать базу
 		Dir.chdir(File.expand_path("../../", __FILE__))							# переход в корень проекта
-		DataMapper.setup(:default, "sqlite3://#{Dir.pwd}/#{filename}")			# подключаемся к базе
+		DataMapper.setup(:default, "sqlite3://#{Dir.pwd}/#{hsh[:filename]}")			# подключаемся к базе
 		DataMapper.finalize
 		drop ? DataMapper.auto_migrate! : DataMapper.auto_upgrade!
 	end
