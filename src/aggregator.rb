@@ -3,8 +3,10 @@ require "yaml/store"
 
 module Aggregator
 class Aggregator
-	def initialize(filename)
+	def initialize(filename, keys = {})
+		raise "Wrong conditions" unless keys.class == {}.class
 		@db = Database::Database.new filename: filename
+		@result = keys == {} ? Database::Logline.all : Database::Logline.all keys
 	end
 	# def aggregate_by_field(hsh = {})
 	# 	field = hsh[:field]
@@ -40,6 +42,7 @@ class Aggregator
 	# 	printf "More #{a.size - count} entries...\n" if a.size > count
 	# end
 
+
 	def aggregate_by_field(field, keys_hash = {})
 		a = Database::Logline.all
 		keys_hash.each_pair do |key, value|
@@ -47,7 +50,22 @@ class Aggregator
 		end
 		return a.datas.all(name: field).aggregate(:value, :all.count).sort{|a, b| b[1] <=> a[1]}.to_h
 	end
+	def select_by_keys(keys = {})
+		raise "Wrong conditions" unless keys.class == {}.class
+		@result = keys == {} ? @result.all : @result.all keys
+	end
 public
+	def reset
+		@result = Database::Logline.all
+	end
+	
+	def select(type, keys = {})
+		raise "Wrong conditions" unless keys.class == {}.class
+		return if keys == {}
+		raise "Type is not symbol" unless type.class == :a.class
+		self.select_by_keys 
+		
+		
 	def aggregate_by_keys(*keys)
 		@result = {}
 		max = 15
@@ -73,6 +91,8 @@ public
 		end
 		return self
 	end
+
+	def aggregate_with_cond(
 
 	def save(filename)
 		File.delete filename if File.exists? filename

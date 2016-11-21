@@ -12,6 +12,10 @@ class TestReport < Minitest::Test
 	
 	def test_report
 		a = Aggregator::Aggregator.new("archive/access.sqlite3")
-		a.aggregate_by_keys("code", "ip", "path").save("report/report.yaml")
+		a.aggregate_by_keys("ip").save("report/report.yaml")
 	end
+	
+	def test_aggregate_by_field
+		a = Aggregator::Aggregator.new("archive/auth_test.sqlite3")
+		a.select_where(metas: {:service => "sshd"})
 end
