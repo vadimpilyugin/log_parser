@@ -66,9 +66,11 @@ public
   	@keys = keys
     @result = hash_cnt(keys.size)
     Database::Logline.transaction do |t|
-      @lines.each do |line|
-        puts "Next line"
-        hash_inc(@result, keys.map {|e| line[e]})
+      @lines.each_with_index do |line,i|
+        puts "Processing line ##{i}"
+        ar = keys.map {|e| line[e]}
+        next if ar.include? nil
+        hash_inc(@result, ar)
       end
     end
     if keys.size == 1

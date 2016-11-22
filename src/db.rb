@@ -18,7 +18,9 @@ has n, :datas
 has n, :metas
 
   def [](name)
-    return self.datas.first(:name => name).value
+    a = self.datas.first(:name => name)
+    return a.value if a
+    return nil
   end
 end
 
@@ -45,8 +47,7 @@ end
 class Database
   def initialize(hsh = {})
     drop = hsh[:drop] ? hsh[:drop] : false                                              # нужно ли очищать базу
-    filename = hsh[:filename] ? hsh[:filename] : Config["database"]["database_file"]   # можно задать файл базы
-    raise "Database file does not exist: #{filename}" if !File.exists? filename
+    filename = hsh[:filename] ? hsh[:filename] : Config["database"]["database_file"]    # можно задать файл базы
     Dir.chdir(File.expand_path("../../", __FILE__))                                     # переход в корень проекта
     DataMapper.setup(:default, "sqlite3://#{Dir.pwd}/#{filename}")                      # подключаемся к базе
     DataMapper.finalize
@@ -54,6 +55,7 @@ class Database
   end
 public
   def save(table)
+    DataMapper.auto_migrate!
     resources = []
     table.each do |ar|
       data = []
