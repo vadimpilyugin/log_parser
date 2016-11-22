@@ -1,27 +1,30 @@
-require 'yaml'
-require 'yaml/store'
-
 $:.unshift(File.expand_path("../", __FILE__))
 
+require 'config'
 require 'parser'
 require 'db'
 require 'aggregator'
 
-Dir.chdir(File.expand_path("../../", __FILE__))							# переходим в корень проекта
-config = YAML.load_file('default.conf/parser.cfg')						# загружаем конфиг
+Dir.chdir(File.expand_path("../../", __FILE__))
+Config.new
 
-# Подготовка данных для парсера
-log_file = config["log_file"] ? config["log_file"] : "logs/access-test_log"
-services_dir = config["services_dir"] ? config["services_dir"] : "default.conf/services"
-error_log = config["error_log"] ? config["error_log"] : "/tmp/parser.log"
-p = Parser::Parser.new filename: log_file, error_log: error_log, services_dir: services_dir
-p.parse!
+#database_file = "archive/access.sqlite3"
+#log_file = "logs/access.log"
+report_only = false	# чтобы не парсить логи заново, можно пропустить эту часть
 
-# Выгружаем распарсенный лог в базу данных
-database_file = config["database_file"] ? config["database_file"] : "archive/test.sqlite3"
-db = Database::Database.new filename: database_file, drop: true
-db.save(p.table)
+if !report_only
+  # Подготовка данных для парсера
+  p = Parser::Parser.new #filename: log_file
+  p.parse!
+  
+  # Выгружаем распарсенный лог в базу данных
+  db = Database::Database.new #filename: database_file, drop: true
+  db.save(p.table)
+end
 
 # Создаем отчеты по базе данных
-a = Aggregator::Aggregator.new database_file
-a.aggregate_by_keys("user_ip", "server_port").save("report/ip-path-distrib.yml")
+a = Aggregator::Aggregator.new #database_file
+# a.select(:datas => {"user-ip" => "91.224.161.69"})
+a.aggregate_by_keys("user_ip", "user_port")
+a.save("report/ip-port-distrib.yml")
+a.show_report("report/ip-port-distrib.yml")
