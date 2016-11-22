@@ -10,7 +10,7 @@ Config.new
 
 #database_file = "archive/access.sqlite3"
 #log_file = "logs/access.log"
-report_only = false
+report_only = false	# чтобы не парсить логи заново, можно пропустить эту часть
 
 if !report_only
   # Подготовка данных для парсера
@@ -27,3 +27,4 @@ a = Aggregator::Aggregator.new #database_file
 # a.select(:datas => {"user-ip" => "91.224.161.69"})
 a.aggregate_by_keys("user_ip", "user_port")
 a.save("report/ip-port-distrib.yml")
+a.show_report("report/ip-port-distrib.yml")

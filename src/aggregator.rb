@@ -94,7 +94,8 @@ public
   	store.transaction do
   	  store["Report Name"] = name
   	  store["Result"] = @result
-  	end	
+  	end
+    printf "Result saved in ==> #{filename}\n"
   end
 
   def show_report(filename = Config["aggregator"]["report_file"])
