@@ -1,27 +1,22 @@
 require 'yaml/store'
 
-module Config
-  # again - it's a singleton, thus implemented as a self-extended module
-  extend self
+class Config
+  @@config = nil
+  @@filename = nil
 
-  @_settings = {}
-  attr_reader :_settings
-
-  # This is the main point of entry - we call Settings.load! and provide
-  # a name of the file to read as it's argument. We can also pass in some
-  # options, but at the moment it's being used to allow per-environment
-  # overrides in Rails
-  def load!(filename = "")
+  def initialize(filename = "")
     filename = 'default.conf/config.yml' if filename == ""
-    raise "Конфигурационный файл по пути #{filename} не найден!" if !File.exists? filename
-    newsets = YAML.load_file(filename)
-    @_settings.update(newsets)
+    return @@config if @@config && filename == @@filename
+    @@filename = filename
+    throw "Config file does not exist! (#{filename})" unless File.exists? filename
+    @@config = YAML.load_file filename
   end
 
-  def method_missing(name, *args, &block)
-	name = name.to_s
-    @_settings[name] ||
-    fail(NoMethodError, "unknown configuration root #{name}", caller)
+  def Config.[] (arg)
+    return @@config[arg]
   end
 
+  def Config.hsh
+    return @@config
+  end
 end
