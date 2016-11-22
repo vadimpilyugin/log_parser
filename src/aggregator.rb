@@ -4,6 +4,7 @@ require "yaml/store"
 module Aggregator
 class Aggregator
 	def initialize(filename)
+		raise "Database file not found: #{filename}" unless File.exists? filename
 		@db = Database::Database.new filename: filename
 	end
 	# def aggregate_by_field(hsh = {})
@@ -75,6 +76,7 @@ public
 	end
 
 	def save(filename)
+		Dir.mkdir("report", 0777) unless Dir.exists? "report"
 		File.delete filename if File.exists? filename
 		store = YAML::Store.new filename
 		name = ""

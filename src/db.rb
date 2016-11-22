@@ -6,6 +6,7 @@ require 'dm-validations'
 require 'dm-timestamps'
 require  'dm-migrations'
 require  'dm-aggregates'
+require 'dm-transactions'
 
 module Database
 
@@ -70,8 +71,10 @@ public
 		end
 		puts
 		puts "Закончили создание ресурсов, начинаем сохранение:"
-		resources.each_with_index do |r, i|
-			puts "##{i}: #{r.save!}"
+		Logline.transaction do |t|
+			resources.each_with_index do |r, i|
+				puts "##{i}: #{r.save!}"
+			end
 		end
 		puts
 	end
