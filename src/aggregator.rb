@@ -11,6 +11,8 @@ class Aggregator
     @max = 15
   end
 
+  attr_accessor :lines
+
   # def aggregate_by_field(field, keys_hash = {})
   # 	if keys_hash != {}
   # 	  return @lines.all(datas: keys_hash).datas.all(name: field).aggregate(:value, :all.count).sort{|a, b| b[1] <=> a[1]}[0..(@max-1)].to_h
@@ -19,10 +21,28 @@ class Aggregator
   # 	end
   # end
 
+  def hash_cnt(cnt)
+    if cnt > 0
+      Hash.new {|hash, key| hash[key] = hash_cnt(cnt-1)}
+    else
+      0
+    end
+  end
+
+  def hash_inc(hash, *args)
+    hsh = hash
+    args.flatten!
+    args[0..-2].each do |arg|
+      hsh = hsh[arg]
+    end
+    hsh[args.last]+=1
+  end
+
 public
 
   def reset
     @lines = Database::Logline.all
+    return self
   end
 
   def select(keys_hash)
@@ -41,33 +61,24 @@ public
     return @lines
   end
 
-  def aggregate_by_field(field, keys_hash = {})
-    lines = @lines.clone
-    select(keys_hash).datas.all(name: field).aggregate(:value, :all.count).sort{|a, b| b[1] <=> a[1]}[0..(@max-1)].to_h
-  end
-
   def aggregate_by_keys(*keys)
   	return if keys == nil || keys.size == 0
-  	if keys.size > 3
-  	  printf "Max aggregation keys = 3\n"
-  	  return nil
-  	end
-
   	@keys = keys
-  	@result = aggregate_by_field(keys[0]) 
-  	return @result if keys.size == 1
-
-  	@result.each_key do |k|
-  	  @result[k] = aggregate_by_field(keys[1], {:datas => {keys[0] => k}})
-  	end
-  	return @result if keys.size == 2
-
-  	@result.each_key do |k|
-  	  v.each_key do |k1|
-  	    v[k1] = aggregate_by_field(keys[2], {:datas => {keys[0] => k, keys[1] => k1}})
-  	  end
-  	end
-  	return @result
+    @result = hash_cnt(keys.size)
+    Database::Logline.transaction do |t|
+      @lines.each do |line|
+        puts "Next line"
+        hash_inc(@result, keys.map {|e| line[e]})
+      end
+    end
+    if keys.size == 1
+      @result = @result.sort{|a, b| b[1] <=> a[1]}.to_h
+    elsif keys.size == 2
+      @result.each_pair do |k,v|
+        @result[k] = v.sort{|a, b| b[1] <=> a[1]}.to_h
+      end
+    end
+    return @result
   end
 
   def save(filename = Config["aggregator"]["report_file"])

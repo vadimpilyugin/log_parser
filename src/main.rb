@@ -6,17 +6,25 @@ require 'db'
 require 'aggregator'
 
 Dir.chdir(File.expand_path("../../", __FILE__))
-Config.load! "default.conf/config.yml"
+Config.new
 
-# Подготовка данных для парсера
-p = Parser::Parser.new filename: "logs/access.log"
-p.parse!
+database_file = "archive/access.sqlite3"
+log_file = "logs/access.log"
+report_only = true
 
-# Выгружаем распарсенный лог в базу данных
-database_file = "archive/test.sqlite3"
-db = Database::Database.new filename: database_file, drop: true
-db.save(p.table)
+if !report_only
+  # Подготовка данных для парсера
+  p = Parser::Parser.new filename: log_file
+  p.parse!
+  
+  # Выгружаем распарсенный лог в базу данных
+  
+  db = Database::Database.new filename: database_file, drop: true
+  db.save(p.table)
+end
 
 # Создаем отчеты по базе данных
 a = Aggregator::Aggregator.new database_file
-a.aggregate_by_keys("user_ip", "server_port").save("report/ip-path-distrib.yml")
+a.select(:datas => {"path" => "/robots.txt"})
+a.aggregate_by_keys("ip", "path")
+a.save("report/ip-path-distrib.yml")
