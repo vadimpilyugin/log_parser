@@ -4,11 +4,13 @@ require "yaml"
 
 require_relative "../db.rb"
 require_relative "../parser.rb"
+require_relative "../aggregator.rb"
 
 class TestSaving < Minitest::Test
-	@db = Database::Database.new(filename: "archive/test.sqlite3")
-	#@p = Parser.new(filename: "logs/access-big_log")
-	#@db.save(@p.parse!.table)
+	Config.load!
+	@db = Database::Database.new(filename: "archive/auth2.sqlite3", drop: true)
+	@p = Parser::Parser.new(filename: "logs/auth-test_log")
+	@db.save(@p.parse!.table)
 
 	def setup
 		# puts "Next test"

@@ -1,0 +1,12 @@
+---
+overall:
+  :error_log: /tmp/parser.log
+parser:
+  :log_file: logs/access-test_log
+  :services_dir: default.conf/services
+  #:log_folder: logs
+database:
+  :database_file: archive/test.sqlite3
+aggregator:
+  :database_file: archive/auth2.sqlite3
+  :report_file: report/report.yml

@@ -1,6 +1,5 @@
-require 'yaml'
-require 'yaml/store'
 require_relative 'regex.rb'
+require_relative 'config.rb'
 
 module Parser
 
@@ -22,13 +21,16 @@ class Parser
 		md.names.zip(md.captures).to_h			# представление в виде хэша {<named_group_1> => "data_1", ...}
 	end
 
-	def initialize(config = {})
+	def initialize(hsh = {})
 		Dir.chdir(File.expand_path("../../", __FILE__))												# переходим в корень проекта
-		@error_log = File.new(config[:error_log], File::CREAT|File::TRUNC|File::RDWR, 0644)			# сюда пишем ошибки
-		@filename = config[:filename]																# отсюда читаем лог
-		@services_dir = config[:services_dir]														# здесь храним описания сервисов
+		puts Config.overall[:error_log].inspect
+		puts Config.parser[:log_file].inspect
+		
+		@error_log = File.new(Config.overall[:error_log], File::CREAT|File::TRUNC|File::RDWR, 0644)	# сюда пишем ошибки
+		@filename = hsh[:filename] ? hsh[:filename] : Config.parser[:log_file]						# отсюда читаем лог
+		@services_dir = Config.parser[:services_dir]												# здесь храним описания сервисов
 		@log_template = case @filename
-						when /auth\d*\.log/ then Syslog												# определяем тип лога на основе имени файла
+						when /auth.*log/ then Syslog												# определяем тип лога на основе имени файла
 						when /access/ then Apache
 						else
 							@error_log.puts "Неопознанный формат лога: имя файла #{@filename}\n"
