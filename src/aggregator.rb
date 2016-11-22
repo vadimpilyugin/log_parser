@@ -3,7 +3,9 @@ require "yaml/store"
 
 module Aggregator
 class Aggregator
-	def initialize(hsh = {})
+
+	def initialize(filename)
+		raise "Database file not found: #{filename}" unless File.exists? filename
 		filename = hsh[:filename] ? hsh[:filename] : Config.aggregator[:database_file]
 		@default_output = Config.aggregator[:report_file]
 		@db = Database::Database.new filename: filename
@@ -58,7 +60,8 @@ public
 		return self
 	end
 
-	def save(filename = "")
+	def save(filename)
+		Dir.mkdir("report", 0777) unless Dir.exists? "report"
 		filename = filename == "" ? @default_output : filename
 		File.delete filename if File.exists? filename
 		store = YAML::Store.new filename

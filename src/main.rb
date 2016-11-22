@@ -18,5 +18,5 @@ db = Database::Database.new filename: database_file, drop: true
 db.save(p.table)
 
 # Создаем отчеты по базе данных
-a = Aggregator::Aggregator.new filename: database_file
-a.aggregate_by_keys("ip", "path").save("report/report.yml")
+a = Aggregator::Aggregator.new database_file
+a.aggregate_by_keys("user_ip", "server_port").save("report/ip-path-distrib.yml")
