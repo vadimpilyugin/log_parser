@@ -3,7 +3,8 @@ require_relative 'config.rb'
 
 class MatchData
   def to_h
-    self.names.zip(self.captures).to_h
+    a = self.captures.delete_if {|e| e == nil}
+    self.names.zip(a).to_h
   end
 end
 
@@ -15,12 +16,18 @@ class Parser
   attr_reader :table
 
   def include?(array, line)
-    if array.index {|rxp| line =~ rxp}	# дан массив регулярок и строка. Определить вхождение или не вхождение	
-      # printf "#{$~.to_h}\n"
+    a = array.index {|rxp| line =~ rxp} # дан массив регулярок и строка. Определить вхождение или не вхождение
+    @md = $~
+    if @ind == -1 and a != nil
+      printf "Array of regexes: #{array}\n"
+      printf "Line: #{line}\n"
+      printf "Index found at #{a}\n"
+      printf "MatchData is #{@md.to_h}\n"
+      line =~ array[a]
       @md = $~
-    else
-      nil
+      printf "And now MatchData is #{@md.to_h}\n"
     end
+    return a
   end
 
   def initialize(hsh = {})
@@ -63,39 +70,40 @@ public
   def parse!
     f = File.open(@filename)
     f.each_line{ |line|
-    if line !~ @log_template													# сравниваем строку с шаблоном, определенным по имени файла
-      @error_log.puts "Строка не соответствует шаблону( #{@filename}) #{f.lineno}:1): #{line}\n"
-      puts "Строка не соответствует шаблону( #{@filename}) #{f.lineno}:1): #{line}\n"
-    end
-    if @log_template == Apache 												# для апача просто сбрасываем в таблицу все именованные группы из регулярки
-      @table << [@filename, f.lineno, $~.to_h, {"service" => "apache"}]
-    elsif @log_template == Syslog
-      service = $~[:service]
-      msg = $~[:msg]
-      server = $~[:server]
-      if !@thing.has_key?(service)											# подгружаем сервисы по мере надобности, изначально нет ни одного
-        if hsh = load_service(service, f)										# проверяем, что файл с шаблонами существует
-          @thing.store(service, hsh)											# и включаем хэш регулярок в хэш по всем сервисам
-        else																	# если набора шаблонов для такого сервиса не существует
-          next																# пропускаем эту строку
+      @ind = f.lineno
+      if line !~ @log_template													# сравниваем строку с шаблоном, определенным по имени файла
+        @error_log.puts "Строка не соответствует шаблону( #{@filename}) #{f.lineno}:1): #{line}\n"
+        puts "Строка не соответствует шаблону( #{@filename}) #{f.lineno}:1): #{line}\n"
+      end
+      if @log_template == Apache 												# для апача просто сбрасываем в таблицу все именованные группы из регулярки
+        @table << [@filename, f.lineno, $~.to_h, {"service" => "apache"}]
+      elsif @log_template == Syslog
+        service = $~[:service]
+        msg = $~[:msg]
+        server = $~[:server]
+        if !@thing.has_key?(service)											# подгружаем сервисы по мере надобности, изначально нет ни одного
+          if hsh = load_service(service, f)										# проверяем, что файл с шаблонами существует
+            @thing.store(service, hsh)											# и включаем хэш регулярок в хэш по всем сервисам
+          else																	# если набора шаблонов для такого сервиса не существует
+            next																# пропускаем эту строку
+          end
+        end
+        i = @thing[service].to_a.index { |ar|									# поиск совпадений по указанному сервису
+          include?(ar[1], msg)												# описывается ли данное сообщение какой-нибудь регуляркой?
+        }
+        # printf "#{md_h($~)}\n"
+        if i
+          elem = @thing[service].to_a[i]			# если описывается, то MatchData из него выгружаем целиком
+          																    # плюс описание, из какой команды мы ее получили
+          @table << [@filename, f.lineno, @md.to_h, {"service" => service, "server" => server, "type" => elem[0]}] unless elem[0] == "Ignore" 
+          else
+          																    # все сообщения сервиса, для которых не нашлось
+          																    # регулярки, идут в таблицу с типом undefined
+          @table << [@filename, f.lineno, {"msg" => msg}, {"service" => service, "type" => "undefined"}] 	
         end
       end
-      i = @thing[service].to_a.index { |ar|									# поиск совпадений по указанному сервису
-        include?(ar[1], msg)												# описывается ли данное сообщение какой-нибудь регуляркой?
-      }
-      # printf "#{md_h($~)}\n"
-      if i
-        elem = @thing[service].to_a[i]			# если описывается, то MatchData из него выгружаем целиком
-        																    # плюс описание, из какой команды мы ее получили
-        @table << [@filename, f.lineno, @md.to_h, {"service" => service, "server" => server, "type" => elem[0]}] unless elem[0] == "Ignore" 
-        else
-        																    # все сообщения сервиса, для которых не нашлось
-        																    # регулярки, идут в таблицу с типом undefined
-        @table << [@filename, f.lineno, {"msg" => msg}, {"service" => service, "type" => "undefined"}] 	
-      end
-    end
-  }
-  self
+    }
+    self
   end
 end
 end

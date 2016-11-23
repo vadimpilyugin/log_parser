@@ -8,11 +8,12 @@ class TestParser < Minitest::Test
   Config.new
 
   def setup
-    @parser = Parser::Parser.new filename: "logs/access.log"
+    @parser = Parser::Parser.new filename: "logs/auth-test_log"
+    @parser.parse!
   end
 
   def test_output
-    @parser.parse!
+    skip
     @parser.table.each_with_index do |entry, i|
       printf "##{i})\tFilename = #{entry[0]}\n"
       printf "\tLine No = #{entry[1]}\n"
