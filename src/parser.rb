@@ -31,6 +31,7 @@ class Parser
   end
 
   def initialize(hsh = {})
+	Config.new
     Dir.chdir(File.expand_path("../../", __FILE__))	# переходим в корень проекта
     @error_log = File.new(Config["overall"]["error_log"], File::CREAT|File::TRUNC|File::RDWR, 0644)	# сюда пишем ошибки
     @filename = hsh[:filename] ? hsh[:filename] : Config["parser"]["log_file"]	# отсюда читаем лог
