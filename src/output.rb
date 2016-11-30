@@ -29,5 +29,11 @@ public
     end
     @ostream
   end
-
+  def Output.hash_to_s(hsh)
+    s = ""
+    hsh.each_pair do |k,v|
+      s << "#{k} = #{v}\n"
+    end
+    return s
+  end
 end

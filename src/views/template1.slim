@@ -1,28 +1,19 @@
 doctype html
 html
   head
-    title Slim Examples
-    meta name="keywords" content="template language"
-
+    title Table
   body
-    h1 Markup examples
+    h3 Table
+    table border="1"
+      tr
+        th Filename
+        th Line No
+        th Data
+        th Meta
 
-    #content
-      p This example shows you what a basic Slim file looks like.
-
-      == yield
-
-      - unless @items.empty?
-        table
-          - @items.each do |item|
-            tr
-              td.name = item[0]
-              td.price = item[1]
-      - else
-        p
-         | No items found.  Please add some inventory.
-           Thank you!
-
-    div id="footer"
-      | Copyright © 2011 Vadim
-          
+      - @table.each do |a|
+        tr
+          td = a[0]
+          td = a[1]
+          - a[2].each_pair do |k,v|
+            td = "#{k} = #{v}"
