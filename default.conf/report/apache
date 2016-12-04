@@ -1,11 +1,9 @@
 - "Число уникальных IP":
   type: counter
   field: user_ip
-  href: "/distrib?field=user_ip"
 - "Число уникальных страниц":
   type: counter
   field: path
-  href: "/distrib?field=path"
 - "Число успешных/неуспешных запросов":
   type: distribution
   fields:

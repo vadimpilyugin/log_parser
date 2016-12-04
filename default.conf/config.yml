@@ -15,6 +15,6 @@ aggregator:
   database_file: archive/auth-test.sqlite3
 reporter:
   # Файл, в который будет выдан основной отчет
-  report_file: report/report.yml
+  report_file: report/report.html
   # Папка с настройками отображения
   config_folder: default.conf/report

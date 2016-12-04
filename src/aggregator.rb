@@ -1,10 +1,13 @@
-require_relative "db.rb"
+require_relative "db"
+require_relative "config"
 require "yaml/store"
 
 module Aggregator
 class Aggregator
 
-  def initialize(filename = Config["aggregator"]["database_file"])
+  def initialize(filename = "")
+    Config.new
+    filename = Config["aggregator"]["database_file"] if filename == ""
     raise "Database file not found: #{filename}" unless File.exists? filename
     Database::Database.new filename: filename
     @lines = Database::Logline.all
