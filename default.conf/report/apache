@@ -1,4 +1,20 @@
-Посчитай user_ip, path
-Посчитай code группируя по "200"
-Распределение user_ip, code первые 10
-Ссылками являются user_ip, path
+- "Число уникальных IP":
+  type: counter
+  field: user_ip
+  href: "/distrib?field=user_ip"
+- "Число уникальных страниц":
+  type: counter
+  field: path
+  href: "/distrib?field=path"
+- "Число успешных/неуспешных запросов":
+  type: distribution
+  fields:
+  - code
+  group_by: "200"
+- "Распределение кодов ошибок по пользователям":
+  type: distribution
+  fields: 
+  - user_ip
+  - code
+  group_by: "404"
+  exclude: "200"

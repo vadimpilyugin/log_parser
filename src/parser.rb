@@ -72,6 +72,7 @@ public
     f = File.open(@filename)
     f.each_line{ |line|
       @ind = f.lineno
+      puts "Парсим строку #{@ind}"
       if line !~ @log_template													# сравниваем строку с шаблоном, определенным по имени файла
         @error_log.puts "Строка не соответствует шаблону( #{@filename}) #{f.lineno}:1): #{line}\n"
         puts "Строка не соответствует шаблону( #{@filename}) #{f.lineno}:1): #{line}\n"

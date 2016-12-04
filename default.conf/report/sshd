@@ -1,4 +1,14 @@
-Посчитай user_ip
-Распределение user_ip, server_port первые 10
-Было ли "Invalid user"
-Ссылками являются user_ip, username
+- "Число пользователей":
+  type: counter
+  field: user_ip
+- "На какие порты заходили пользователи"
+  type: distribution
+  fields:
+  - user_ip
+  - server_port
+- "Попытка подбора пароля? "
+  type: flag
+  look_for: "Auth fail"
+  threshold: 5
+  fields:
+  - user_ip
