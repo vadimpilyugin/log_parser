@@ -45,9 +45,14 @@ belongs_to :logline
 end
 
 class Database
+  @@filename = nil
+  @@db = nil
+
   def initialize(hsh = {})
+    Config.new
     drop = hsh[:drop] ? hsh[:drop] : false                                              # нужно ли очищать базу
     filename = hsh[:filename] ? hsh[:filename] : Config["database"]["database_file"]    # можно задать файл базы
+    @@filename == filename ? return : @@filename = filename
     Dir.chdir(File.expand_path("../../", __FILE__))                                     # переход в корень проекта
     Dir.mkdir("archive") if !Dir.exists? "archive"
     DataMapper.setup(:default, "sqlite3://#{Dir.pwd}/#{filename}")                      # подключаемся к базе
@@ -55,8 +60,8 @@ class Database
     drop ? DataMapper.auto_migrate! : DataMapper.auto_upgrade!
   end
 public
-  def save(table)
-    DataMapper.auto_migrate!
+  def Database.save(table)
+    # DataMapper.auto_migrate!
     resources = []
     table.each do |ar|
       data = []
@@ -78,7 +83,7 @@ public
     puts "Закончили создание ресурсов, начинаем сохранение:"
     Logline.transaction do |t|
       resources.each_with_index do |r, i|
-        puts "##{i}: #{r.save!}"
+        puts "Запись ##{i} сохранена: #{r.save!}"
       end
     end
     puts
