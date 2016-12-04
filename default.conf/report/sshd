@@ -1,13 +1,13 @@
-- "Число пользователей":
-  type: counter
+---
+- Counter: "Число пользователей"
   field: user_ip
-- "На какие порты заходили пользователи"
-  type: distribution
+
+- Distribution: "На какие порты заходили пользователи"
   fields:
   - user_ip
   - server_port
-- "Попытка подбора пароля? "
-  type: flag
+
+- Flag: "Попытка подбора пароля? "
   look_for: "Auth fail"
   threshold: 5
   fields:

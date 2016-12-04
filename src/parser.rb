@@ -32,13 +32,13 @@ class Parser
 
   def initialize(hsh = {})
 	Config.new
-    Dir.chdir(File.expand_path("../../", __FILE__))	# переходим в корень проекта
+    Chdir.chdir
     @error_log = File.new(Config["overall"]["error_log"], File::CREAT|File::TRUNC|File::RDWR, 0644)	# сюда пишем ошибки
     @filename = hsh[:filename] ? hsh[:filename] : Config["parser"]["log_file"]	# отсюда читаем лог
     raise "Log file does not exist: #{@filename}" if !File.exists? @filename
     @services_dir = Config["parser"]["services_dir"]  # здесь храним описания сервисов
     raise "Services directory does not exist: #{@services_dir}" if Dir.entries(@services_dir).empty?
-    raise "No templates found at services dir: #{@services_dir}" if Dir.entries(@services_dir).empty?
+    raise "No templates found at services dir: #{@services_dir}" if Dir.entries(@services_dir).size == 2
     @log_template = case @filename	# определяем тип лога по имени файла
       when /auth.*log/ then Syslog	
       when /access/ then Apache

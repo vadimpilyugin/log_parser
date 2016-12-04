@@ -6,16 +6,20 @@ require_relative 'parser'
 require_relative 'output'
 
 p = Parser::Parser.new filename: "logs/access.log"
+p.parse!
 
-io = StringIO.new
-out = Output.new ostream: io
-out.out_entry p.parse!.table[10], 10
-# puts io.empty?
+Chdir.chdir
 
-Dir.chdir(File.expand_path("../../", __FILE__))
+class Stat
+  def to_slim
+  	"<p><h3>This string shows up</h3></p>"
+  end
+end
 
 get '/' do
-  @test = {"a" => "apple"}
+  @str = "Hello, World!\n"
+  @test = {"sshd" => {"Count" => "256", "Flag" => "Yes"}, "apache" => {"Count" => "240"}}
+  @st = Stat.new
   slim :helloworld
 end
 

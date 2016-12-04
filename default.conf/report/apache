@@ -1,16 +1,16 @@
-- "Число уникальных IP":
-  type: counter
+---
+- Counter: "Число уникальных IP"
   field: user_ip
-- "Число уникальных страниц":
-  type: counter
+
+- Counter: "Число уникальных страниц"
   field: path
-- "Число успешных/неуспешных запросов":
-  type: distribution
+
+- Distribution: "Число успешных/неуспешных запросов"
   fields:
   - code
   group_by: "200"
-- "Распределение кодов ошибок по пользователям":
-  type: distribution
+
+- Distribution: "Распределение кодов ошибок по пользователям"
   fields: 
   - user_ip
   - code

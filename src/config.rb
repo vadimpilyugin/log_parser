@@ -8,6 +8,7 @@ class Config
     filename = 'default.conf/config.yml' if filename == ""
     return @@config if @@config && filename == @@filename
     @@filename = filename
+    Chdir.chdir
     throw "Config file does not exist! (#{filename})" unless File.exists? filename
     @@config = YAML.load_file filename
   end
@@ -18,5 +19,18 @@ class Config
 
   def Config.hsh
     return @@config
+  end
+end
+
+class Chdir
+  @@chdir = nil
+public
+  def Chdir.chdir()
+    if @@chdir == nil
+      Dir.chdir(File.expand_path("../../", __FILE__)) # переходим в корень проекта
+      @@chdir = Dir.pwd
+    else
+      return
+    end
   end
 end
