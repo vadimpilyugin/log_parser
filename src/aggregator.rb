@@ -12,13 +12,17 @@ module Aggregator
     end
   end
 
-  def Aggregator.hash_inc(hash, *args)
+  def Aggregator.hash_inc(hash, group_by, *args)
     hsh = hash
     args.flatten!
     args[0..-2].each do |arg|
       hsh = hsh[arg]
     end
-    hsh[args.last]+=1
+    if group_by != nil && args.last == group_by || group_by == nil
+      hsh[args.last] += 1
+    else
+      hsh["else"] += 1
+    end 
   end
 
 class Aggregator
@@ -55,14 +59,16 @@ public
     return @@lines.size
   end
 
-  def Aggregator.select(keys_hash)
+  def Aggregator.select(invert = false, keys_hash)
     return self if keys_hash.empty?
   	keys_hash.each_key {|k| raise "#{k} is not a symbol" if k.class != Symbol}
-    Aggregator.reset
     query_list = []
     keys_hash.each_pair do |k,v|
       v.each_pair do |k1,v1|
-        query_list << {k => {:name => k1, :value => v1}}
+        if invert
+          query_list << {k => {:name => k1, :value.not => v1}}
+        else
+          query_list << {k => {:name => k1, :value => v1}}
       end
     end
     Database::Logline.transaction do |t|
@@ -73,7 +79,7 @@ public
     return self
   end
 
-  def Aggregator.aggregate_by_keys(*keys)
+  def Aggregator.aggregate_by_keys(group_by = nil, *keys)
   	return if keys == nil || keys.size == 0
     keys.each do |key|
       raise "Key #{key} is not a String!" if key.class != String
@@ -84,7 +90,7 @@ public
         puts "Processing line ##{i}"
         ar = keys.map {|e| line[e]}
         next if ar.include? nil
-        Aggregator.hash_inc(result, ar)
+        Aggregator.hash_inc(result, group_by, ar)
       end
     end
     if keys.size == 1
