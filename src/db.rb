@@ -46,14 +46,13 @@ end
 
 class Database
   @@filename = nil
-  @@db = nil
 
   def initialize(hsh = {})
     Config.new
     drop = hsh[:drop] ? hsh[:drop] : false                                              # нужно ли очищать базу
     filename = hsh[:filename] ? hsh[:filename] : Config["database"]["database_file"]    # можно задать файл базы
     @@filename == filename ? return : @@filename = filename
-    Dir.chdir(File.expand_path("../../", __FILE__))                                     # переход в корень проекта
+    Chdir.chdir
     Dir.mkdir("archive") if !Dir.exists? "archive"
     DataMapper.setup(:default, "sqlite3://#{Dir.pwd}/#{filename}")                      # подключаемся к базе
     DataMapper.finalize

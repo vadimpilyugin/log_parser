@@ -4,27 +4,38 @@ require 'config'
 require 'parser'
 require 'db'
 require 'aggregator'
+require 'reporter'
+require 'tools'
 
-Dir.chdir(File.expand_path("../../", __FILE__))
 Config.new
+Chdir.chdir
+Tools.clean
 
-#database_file = "archive/access.sqlite3"
-log_file = "logs/access.log"
+# database_file = "archive/access.sqlite3"
+# log_file = "logs/access.log"
 report_only = true	# чтобы не парсить логи заново, можно пропустить эту часть
 
 if !report_only
   # Подготовка данных для парсера
-  p = Parser::Parser.new filename: log_file
+  p = Parser::Parser.new
   p.parse!
   
   # Выгружаем распарсенный лог в базу данных
-  db = Database::Database.new #filename: database_file, drop: true
-  db.save(p.table)
+  Database::Database.new drop: true #filename: database_file, drop: true
+  Database::Database.save p.table
 end
 
 # Создаем отчеты по базе данных
-a = Aggregator::Aggregator.new #database_file
-# a.select(:datas => {"user-ip" => "91.224.161.69"})
-a.aggregate_by_keys("ip", "code")
-a.save("report/ip-port-distrib.yml")
-a.show_report("report/ip-port-distrib.yml")
+a = Reporter::Reporter.new
+a.report()
+
+# Запускаем сервер
+require 'sinatra'
+
+report_file = Config["reporter"]["report_file"]
+get '/' do
+  send_file report_file
+end
+get '/tmp/:filename' do |fn|
+  send_file 'tmp/#{fn}'
+end

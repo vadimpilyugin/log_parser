@@ -5,26 +5,41 @@ require 'stringio'
 require_relative 'parser'
 require_relative 'output'
 
-p = Parser::Parser.new filename: "logs/access.log"
-p.parse!
-
 Chdir.chdir
+Config.new
 
-class Stat
-  def to_slim
-  	"<p><h3>This string shows up</h3></p>"
-  end
-end
-
+report_file = Config["reporter"]["report_file"]
 get '/' do
-  @str = "Hello, World!\n"
-  @test = {"sshd" => {"Count" => "256", "Flag" => "Yes"}, "apache" => {"Count" => "240"}}
-  @st = Stat.new
-  slim :helloworld
+  send_file @report_file
 end
 
-get '/table' do
-  @table = p.table
-  puts @table.class
-  slim :template1
-end
+# Simple class to represent an environment
+# class Env
+#   attr_accessor :name
+#   def initialize
+#     @string = "Hello, World!"
+#   end
+# end
+
+# scope = Env.new
+# scope.name = "test this layout"
+
+# layout =<<EOS
+# h1 Hello
+# .content
+#   = yield
+# EOS
+
+# contents =<<EOS
+#   = name
+# EOS
+
+# layout = Slim::Template.new { layout }
+# content = Slim::Template.new { contents }.render(scope)
+
+# puts layout.render{ content }
+
+# get '/test' do
+#   #layout.render{ content }
+#   "---\n127.0.0.1:\n  24: 2\n  22: 3\n255.255.255.0:\n  22: 4\n  80: 6\n"
+# end

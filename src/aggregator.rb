@@ -4,7 +4,32 @@ require "yaml/store"
 
 module Aggregator
 
-  def Aggregator.hash_cnt(cnt)
+class Aggregator
+
+  @@lines = nil
+  @@filename = nil
+
+  def initialize(filename = "")
+    Config.new
+    Chdir.chdir
+    filename = Config["aggregator"]["database_file"] if filename == ""
+    return if filename == @@filename
+    @@filename = filename
+    Database::Database.new
+    @@lines = Database::Logline.all
+    raise "Database file not found: #{filename}" unless File.exists? filename
+    Database::Database.new filename: filename
+  end
+
+  # def aggregate_by_field(field, keys_hash = {})
+  # 	if keys_hash != {}
+  # 	  return @lines.all(datas: keys_hash).datas.all(name: field).aggregate(:value, :all.count).sort{|a, b| b[1] <=> a[1]}[0..(@max-1)].to_h
+  # 	else
+  # 	  return @lines.all.datas.all(name: field).aggregate(:value, :all.count).sort{|a, b| b[1] <=> a[1]}[0..(@max-1)].to_h
+  # 	end
+  # end
+
+def Aggregator.hash_cnt(cnt)
     if cnt > 0
       Hash.new {|hash, key| hash[key] = hash_cnt(cnt-1)}
     else
@@ -25,29 +50,6 @@ module Aggregator
     end 
   end
 
-class Aggregator
-
-  @@lines = nil
-  @@filename = nil
-
-  def initialize(filename = "")
-    Config.new
-    filename = Config["aggregator"]["database_file"] if filename == ""
-    return if filename == @@filename
-    @@filename = filename
-    @@lines = Database::Logline.all
-    raise "Database file not found: #{filename}" unless File.exists? filename
-    Database::Database.new filename: filename
-  end
-
-  # def aggregate_by_field(field, keys_hash = {})
-  # 	if keys_hash != {}
-  # 	  return @lines.all(datas: keys_hash).datas.all(name: field).aggregate(:value, :all.count).sort{|a, b| b[1] <=> a[1]}[0..(@max-1)].to_h
-  # 	else
-  # 	  return @lines.all.datas.all(name: field).aggregate(:value, :all.count).sort{|a, b| b[1] <=> a[1]}[0..(@max-1)].to_h
-  # 	end
-  # end
-
 public
 
   def Aggregator.reset
@@ -57,6 +59,10 @@ public
 
   def Aggregator.count
     return @@lines.size
+  end
+
+  def Aggregator.lines
+    return @@lines
   end
 
   def Aggregator.select(invert = false, keys_hash)
@@ -69,6 +75,7 @@ public
           query_list << {k => {:name => k1, :value.not => v1}}
         else
           query_list << {k => {:name => k1, :value => v1}}
+        end
       end
     end
     Database::Logline.transaction do |t|
@@ -79,18 +86,18 @@ public
     return self
   end
 
-  def Aggregator.aggregate_by_keys(group_by = nil, *keys)
+  def Aggregator.aggregate_by_keys(group_by = nil, keys)
   	return if keys == nil || keys.size == 0
     keys.each do |key|
       raise "Key #{key} is not a String!" if key.class != String
     end
-    result = Aggregator.hash_cnt(keys.size)
+    result = hash_cnt(keys.size)
     Database::Logline.transaction do |t|
       @@lines.each_with_index do |line,i|
         puts "Processing line ##{i}"
         ar = keys.map {|e| line[e]}
         next if ar.include? nil
-        Aggregator.hash_inc(result, group_by, ar)
+        hash_inc(result, group_by, ar)
       end
     end
     if keys.size == 1

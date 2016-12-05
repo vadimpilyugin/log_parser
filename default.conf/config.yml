@@ -16,5 +16,5 @@ aggregator:
 reporter:
   # Файл, в который будет выдан основной отчет
   report_file: report/report.html
-  # Папка с настройками отображения
+  # Папка с настройками отображения отчета
   config_folder: default.conf/report

@@ -7,8 +7,9 @@ require_relative "../config"
 
 class TestSaving < Minitest::Test
   Config.new
+  Chdir.chdir
   @@db_name = "archive/auth-test.sqlite3"
-  db = Database::Database.new filename: @@db_name, drop: false
+  Database::Database.new filename: @@db_name, drop: false
   #@p = Parser::Parser.new filename: "logs/auth-test_log"
   #db.save(@p.parse!.table)
 
@@ -94,9 +95,9 @@ class TestSaving < Minitest::Test
 
   def test_saving
     skip
-    @db = Database::Database.new filename: "archive/test.sqlite3", drop: true
+    Database::Database.new filename: "archive/access.sqlite3", drop: true
     @p = Parser::Parser.new filename: "logs/access.log"
     @p.parse!
-    @db.save(@p.table)
+    Database::Database.save(@p.table)
   end
 end
