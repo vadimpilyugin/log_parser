@@ -97,7 +97,7 @@ class Distribution
   end
 public
   def to_html()
-    filename = "tmp/#{self.hash}.html"
+    filename = "tmp/#{self.hash}.txt"
     store = YAML::Store.new filename
     store.transaction do
       name = ""

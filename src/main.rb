@@ -37,5 +37,9 @@ get '/' do
   send_file report_file
 end
 get '/tmp/:filename' do |fn|
-  send_file 'tmp/#{fn}'
+  printf "tmp/#{fn}\n"
+  send_file "tmp/#{fn}"
+end
+get '/tmp' do
+  "Hello, World!"
 end
