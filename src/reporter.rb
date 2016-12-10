@@ -94,9 +94,35 @@ class Distribution
   	@value = Aggregator::Aggregator.reset.select(metas: {:service => service})
     @value = Aggregator::Aggregator.select(true, datas: {@keys.last => params["exclude"]}) if params["exclude"]  # убрать строки со значением params[exclude] 
     @value = Aggregator::Aggregator.aggregate_by_keys(params["group_by"], @keys)    # выполнить агрегацию, если нужно, сгруппировать по значению
+    @service = service
   end
+
+  def hash_to_html(hsh, cnt = 0)
+    if cnt == 0
+      s = "<p>"
+      hsh.each_pair do |k, v|
+        s << "<a href='127.0.0.1/select?#{@keys[0]}=#{k}&service=#{@service}'>#{k}</a>: #{v.class == Hash ? "<br>"+hash_to_html(v, cnt+1) : v.to_s + "<br>"}\n"
+      end
+      s << "</p>"
+      return s
+    else
+      s = ""
+      hsh.each_pair do |k, v|
+        s << "#{"  "*cnt}#{k}: #{v.class == Hash ? "<br>"+hash_to_html(v, cnt+1) : v.to_s + "<br>"}\n"
+      end
+      return s
+    end
+  end
+
 public
   def to_html()
+    max = 15
+    s = ""
+    s << "#{@descr}: <br>\n"
+    s << hash_to_html(@value[0..max].to_h)
+    s << "<a href='127.0.0.1/distrib?service=#{@service}'>show more #{@value.size-max} entries</a>\n" unless @value.size < max
+
+
     filename = "tmp/#{self.hash}.txt"
     store = YAML::Store.new filename
     store.transaction do
