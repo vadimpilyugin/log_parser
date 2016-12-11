@@ -6,6 +6,7 @@ require 'db'
 require 'aggregator'
 require 'reporter'
 require 'tools'
+require 'server'
 
 Config.new
 Chdir.chdir
@@ -14,6 +15,7 @@ Tools.clean
 # database_file = "archive/access.sqlite3"
 # log_file = "logs/access.log"
 report_only = true	# чтобы не парсить логи заново, можно пропустить эту часть
+without_report = false # чтобы отослать готовый отчет
 
 if !report_only
   # Подготовка данных для парсера
@@ -26,8 +28,10 @@ if !report_only
 end
 
 # Создаем отчеты по базе данных
-a = Reporter::Reporter.new
-a.report()
+unless without_report
+  a = Reporter::Reporter.new
+  a.report()
+end
 
 # Запускаем сервер
 require 'sinatra'
@@ -36,10 +40,8 @@ report_file = Config["reporter"]["report_file"]
 get '/' do
   send_file report_file
 end
-get '/tmp/:filename' do |fn|
-  printf "tmp/#{fn}\n"
-  send_file "tmp/#{fn}"
-end
-get '/tmp' do
-  "Hello, World!"
+
+get '/id/:id' do |id|
+  content = Reference[id]
+  "Hello, world!"
 end

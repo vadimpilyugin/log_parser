@@ -1,5 +1,6 @@
 require_relative "aggregator"
 require_relative "config"
+require_relative "server"
 require "yaml/store"
 require 'yaml'
 require "slim"
@@ -67,18 +68,17 @@ end
 
 class Counter
   def initialize(service, params)
-    printf "#{params} - Params\n"
   	@descr = params["Counter"]		# Описание, которое в первой строке
   	# Счетчик имеет следующие параметры:
   	# Поле - подсчитывает уникальные значения данного поля. Например, уникальные IP адреса
   	@field = params["field"]
-  	raise "Service is not a string! #{service}" if service.class != String
+  	Tools.assert service.class == String, "Service is not a string! #{service}"
   	@value = Aggregator::Aggregator.reset.select(metas: {:service => service}).aggregate_by_keys(nil, [@field]).size
+    @service = service
   end
 public
   def to_html()
-    s = ""
-    s << "<p>#{@descr}: <a href=localhost:4567/>#{@value}</a></p>"
+    return "<p>#{@descr}: #{Reference.href(text: @value, select: {"service" => @service}, distrib: [@field])}</p>"
   end
 end
 
@@ -99,16 +99,17 @@ class Distribution
 
   def hash_to_html(hsh, cnt = 0)
     if cnt == 0
-      s = "<p>"
-      hsh.each_pair do |k, v|
-        s << "<a href='127.0.0.1/select?#{@keys[0]}=#{k}&service=#{@service}'>#{k}</a>: #{v.class == Hash ? "<br>"+hash_to_html(v, cnt+1) : v.to_s + "<br>"}\n"
+      Tools.assert hsh.class == Hash && hsh.size > 0, "Distribution::to_html: wrong hash type"
+      s = ""
+      hsh.each_pair do |key, value|
+        s << Reference.href(text: key, select: {"service" => @service, @keys[0] => key})
+        s << ": #{v.class == Hash ? "\n"+hash_to_html(v, cnt+1) : v.to_s + "\n"}"
       end
-      s << "</p>"
       return s
     else
       s = ""
       hsh.each_pair do |k, v|
-        s << "#{"  "*cnt}#{k}: #{v.class == Hash ? "<br>"+hash_to_html(v, cnt+1) : v.to_s + "<br>"}\n"
+        s << "#{"  "*cnt}#{k}: #{v.class == Hash ? "\n"+hash_to_html(v, cnt+1) : v.to_s + "\n"}\n"
       end
       return s
     end
@@ -117,25 +118,11 @@ class Distribution
 public
   def to_html()
     max = 15
-    s = ""
-    s << "#{@descr}: <br>\n"
-    s << hash_to_html(@value[0..max].to_h)
-    s << "<a href='127.0.0.1/distrib?service=#{@service}'>show more #{@value.size-max} entries</a>\n" unless @value.size < max
-
-
-    filename = "tmp/#{self.hash}.txt"
-    store = YAML::Store.new filename
-    store.transaction do
-      name = ""
-      @keys.each do |key|
-        name << "#{key.upcase} - "
-      end      
-      name[-3..-1] = ""
-      name << " DISTRIBUTION"
-      store["Report Name"] = name
-      store["Result"] = @value
-    end
-    s = "<p>#{@descr}: <a href=localhost:4567/#{filename} >show #{@value.size} #{@keys[0]}'s</a></p>"
+    s = "<PRE>"
+    s << "<b>#{@descr}</b>: \n"
+    s << hash_to_html(@value.to_a[0..max-1].to_h)
+    s << Reference.href(text: "show more #{@value.size-max} entries", select: {"service" => @service}, distrib: @keys) unless @value.size < max
+    s << "\n</PRE>"
   end
 end
 

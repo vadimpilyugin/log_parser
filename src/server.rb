@@ -1,7 +1,4 @@
-require 'sinatra'
-require 'slim'
-require 'stringio'
-
+require_relative 'tools'
 
 # Пусть он вернет в href id записи в своей таблице
 # Тогда при обращении по данному id выдать то, что записано в таблице
@@ -9,23 +6,20 @@ class Reference
 @@ip = "127.0.0.1"
 @@table = []
 
+public
   def Reference.href(hsh)
-    select_keys = hsh["select"]
-    distrib_keys = hsh["distrib"]
-    s = ""
-    s << "#{@@ip}/"
+    Tools.assert hsh.keys.size <= 3, "Too many keys #{hsh.keys}"
+    Tools.assert ([:select, :distrib, :text] - hsh.keys).empty?, "Unknown key(s) #{[:select, :distrib, :text] - hsh.keys}"
+    Tools.assert hsh[:distrib].class == Array, "Keys are not in form of array"
+    
+    id = @@table.size
+    s = "<a href=\"#{@@ip}/id/#{id}\">#{hsh[:text]}</a>"
+    @@table << [id, hsh]
+    return s
   end
-end
-
-require_relative 'parser'
-require_relative 'output'
-
-Chdir.chdir
-Config.new
-
-report_file = Config["reporter"]["report_file"]
-get '/' do
-  send_file @report_file
+  def Reference.[] (line)
+    return @@table[line]
+  end
 end
 
 # Simple class to represent an environment
