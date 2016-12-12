@@ -22,11 +22,11 @@ public
     entry.each_with_index do |elem, pos|
       name = layout[pos] ? layout[pos] : "nil"
       # @ostream.write(sprintf("#{@indent}#{name}:\n"))
-      s << "#{@indent}#{name}:\n"
+      s << "#{@indent}#{name}:"
       case elem.class.to_s
       when "Hash"
         # out_h elem
-        s << out_h(elem)
+        s << "\n" << out_h(elem)
       else
         # @ostream.write(sprintf("#{@indent+@little_ind}#{elem}\n"))
         s << "#{@indent+@little_ind}#{elem}\n"
