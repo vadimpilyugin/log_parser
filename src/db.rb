@@ -5,6 +5,8 @@ require  'dm-migrations'
 require  'dm-aggregates'
 require 'dm-transactions'
 
+require_relative 'tools'
+
 module Database
 
 
@@ -17,10 +19,33 @@ property :line, Integer, :key => true      # и номер строки в фа�
 has n, :datas
 has n, :metas
 
-  def [](name)
-    a = self.datas.first(:name => name)
+  def [](hsh)
+    if hsh.keys[0] == :data
+      a = self.datas.first(:name => hsh[:data])
+    elsif hsh.keys[0] == :meta
+      a = self.metas.first(:name => hsh[:meta])
+    else
+      Tools.assert false, "No such key #{hsh}"
+    end
     return a.value if a
     return nil
+  end
+
+  def to_a
+    a = []
+    a << self.filename
+    a << self.line
+    data_hash = {}
+    self.datas.each do |data|
+      data_hash.update(data.name => data.value)
+    end
+    a << data_hash
+    meta_hash = {}
+    self.metas.each do |meta|
+      meta_hash.update(meta.name => meta.value)
+    end
+    a << meta_hash
+    return a
   end
 end
 

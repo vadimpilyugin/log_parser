@@ -35,17 +35,17 @@ class Parser
     Chdir.chdir
     @error_log = File.new(Config["overall"]["error_log"], File::CREAT|File::TRUNC|File::RDWR, 0644)	# сюда пишем ошибки
     @filename = hsh[:filename] ? hsh[:filename] : Config["parser"]["log_file"]	# отсюда читаем лог
-    raise "Log file does not exist: #{@filename}" if !File.exists? @filename
+    Tools.assert File.exists?(@filename), "Log file does not exist: #{@filename}"
     @services_dir = Config["parser"]["services_dir"]  # здесь храним описания сервисов
-    raise "Services directory does not exist: #{@services_dir}" if Dir.entries(@services_dir).empty?
-    raise "No templates found at services dir: #{@services_dir}" if Dir.entries(@services_dir).size == 2
+    Tools.assert !Dir.entries(@services_dir).empty?, "Services directory does not exist: #{@services_dir}"
+    Tools.assert Dir.entries(@services_dir).size > 2, "No templates found at services dir: #{@services_dir}"
     @log_template = case @filename	# определяем тип лога по имени файла
       when /auth.*log/ then Syslog	
       when /access/ then Apache
       else
         @error_log.puts "Неопознанный формат лога: имя файла #{@filename}\n"
         puts "Неопознанный формат лога: имя файла #{@filename}\n"
-        raise "Неопознанный формат лога"
+        Tools.assert false, "Неопознанный формат лога"
     end
     @thing = {} 	# {sshd => {Name1 => [Patterns], ...}, CRON => {Name1 => [Patterns1], ...}, ...}
     @table = [] 	# [filename, line, data => {key:value}, meta => {key:value}]    

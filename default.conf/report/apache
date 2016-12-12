@@ -8,11 +8,16 @@
 - Distribution: "Число успешных/неуспешных запросов"
   fields:
   - code
-  group_by: "200"
+  # group_by: "200"
 
 - Distribution: "Распределение кодов ошибок по пользователям"
   fields: 
   - user_ip
   - code
-  group_by: "404"
-  exclude: "200"
+  # group_by: "404"
+  # exclude: "200"
+
+- Distribution: "Распределение кодов ошибок по страницам"
+  fields:
+  - path
+  - code

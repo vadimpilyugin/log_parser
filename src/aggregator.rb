@@ -1,23 +1,27 @@
 require_relative "db"
 require_relative "config"
+require_relative "tools"
 require "yaml/store"
 
 module Aggregator
 
 class Aggregator
 
-  @@lines = nil
-  @@filename = nil
+  @lines = nil
+  @filename = nil
+  @group_by = nil
+
+  class << self; attr_accessor(:lines, :group_by) end
 
   def initialize(filename = "")
     Config.new
     Chdir.chdir
     filename = Config["aggregator"]["database_file"] if filename == ""
-    return if filename == @@filename
-    @@filename = filename
+    return if filename == @filename
+    @filename = filename
     Database::Database.new
-    @@lines = Database::Logline.all
-    raise "Database file not found: #{filename}" unless File.exists? filename
+    @lines = Database::Logline.all
+    Tools.assert File.exists?(filename), "Database file not found: #{filename}"
     Database::Database.new filename: filename
   end
 
@@ -37,41 +41,57 @@ def Aggregator.hash_cnt(cnt)
     end
   end
 
-  def Aggregator.hash_inc(hash, group_by, *args)
+  def Aggregator.hash_inc(hash,*args)
     hsh = hash
     args.flatten!
     args[0..-2].each do |arg|
       hsh = hsh[arg]
     end
-    if group_by != nil && args.last == group_by || group_by == nil
+    if @group_by == nil || @group_by != nil && args.last == @group_by
       hsh[args.last] += 1
     else
-      hsh["else"] += 1
-    end 
+      hsh["not #{@group_by}"] += 1
+    end
+  end
+
+  def Aggregator.sum(hsh)
+    if hsh.class == Hash
+      total = 0
+      hsh.each_value do |v|
+        total += sum(v)
+      end
+      return total
+    else
+      return hsh
+    end
   end
 
 public
 
   def Aggregator.reset
-    @@lines = Database::Logline.all
+    @lines = Database::Logline.all
+    @group_by = nil
     return self
   end
 
   def Aggregator.count
-    return @@lines.size
+    return @lines.size
   end
 
-  def Aggregator.lines
-    return @@lines
-  end
-
-  def Aggregator.select(invert = false, keys_hash)
-    return self if keys_hash.empty?
-  	keys_hash.each_key {|k| raise "#{k} is not a symbol" if k.class != Symbol}
+  def Aggregator.select(keys_hash)
+    Tools.assert !keys_hash.empty? 
+    keys_hash.each_pair do |k,v|
+      Tools.assert k.class == Symbol, "#{k} is not a symbol in #{keys_hash}"
+      v.each_pair do |k1,v1|
+        Tools.assert k1.class == String, "#{k1} is not a string in #{keys_hash}"
+        Tools.assert v1.class == String, "#{v1} is not a string in #{keys_hash}"
+      end
+    end
     query_list = []
     keys_hash.each_pair do |k,v|
       v.each_pair do |k1,v1|
-        if invert
+        if v1 =~ /^not/
+          v1[0..3] = ""
           query_list << {k => {:name => k1, :value.not => v1}}
         else
           query_list << {k => {:name => k1, :value => v1}}
@@ -80,33 +100,35 @@ public
     end
     Database::Logline.transaction do |t|
       query_list.each do |query|
-        @@lines = @@lines.all query
+        @lines = @lines.all query
       end
     end
     return self
   end
 
-  def Aggregator.aggregate_by_keys(group_by = nil, keys)
-  	return if keys == nil || keys.size == 0
+  def Aggregator.aggregate_by_keys(keys)
+    Tools.assert keys != nil && keys.size != 0
     keys.each do |key|
-      raise "Key #{key} is not a String!" if key.class != String
+      Tools.assert key.class == String, "Key #{key} is not a String!"
     end
+    puts "Aggregation by keys: #{keys}"
     result = hash_cnt(keys.size)
     Database::Logline.transaction do |t|
-      @@lines.each_with_index do |line,i|
+      @lines.each_with_index do |line,i|
         puts "Processing line ##{i}"
-        ar = keys.map {|e| line[e]}
+        ar = keys.map {|e| line[data: e]}
         next if ar.include? nil
-        hash_inc(result, group_by, ar)
+        hash_inc(result,ar)
       end
     end
-    if keys.size == 1
-      result = result.sort{|a, b| b[1] <=> a[1]}.to_h
-    elsif keys.size == 2
-      result.each_pair do |k,v|
-        result[k] = v.sort{|a, b| b[1] <=> a[1]}.to_h
-      end
-    end
+    # if keys.size == 1
+    #   result = result.sort{|a, b| b[1] <=> a[1]}.to_h
+    # elsif keys.size == 2
+    #   result.each_pair do |k,v|
+    #     result[k] = v.sort{|a, b| b[1] <=> a[1]}.to_h
+    #   end
+    # end
+    result = result.to_a.sort{|a,b| sum(b[1]) <=> sum(a[1])}.to_h
     return result
   end
 

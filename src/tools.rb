@@ -8,6 +8,7 @@ class Tools
   end
   def Tools.rprint(str)
     puts str.red
+    printf "from #{caller[0].light_white}\n"
     raise str
   end
 public
@@ -30,18 +31,18 @@ public
   #     end
   #   end
   # end
-  def Tools.assert(cond, str)
-    rprint "Assertion::Not a boolean value: #{cond}" if cond != true && cond != false
+  def Tools.assert(cond, str = "No description")
+    # rprint "Assertion::Not a boolean value: #{cond}" if cond != true && cond != false && cond != nil
     rprint "Assertion::Not a string: #{str}" if str.class != String
-    if cond == false
+    if !cond
       printf "-----\n".light_white
       printf "Assertion failed: ".red
       printf "from #{caller[0].light_white}:\n"
       printf "\t#{str}\n"
+      printf "-----\n".light_white
+      printf "\n"
       raise str    
     end
-    printf "-----\n".light_white
-    printf "\n"
   end
 end
 

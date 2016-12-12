@@ -42,6 +42,5 @@ get '/' do
 end
 
 get '/id/:id' do |id|
-  content = Reference[id]
-  "Hello, world!"
+  Reference[id]
 end

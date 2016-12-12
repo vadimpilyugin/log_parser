@@ -9,16 +9,33 @@ class Reference
 public
   def Reference.href(hsh)
     Tools.assert hsh.keys.size <= 3, "Too many keys #{hsh.keys}"
-    Tools.assert ([:select, :distrib, :text] - hsh.keys).empty?, "Unknown key(s) #{[:select, :distrib, :text] - hsh.keys}"
-    Tools.assert hsh[:distrib].class == Array, "Keys are not in form of array"
+    Tools.assert (hsh.keys - [:select, :distrib, :text]).empty?, "Unknown key(s) #{hsh.keys - [:select, :distrib, :text]}"
+    Tools.assert hsh[:distrib] == nil || hsh[:distrib].class == Array, "Keys are not in form of array: #{hsh[:distrib]}"
+    # Tools.assert hsh[:title] == nil || hsh[:title].class == String, "A title is in wrong format"
+    Tools.assert hsh[:select]["service"] != nil, "Service not specified: #{hsh}"
     
     id = @@table.size
-    s = "<a href=\"#{@@ip}/id/#{id}\">#{hsh[:text]}</a>"
-    @@table << [id, hsh]
+    s = "<a href=\"/id/#{id}\">#{hsh[:text]}</a>"
+    @@table << {:id => id, :params => hsh, :page => ""}
     return s
   end
   def Reference.[] (line)
-    return @@table[line]
+    ref = @@table[line.to_i]
+    if ref[:page] == ""
+      params = ref[:params]
+      s = "<!DOCTYPE html>\n"
+      s << "<html>\n"
+      s << "<head><title>Detail on #{ref[:id]}</title></head>\n"
+      s << "<body>\n<PRE>"
+      if params[:distrib] == nil
+        s << Reporter::Lines.new(params).to_html
+      else
+        s << Reporter::Distribution.new(params[:select]["service"], {"Distribution" => "#{params[:distrib]}", "fields" => params[:distrib], "max" => -1}).to_html
+      end
+      s << "</PRE></body></html>"
+      ref[:page] = s
+    end
+    return ref[:page]
   end
 end
 

@@ -1,6 +1,7 @@
 require_relative "aggregator"
 require_relative "config"
 require_relative "server"
+require_relative "output"
 require "yaml/store"
 require 'yaml'
 require "slim"
@@ -14,7 +15,7 @@ class Statistics
       when "Counter" then Counter.new service, hsh
       when "Distribution" then Distribution.new service, hsh
       when "Flag" then Flag.new service, hsh
-      else raise "Неопределенный тип статистики в #{hsh}"
+      else Tools.assert false, "Неопределенный тип статистики в #{hsh}"
     end
   end
 end
@@ -25,8 +26,8 @@ class Reporter
     Config.new
     Aggregator::Aggregator.new
     folder = Config["reporter"]["config_folder"]
-    raise "Report directory does not exist: #{folder}" if Dir.entries(folder).empty?
-    raise "No templates found at report dir: #{folder}" if Dir.entries(folder).size == 2
+    Tools.assert !Dir.entries(folder).empty?,  "Report directory does not exist: #{folder}"
+    Tools.assert Dir.entries(folder).size > 2, "No templates found at report dir: #{folder}"
     @report_struct = {}
     Dir.entries(folder).each do |service|    # загружаем шаблоны построения отчета
       next if service == "." || service == ".."
@@ -50,18 +51,16 @@ public
     f << "<!DOCTYPE html>\n"
     f << "<html>\n"
     f << "<head><title>Report</title></head>\n"
-    f << "<body>\n"
-    f << "<h3>Report on #{Config["parser"]["log_file"]}</h3>\n"
-    f << "<br>"
+    f << "<body>\n<PRE>"
+    f << "<h4>Report on #{Config["parser"]["log_file"]}</h4>\n"
     @report_struct.each_pair do |service, template|
-      f << "<p>=================#{service.upcase}=================</p>\n"
+      f << "=================#{service.upcase}=================\n"
       template.each do |stat|
-        f << stat.to_html << "\n"
+        f << stat.to_html
       end
-      f << "<p>=================#{service.upcase} END=================</p>\n"
-      f << "<br>"
+      f << "=================#{service.upcase} END=================\n\n\n"
     end
-    f << "</body></html>"
+    f << "</PRE></body></html>"
     f.close
   end
 end
@@ -73,12 +72,13 @@ class Counter
   	# Поле - подсчитывает уникальные значения данного поля. Например, уникальные IP адреса
   	@field = params["field"]
   	Tools.assert service.class == String, "Service is not a string! #{service}"
-  	@value = Aggregator::Aggregator.reset.select(metas: {:service => service}).aggregate_by_keys(nil, [@field]).size
+  	@value = Aggregator::Aggregator.reset.select(metas: {"service" => service}).aggregate_by_keys([@field]).size
     @service = service
   end
 public
   def to_html()
-    return "<p>#{@descr}: #{Reference.href(text: @value, select: {"service" => @service}, distrib: [@field])}</p>"
+    return "<b>#{@descr}</b>: #{Reference.href(text: @value, select: {"service" => @service}, distrib: [@field])}" + "\n" if @value > 0
+    return "<b>#{@descr}</b>: 0\n"
   end
 end
 
@@ -89,27 +89,49 @@ class Distribution
   	# Поля - показывает их взаимное распределение. Например, какие IP по каким портам заходили(распределение user_ip, server_port)
   	# Группировка - не показывать полное распределение, а по отношению к какому-то значению. Например, коды ошибок 200/не 200
   	# Исключение - в распределении убрать из рассмотрения определенное поле. Например, в распределении по кодам ошибок убрать код 200
-  	raise "Service is not a string! #{service}" if service.class != String
+  	Tools.assert service.class == String, "Service is not a string! #{service}"
     @keys = params["fields"]
-  	@value = Aggregator::Aggregator.reset.select(metas: {:service => service})
-    @value = Aggregator::Aggregator.select(true, datas: {@keys.last => params["exclude"]}) if params["exclude"]  # убрать строки со значением params[exclude] 
-    @value = Aggregator::Aggregator.aggregate_by_keys(params["group_by"], @keys)    # выполнить агрегацию, если нужно, сгруппировать по значению
+  	@value = Aggregator::Aggregator.reset.select(metas: {"service" => service})
+    @value = Aggregator::Aggregator.select(datas: {@keys.last => "not "+params["exclude"]}) if params["exclude"]  # убрать строки со значением params[exclude] 
+    Aggregator::Aggregator.group_by = params["group_by"]
+    @value = Aggregator::Aggregator.aggregate_by_keys(@keys)    # выполнить агрегацию, если нужно, сгруппировать по значению
     @service = service
+    @exclude = params["exclude"]
+    @max = params["max"] ? params["max"] : 15
   end
 
   def hash_to_html(hsh, cnt = 0)
     if cnt == 0
-      Tools.assert hsh.class == Hash && hsh.size > 0, "Distribution::to_html: wrong hash type"
+      Tools.assert hsh.class == Hash, "Not a hash! #{hsh.class}"
+      # Tools.assert hsh.size > 0, "Hash size equals zero!"
       s = ""
       hsh.each_pair do |key, value|
         s << Reference.href(text: key, select: {"service" => @service, @keys[0] => key})
-        s << ": #{v.class == Hash ? "\n"+hash_to_html(v, cnt+1) : v.to_s + "\n"}"
+        s << ": #{value.class == Hash ? "\n"+hash_to_html(value, cnt+1) : value.to_s + "\n"}"
       end
       return s
     else
       s = ""
-      hsh.each_pair do |k, v|
-        s << "#{"  "*cnt}#{k}: #{v.class == Hash ? "\n"+hash_to_html(v, cnt+1) : v.to_s + "\n"}\n"
+      if cnt == @keys.size-1 && @exclude
+        keys = hsh.keys
+        if keys[0] =~ /^not/
+          key2 = keys[0]
+          key = keys[1]
+        else
+          key = keys[0]
+          key2 = keys[1]
+        end
+        s << "#{"  "*cnt}#{key}: #{hsh[key].to_s + "\n"}" if key != nil
+        s << "#{"  "*cnt}#{key2}: #{hsh[key2].to_s + "\n"}" if key2 != nil
+      elsif cnt == @keys.size-1
+        hsh.each_pair do |k, v|
+          s << "#{"  "*cnt}#{k}: #{v.to_s + "\n"}"
+        end
+      else
+        hsh.each_pair do |k, v|
+          Tools.assert v.class == Hash, "Value is not a hash: #{k} => #{v.class}"
+          s << "#{"  "*cnt}#{k}: #{"\n"+hash_to_html(v, cnt+1)+"\n"}"
+        end
       end
       return s
     end
@@ -117,12 +139,17 @@ class Distribution
 
 public
   def to_html()
-    max = 15
-    s = "<PRE>"
-    s << "<b>#{@descr}</b>: \n"
-    s << hash_to_html(@value.to_a[0..max-1].to_h)
-    s << Reference.href(text: "show more #{@value.size-max} entries", select: {"service" => @service}, distrib: @keys) unless @value.size < max
-    s << "\n</PRE>"
+    if @value.size > 0
+      s = "<b>#{@descr}</b>: \n"
+      s << hash_to_html(@value.to_a[0..@max-1].to_h)
+      if @value.size > @max && @max != -1
+        s << ":\n"
+        s << Reference.href(text: "show #{@value.size-@max} more entries", select: {"service" => @service}, distrib: @keys) << "\n"
+      end
+      s << "\n"
+    else
+      "<b>#{@descr}</b>: Empty\n"
+    end
   end
 end
 
@@ -135,21 +162,53 @@ class Flag
     # threshold - порог, если >=, то флаг становится активен
     # Поля - подсчет числа событий, у которых совпадают значения данных полей. Например, подсчет числа неверных авторизаций
     # с одного IP адреса.
-    raise "Service is not a string! #{service}" if service.class != String
+    Tools.assert service.class == String, "Service is not a string! #{service}"
     @fields = params["fields"]
-    raise "Агрегация по нескольким полям пока не поддерживается!" if @fields.size > 1
-    @value = Aggregator::Aggregator.reset.select(metas: {:service => service})
-    @value = Aggregator::Aggregator.select(metas: {:type => params["look_for"]})
-    @value = Aggregator::Aggregator.aggregate_by_keys(nil, @fields)
+    Tools.assert @fields.size == 1, "Агрегация по нескольким полям пока не поддерживается!"
+    @value = Aggregator::Aggregator.reset.select(metas: {"service" => service})
+    @value = Aggregator::Aggregator.select(metas: {"type" => params["look_for"]})
+    @value = Aggregator::Aggregator.aggregate_by_keys(@fields)
     # Переписать для поддержки многоуровневой агрегации
     threshold = params["threshold"].to_i
     @value = @value.to_a.delete_if { |ar|  ar[1] < threshold }.to_h
     @flag = !@value.empty?
+    @service = service
   end
 public
   def to_html()
     s = ""
-    s << "<p>#{@descr}:  #{@flag ? "Yes" : "No"}</p>"
+    if @flag
+      s << "<b>#{@descr}</b>:  Да\n"
+      @value.each_pair do |k,v|
+        s << Reference.href(text: k, select: {"service" => @service, @fields[0] => k})
+        s << ": #{v}\n"
+      end
+    else
+      s << "<b>#{@descr}</b>:  Нет\n"
+    end
+    return s
+  end
+end
+
+class Lines
+  def initialize(params)
+    # Tools.assert params[:text], "No description: #{params}"
+    Tools.assert params[:select], "No parameters specified for selection: #{params}"
+    # Tools.assert !params[:distrib], "This is not for distribution: #{params}"
+    @descr = "#{params[:select]}"
+    service = params[:select]["service"]
+    select_params = params[:select].reject {|k,v| k == "service"}
+    @value = []
+    lines = Aggregator::Aggregator.reset.select(metas: {"service" => service}, datas: select_params).lines
+    lines.each do |line|
+      @value << line.to_a
+    end
+  end
+public
+  def to_html()
+    s = "<b>Value:</b> #{@descr}\n"
+    s << "<b>Log lines containing value:</b>\n"
+    s << Output.out_table(@value)
   end
 end
 end
