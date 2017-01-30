@@ -14,7 +14,7 @@ Tools.clean
 
 # database_file = "archive/access.sqlite3"
 # log_file = "logs/access.log"
-report_only = false	# чтобы не парсить логи заново, можно пропустить эту часть
+report_only = true	# чтобы не парсить логи заново, можно пропустить эту часть
 without_report = false # чтобы отослать готовый отчет
 
 if !report_only

@@ -29,7 +29,7 @@ public
         s << "\n" << out_h(elem)
       else
         # @ostream.write(sprintf("#{@indent+@little_ind}#{elem}\n"))
-        s << "#{@indent+@little_ind}#{elem}\n"
+        s << "#{@little_ind}#{elem}\n"
       end
     end
     return s
