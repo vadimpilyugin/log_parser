@@ -1,0 +1,11 @@
+doctype html
+html
+  head
+    title Test page
+  body
+    - @test.each_pair do |key, val|
+      p = "==============#{key.upcase} start============="
+      - val.each_pair do |k1, v1|
+        p = "#{k1}:	#{v1}"
+    == @st.to_slim
+    p Embedded string: #{@str}

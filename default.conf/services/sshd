@@ -10,7 +10,8 @@ Accepted publickey:
 Session activity:
 - 'pam_unix\(sshd:session\): session (?<action>\S+) for user (?<username>\S+)'
 Auth fail:
-- Failed (\S+) for (invalid user (?<username>\S+)|(?<username>\S+)) from (?<user_ip>\S+) port (?<user_port>\S+) ssh2
+- Failed (\S+) for invalid user (?<username>\S+) from (?<user_ip>\S+) port (?<user_port>\S+) ssh2
+- Failed (\S+) for (?<username>\S+) from (?<user_ip>\S+) port (?<user_port>\S+) ssh2
 Invalid user:
 - Invalid user (?<username>\S+) from (?<user-ip>\S+)
 Postponed publickey:

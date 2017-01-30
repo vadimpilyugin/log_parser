@@ -9,7 +9,7 @@ module Regexes
 	#Date = "\\b\\w{3}\\s+\\d{1,2}\\s+[\\d:]+\\b"
 	Date = "(\\S+\\s+){3}"
 	Apache = %r{
-		^(?<ip>\S+)									# 141.8.142.23
+		^(?<user_ip>\S+)									# 141.8.142.23
 		[^"]+"										# - - [09/Oct/2016:06:35:46 +0300]"
 		(?<method>\S+)\s (?<path>#{Path})			# GET /images/logos/russia/vmk.gif
 		[^"]+"\s (?<code>\S+)						# HTTP/1.0" 404
