@@ -5,7 +5,7 @@ class Tools
   @@homedir = nil
 
   def initialize
-    @@homedir = unshift(File.expand_path("../", __FILE__))
+    @@homedir = File.expand_path("../../", __FILE__)
   end
   def Tools.rprint(str)
     puts str.red
@@ -68,17 +68,77 @@ public
   end
 end
 
-# class Chdir
-#   @@chdir = nil
-# public
-#   def Chdir.chdir()
-#     if @@chdir == nil
-#       Dir.chdir(File.expand_path("../../", __FILE__)) # переходим в корень проекта
-#       @@chdir = Dir.pwd
-#     else
-#       return
-#     end
-#   end
-# end
+class String 
+  def colorize(i)
+    return "\x1b[1;#{i}m#{self}\x1b[0m"
+  end
+  def red
+    return colorize(31)
+  end
+  def green
+    return colorize(32)
+  end
+  def yellow
+    return colorize(33)
+  end
+  def white
+    return colorize(37)
+  end
+  # def method_missing(m, *args, &block)
+  #   printf "Method missing: #{m}, with args = #{args}\n"
+  #   i = case m.to_s
+  #     when "red"    then  31
+  #     when "green"  then  32
+  #     when "yellow" then  33
+  #     when "white"  then  37
+  #     when "to_ary" then  return 
+  #     else 
+  #       raise "No color: #{m.to_s}"
+  #   end
+  #   return colorize(i)
+  # end
+end
+
+class Printer
+  @@printer = nil
+  Debug = true
+  Assertion = true
+  @@assert_msg = "Assertion failed"
+  @@note_msg = "Note"
+  @@debug_msg = "Debug"
+  def initialize
+    @@printer ? return : @@printer = 'New printer'
+  end
+public
+  def self.assert(bool_expr, str, params = {})
+    if !bool_expr and Assertion
+      printf "#{@@assert_msg.red}: #{str.white}\n"
+      params.each_pair do |first,second|
+        printf "\t#{first.to_s.white}: \t#{second.to_s.white}\n"
+      end
+      # puts caller
+      # exit 1
+      raise "Assertion failed"
+    end
+  end
+  def self.refute(bool_expr, str, params = {})
+    self.assert(!bool_expr, str, params)
+  end
+  def self.note(bool_expr, str, params = {})
+    if bool_expr
+      printf "#{@@note_msg.yellow}: #{str.white}\n"
+      params.each_pair do |first,second|
+        printf "\t#{first.to_s.white}: \t#{second.to_s.white}\n"
+      end
+    end
+  end
+  def self.debug(str, params = {})
+    printf "#{@@debug_msg.green}: #{str.white}\n"
+    params.each_pair do |first,second|
+      printf "\t#{first.to_s.white}: \t#{second.to_s.white}\n"
+    end
+  end
+end
 
 Tools.new
+Printer.new

@@ -1,17 +1,17 @@
 require_relative 'regex'
 require_relative 'config'
 
-class MatchData
-  def to_h
-    a = self.captures.delete_if {|e| e == nil}
-    self.names.zip(a).to_h
-  end
-end
+# class MatchData
+#   def to_h
+#     a = self.captures.delete_if {|e| e == nil}
+#     self.names.zip(a).to_h
+#   end
+# end
 
-module Parser
+# module Parser
 
 class Parser
-  include Regexes
+  # include Regexes
 
   attr_reader :table
 
@@ -33,7 +33,7 @@ class Parser
   def initialize()
     @filename = Config["parser"]["log_file"]	# отсюда читаем лог
     # Tools.assert Tools.file_exists?(@filename), "Log file does not exist: #{@filename}"
-    @services_dir = Config["parser"]["services_dir"]  # здесь храним описания сервисов
+    # @services_dir = Config["parser"]["services_dir"]  # здесь храним описания сервисов
     # Tools.assert !Dir.entries(@services_dir).empty?, "Services directory does not exist: #{@services_dir}"
     # Tools.assert Dir.entries(@services_dir).size > 2, "No templates found at services dir: #{@services_dir}"
     @log_template = case @filename	# определяем тип лога по имени файла
@@ -104,4 +104,4 @@ public
     self
   end
 end
-end
+# end

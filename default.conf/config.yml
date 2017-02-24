@@ -2,7 +2,7 @@
 # Общие параметры
 overall:
   # Место для сброса отчетов об ошибках
-  error_log: /tmp/parser.log
+  error_log: parser.log
 parser:
   log_file: logs/auth-test_log
   # Путь к папке с шаблонами сервисов
