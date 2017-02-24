@@ -113,13 +113,11 @@ public
     end
     puts "Aggregation by keys: #{keys}"
     result = hash_cnt(keys.size)
-    Database::Logline.transaction do |t|
-      @lines.each_with_index do |line,i|
-        puts "Processing line ##{i}"
-        ar = keys.map {|e| line[data: e]}
-        next if ar.include? nil
-        hash_inc(result,ar)
-      end
+    @lines.each_with_index do |line,i|
+      puts "Processing line ##{i}"
+      ar = keys.map {|e| line[data: e]}
+      next if ar.include? nil
+      hash_inc(result,ar)
     end
     # if keys.size == 1
     #   result = result.sort{|a, b| b[1] <=> a[1]}.to_h

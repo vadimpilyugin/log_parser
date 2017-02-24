@@ -1,5 +1,5 @@
-require_relative 'regex.rb'
-require_relative 'config.rb'
+require_relative 'regex'
+require_relative 'config'
 
 class MatchData
   def to_h
@@ -30,22 +30,18 @@ class Parser
     return a
   end
 
-  def initialize(hsh = {})
-	Config.new
-    Chdir.chdir
-    @error_log = File.new(Config["overall"]["error_log"], File::CREAT|File::TRUNC|File::RDWR, 0644)	# сюда пишем ошибки
-    @filename = hsh[:filename] ? hsh[:filename] : Config["parser"]["log_file"]	# отсюда читаем лог
-    Tools.assert File.exists?(@filename), "Log file does not exist: #{@filename}"
+  def initialize()
+    @filename = Config["parser"]["log_file"]	# отсюда читаем лог
+    # Tools.assert Tools.file_exists?(@filename), "Log file does not exist: #{@filename}"
     @services_dir = Config["parser"]["services_dir"]  # здесь храним описания сервисов
-    Tools.assert !Dir.entries(@services_dir).empty?, "Services directory does not exist: #{@services_dir}"
-    Tools.assert Dir.entries(@services_dir).size > 2, "No templates found at services dir: #{@services_dir}"
+    # Tools.assert !Dir.entries(@services_dir).empty?, "Services directory does not exist: #{@services_dir}"
+    # Tools.assert Dir.entries(@services_dir).size > 2, "No templates found at services dir: #{@services_dir}"
     @log_template = case @filename	# определяем тип лога по имени файла
       when /auth.*log/ then Syslog	
       when /access/ then Apache
       else
-        @error_log.puts "Неопознанный формат лога: имя файла #{@filename}\n"
-        puts "Неопознанный формат лога: имя файла #{@filename}\n"
-        Tools.assert false, "Неопознанный формат лога"
+        Tools.assert false, "Неопознанный формат лога: имя файла #{@filename}\n"
+      end
     end
     @thing = {} 	# {sshd => {Name1 => [Patterns], ...}, CRON => {Name1 => [Patterns1], ...}, ...}
     @table = [] 	# [filename, line, data => {key:value}, meta => {key:value}]    
@@ -55,7 +51,7 @@ class Parser
 def load_service(service, f)
   filename = "#{@services_dir}/#{service.downcase}"		# имя файла это путь до директории плюс имя сервиса в lowercase
   if !File.exists? filename
-    @error_log.puts "Неопознанный сервис: #{service}, строка #{f.lineno}, файл #{@filename}\n"
+ fixme   @error_log.puts "Неопознанный сервис: #{service}, строка #{f.lineno}, файл #{@filename}\n"
     puts "Неопознанный сервис: #{service}, строка #{f.lineno}, файл #{@filename}\n"
     return nil
   end
@@ -74,7 +70,7 @@ public
       @ind = f.lineno
       puts "Парсим строку #{@ind}"
       if line !~ @log_template													# сравниваем строку с шаблоном, определенным по имени файла
-        @error_log.puts "Строка не соответствует шаблону( #{@filename}) #{f.lineno}:1): #{line}\n"
+  fixme      @error_log.puts "Строка не соответствует шаблону( #{@filename}) #{f.lineno}:1): #{line}\n"
         puts "Строка не соответствует шаблону( #{@filename}) #{f.lineno}:1): #{line}\n"
       end
       if @log_template == Apache 												# для апача просто сбрасываем в таблицу все именованные группы из регулярки

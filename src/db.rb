@@ -14,16 +14,17 @@ module Database
 class Logline
 include DataMapper::Resource
 
-property :filename, String, :key => true   # имя файла лога
-property :line, Integer, :key => true      # и номер строки в файле однозначно идентифицируют содержимое
-has n, :datas
-has n, :metas
+property :id, Serial
+property :server, String
+property :service, String
+property :time, Datetime  # 2010-11-03T21:33:00-0600; all(:time => start_t..end_t)
+                          # Logline.create(:time => DateTime.new(2011,1,1,0,0,4)) 
+                          # Logline.all(:time => DateTime.parse('2011-1-1T00:00:04+0100'))
+has n, :datas                              
 
   def [](hsh)
     if hsh.keys[0] == :data
       a = self.datas.first(:name => hsh[:data])
-    elsif hsh.keys[0] == :meta
-      a = self.metas.first(:name => hsh[:meta])
     else
       Tools.assert false, "No such key #{hsh}"
     end
@@ -33,18 +34,15 @@ has n, :metas
 
   def to_a
     a = []
-    a << self.filename
-    a << self.line
+    a << self.id
+    a << self.server
+    a << self.service
+    a << self.time
     data_hash = {}
     self.datas.each do |data|
       data_hash.update(data.name => data.value)
     end
     a << data_hash
-    meta_hash = {}
-    self.metas.each do |meta|
-      meta_hash.update(meta.name => meta.value)
-    end
-    a << meta_hash
     return a
   end
 end
@@ -59,27 +57,14 @@ property :value, String
 belongs_to :logline
 end
 
-class Meta
-include DataMapper::Resource
-
-property :id, Serial
-property :name, String
-property :value, String
-
-belongs_to :logline
-end
-
 class Database
   @@filename = nil
 
-  def initialize(hsh = {})
-    Config.new
-    drop = hsh[:drop] ? hsh[:drop] : false                                              # нужно ли очищать базу
-    filename = hsh[:filename] ? hsh[:filename] : Config["database"]["database_file"]    # можно задать файл базы
-    @@filename == filename ? return : @@filename = filename
-    Chdir.chdir
-    Dir.mkdir("archive") if !Dir.exists? "archive"
-    DataMapper.setup(:default, "sqlite3://#{Dir.pwd}/#{filename}")                      # подключаемся к базе
+  def initialize(drop = false)
+    return @@filename if @@filename
+    filename = Config["database"]["database_file"]
+    # Tools.mkdir("archive")
+    DataMapper.setup(:default, "sqlite3://#{Tools.abs_path(filename)}")
     DataMapper.finalize
     drop ? DataMapper.auto_migrate! : DataMapper.auto_upgrade!
   end
@@ -89,7 +74,6 @@ public
     resources = []
     table.each do |ar|
       data = []
-      meta = []
       ar[2].each_pair do |k, v|
         data << {:name => k, :value => v}
       end

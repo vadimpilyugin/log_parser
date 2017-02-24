@@ -1,16 +1,15 @@
-$:.unshift(File.expand_path("../", __FILE__))
+HOME = unshift(File.expand_path("../", __FILE__))
+$:.HOME
 
+require 'tools'
 require 'config'
 require 'parser'
 require 'db'
 require 'aggregator'
 require 'reporter'
-require 'tools'
 require 'server'
 
-Config.new
-Chdir.chdir
-Tools.clean
+Tools.chdir
 
 # database_file = "archive/access.sqlite3"
 # log_file = "logs/access.log"
@@ -27,7 +26,7 @@ if !report_only
   
   # Выгружаем распарсенный лог в базу данных
   Database::Database.new drop: true
-  Database::Database.save p.table 
+  Database::Database.save p.table
   
   Database::Database.save q.table
 end

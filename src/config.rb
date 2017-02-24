@@ -4,13 +4,14 @@ class Config
   @@config = nil
   @@filename = nil
 
-  def initialize(filename = "")
-    filename = 'default.conf/config.yml' if filename == ""
+  def initialize(hsh)
+    filename = hsh[:filename]
     return @@config if @@config && filename == @@filename
     @@filename = filename
-    Chdir.chdir
-    throw "Config file does not exist! (#{filename})" unless File.exists? filename
+    Tools.assert Tools.file_exists? filename, "Config file does not exist! (#{filename})" 
     @@config = YAML.load_file filename
+    puts "Checking file and directory names: "
+    check_all_paths()
   end
 
   def Config.[] (arg)
@@ -22,15 +23,4 @@ class Config
   end
 end
 
-class Chdir
-  @@chdir = nil
-public
-  def Chdir.chdir()
-    if @@chdir == nil
-      Dir.chdir(File.expand_path("../../", __FILE__)) # переходим в корень проекта
-      @@chdir = Dir.pwd
-    else
-      return
-    end
-  end
-end
+Config.new filename: "default.conf/config.yml"

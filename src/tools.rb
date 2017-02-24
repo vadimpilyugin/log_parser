@@ -2,9 +2,10 @@ require 'fileutils'
 require 'colorize'
 
 class Tools
+  @@homedir = nil
+
   def initialize
-    Config.new
-    Chdir.chdir
+    @@homedir = unshift(File.expand_path("../", __FILE__))
   end
   def Tools.rprint(str)
     puts str.red
@@ -12,9 +13,30 @@ class Tools
     raise str
   end
 public
-  def Tools.clean
-  	`mkdir tmp`
-    FileUtils.rm_rf(Dir.glob('./tmp/*'))
+  def Tools.abs_path(path)
+    @@homedir+path
+  end
+  # def Tools.clean
+  # 	`mkdir tmp`
+  #   FileUtils.rm_rf(Dir.glob('./tmp/*'))
+  # end
+  def Tools.chdir
+    Dir.chdir(@@homedir)
+  end
+  def Tools.homedir
+    @@homedir
+  end
+  def Tools.file_exists? (filename)
+    printf "Checking if file exists(#{Tools.abs_path(filename)}): "
+    s = File.exists? Tools.abs_path(filename)
+    puts s ? "File exists" : "File does not exist"
+    return s
+  end
+
+  def Tools.mkdir(path)
+    printf "Created folder: "
+    puts @@homedir+path
+    Dir.mkdir(@@homedir+path) if !Dir.exists? @@homedir+path
   end
   # def Tools.assert(hsh)
   #   raise "Assertion::Not a hash" if hsh.class != Hash
@@ -46,3 +68,17 @@ public
   end
 end
 
+# class Chdir
+#   @@chdir = nil
+# public
+#   def Chdir.chdir()
+#     if @@chdir == nil
+#       Dir.chdir(File.expand_path("../../", __FILE__)) # переходим в корень проекта
+#       @@chdir = Dir.pwd
+#     else
+#       return
+#     end
+#   end
+# end
+
+Tools.new
