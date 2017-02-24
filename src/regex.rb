@@ -75,9 +75,25 @@ class Templates
     (?<method>\S+)\s (?<path>#{Templates::Path})   # GET /images/logos/russia/vmk.gif
     [^"]+"\s (?<code>\S+)                         # HTTP/1.0" 404
   }x
+  def Templates.load(service)
+    services_dir = Config["parser"]["services_dir"]
+    filename = "#{services_dir}/#{service.downcase}"
+    assert(file_exists?(filename), "Шаблоны для сервиса не найдены", "Path to services files":services_dir, "Service":service)
+    hsh = YAML.load_file(filename)
+    assert(hsh != nil, "Templates for service have not been loaded", "Service":service)
+    hsh.each_value do |ar|
+      ar.map! do |s|
+        Regexp.new(s)
+      end
+    end
+    return hsh
+  end
 end
 
 class Service
+  @@service_name = nil
+  @@service_template = nil
+  @@service_regexes = nil
   @@msg_field = nil
   @@time_regex = nil
 
@@ -103,7 +119,7 @@ class Service
     hour = hsh[:hour].to_i
     minute = hsh[:minute].to_i
     second = hsh[:second].to_i
-    Printer::assert(year >= 1900 && year <= 3000, "Something went wrong", "Year":year)
+    Printer::assert(year >= 1900 && year <= 2100, "Something went wrong", "Year":year)
     Printer::assert(month >= 1 && month <= 12, "Something went wrong", "Month":month)
     Printer::assert(day >= 1 && day <= 31, "Something went wrong", "Day":day)
     Printer::assert(hour >= 0 && hour <= 24, "Something is wrong", "Hour":hour)
@@ -113,14 +129,18 @@ class Service
     return [year,month,day,hour,minute,second]
   end
   def self.get_datetime(logline)
-    assert(@@time_regex != nil, "You should assign a value to @@time_regex or redefine get_datetime!")
+    Printer::assert(@@time_regex != nil, "You should assign a value to @@time_regex or redefine get_datetime!")
     logline =~ @@time_regex
     return self.build_datetime($~.to_h)
   end
   def self.get_data(logline)
     if @@msg_field
+      assert(@@msg_field.class == Symbol, "You should assign a Symbol value to @@msg_field", "Value":@@msg_field)
       logline =~ @@service_template
       logline = $~[@@msg_field]
+      assert(logline != nil, "No such field in @@service_template", "Field":@@msg_field, 
+                              "Available fields":@@service_template.named_captures.keys,
+                              "Service":@@service_name)
     end
     s = nil
     res = nil
@@ -134,20 +154,24 @@ class Service
         end
       end
     end
+    if s == nil || res == nil
+      Printer::note(s == nil || res == nil, "Не удалось распарсить строку", "Line":logline, "Service":@@service_name)
+      return {:descr => "Undefined line", :md => {"Logline" => logline}}
+    end
     return {:descr => s, :md => res}
   end
 public
   def self.services
     ObjectSpace.each_object(Class).select { |klass| klass < self }
   end
-  def self.is_this_it? (logline)
+  def self.check (logline)
   	if logline =~ @@service_template
   	  return true
   	else
   	  return false
   	end
   end
-  def self.parse(logline)
+  def self.parse!(logline)
     server_name = get_server_name(logline)
     service_name = @@service_name
     datetime = self.get_datetime(logline)
@@ -157,22 +181,5 @@ public
 
     return {:server_name => server_name, :service_name => service_name, 
             :datetime => datetime, :descr => descr, :data => data}
-  end
-end
-  
-
-class SyslogService<Service
-  @@service_template = Templates::syslog(@@service_name)
-  @@msg_field = :msg
-
-  def self.get_datetime(logline)
-    logline =~ Templates::SyslogTime
-    time_hsh = $~.to_h
-    time_hsh[:year] = 1997    # FIXME: we need a correct year
-    return self.build_datetime(time_hsh)
-  end
-  def self.get_server_name(logline)
-    logline =~ @@service_template
-    return $~[:server]
   end
 end

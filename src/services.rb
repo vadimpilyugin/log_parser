@@ -42,66 +42,41 @@ class Apache<Service
   end
 end
 
-class Sshd<SyslogService
-  @@service_name = "sshd"
-  @@service_regexes = {
-    "New connection" => [
-        /Connection from (?<user_ip>S+) port (?<user_port>S+) on (?<server_ip>S+) port (?<server_port>S+)/
-      ],
-    "Disconnect" => [
-        /Received disconnect from (?<user_ip>S+)/,
-        /Disconnected from (?<user_ip>S+)/,
-        /Connection closed by (?<user_ip>S+)/,
-        /Connection reset by (?<user_ip>S+)/,
-      ],
-    "Accepted publickey" => [
-        /Accepted publickey for (?<username>S+) from (?<user_ip>S+) port (?<user_port>S+) S+: (?<protocol>S+) (?<hashing-alg>S+):(?<publickey>S+)/
-      ],
-    "Session activity" => [
-        /pam_unix(sshd:session): session (?<action>S+) for user (?<username>S+)/
-      ],
-    "Auth fail" => [
-        /Failed (S+) for invalid user (?<username>S+) from (?<user_ip>S+) port (?<user_port>S+) ssh2/,
-        /Failed (S+) for (?<username>S+) from (?<user_ip>S+) port (?<user_port>S+) ssh2/
-      ],
-    "Invalid user" => [
-        /Invalid user (?<username>S+) from (?<user_ip>S+)/
-      ],
-    "Postponed publickey" => [
-        /Postponed publickey for (?<username>S+) from (?<user_ip>S+) port (?<user_port>S+)/
-      ],
-    "Ignore" => [
-        /^(PAM|pam_unix|error: PAM|Disconnecting)/
-        /^input_userauth_request/
-        /^User child is on pid/
-        /^Starting session: command for S+/
-        /^fatal: Unable to negotiate with/
-        /^Postponed keyboard-interactive/
-        /^Did not receive identification string/
-        /^Starting session: shell on S+/
-        /Received SIGHUP; restarting.|Server listening/
-        /maximum authentication attempts exceeded/
-        /Bad protocol version identification/
-      ]
-    }
+class SyslogService<Service
+  @@service_template = Templates::syslog(@@service_name)
+  @@msg_field = :msg
+  @@service_regexes = Templates::load(@@service_name)
+
+  def self.get_datetime(logline)
+    logline =~ Templates::SyslogTime
+    time_hsh = $~.to_h
+    time_hsh[:year] = 1997    # FIXME: we need a correct year
+    return self.build_datetime(time_hsh)
+  end
+  def self.get_server_name(logline)
+    logline =~ @@service_template
+    return $~[:server]
+  end
 end
 
-class Cron<Service
+class Sshd<SyslogService
+  @@service_name = "sshd"
+end
+
+class Cron<SyslogService
   @@service_name = "cron"
-  @@service_regexes = {
-    "Session activity" => [
-        /pam_unix\(cron:session\): session (?<action>\S+) for user (?<username>\S+)/
-    ]
-  }
 end
 
 class SystemdLogind<SyslogService
   @@service_name = "systemd-logind"
-  @@service_regexes = {
-    "New session" => [
-        "New session (?<pid>d+) of user (?<username>S+)"
-      ],
-    "Removed session" => [
-        "Removed session (?<pid>d+)"
-      ]
-  }
+end
+
+class Systemd<SyslogService
+  @@service_name = "systemd"
+end
+
+class Su<SyslogService
+  @@service_name = "su"
+end
+
+Services = [Apache, Sshd, Cron, SystemdLogind, Systemd, Su]

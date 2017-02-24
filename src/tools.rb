@@ -2,9 +2,11 @@ require 'fileutils'
 require 'colorize'
 
 class Tools
+  @@tools = nil
   @@homedir = nil
 
   def initialize
+    @@tools ? return @@tools : @@tools = "New tools"
     @@homedir = File.expand_path("../../", __FILE__)
   end
   def Tools.rprint(str)
@@ -27,7 +29,7 @@ public
     @@homedir
   end
   def Tools.file_exists? (filename)
-    printf "Checking if file exists(#{Tools.abs_path(filename)}): "
+    Printer::debug("Checking if file exists", "Filename":filename)
     s = File.exists? Tools.abs_path(filename)
     puts s ? "File exists" : "File does not exist"
     return s
@@ -38,6 +40,7 @@ public
     puts @@homedir+path
     Dir.mkdir(@@homedir+path) if !Dir.exists? @@homedir+path
   end
+
   # def Tools.assert(hsh)
   #   raise "Assertion::Not a hash" if hsh.class != Hash
   #   raise "Assertion::Empty condition!" if hsh.size == 0
@@ -53,18 +56,18 @@ public
   #     end
   #   end
   # end
-  def Tools.assert(cond, str = "No description")
-    # rprint "Assertion::Not a boolean value: #{cond}" if cond != true && cond != false && cond != nil
-    rprint "Assertion::Not a string: #{str}" if str.class != String
-    if !cond
-      printf "-----\n".light_white
-      printf "Assertion failed: ".red
-      printf "from #{caller[0].light_white}:\n"
-      printf "\t#{str}\n"
-      printf "-----\n".light_white
-      printf "\n"
-      raise str    
-    end
+  # def Tools.assert(cond, str = "No description")
+  #   # rprint "Assertion::Not a boolean value: #{cond}" if cond != true && cond != false && cond != nil
+  #   rprint "Assertion::Not a string: #{str}" if str.class != String
+  #   if !cond
+  #     printf "-----\n".light_white
+  #     printf "Assertion failed: ".red
+  #     printf "from #{caller[0].light_white}:\n"
+  #     printf "\t#{str}\n"
+  #     printf "-----\n".light_white
+  #     printf "\n"
+  #     raise str    
+  #   end
   end
 end
 

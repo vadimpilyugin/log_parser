@@ -58,13 +58,21 @@ belongs_to :logline
 end
 
 class Database
-  @@filename = nil
+  @@db = nil
+
+  def initialize(hsh)
+    @@db ? return @@db : @@db = "New database"
+    @@filename = Config["database"]["database_file"]
+    assert(Tools.file_exists? (@@filename), "Database file not found", "Filename":@@filename)
+    drop = hsh[:drop] ? hsh[:drop] : false
+    DataMapper.setup(:default, "sqlite3://#{Tools.abs_path(filename)}")
+    
+
 
   def initialize(drop = false)
     return @@filename if @@filename
     filename = Config["database"]["database_file"]
     # Tools.mkdir("archive")
-    DataMapper.setup(:default, "sqlite3://#{Tools.abs_path(filename)}")
     DataMapper.finalize
     drop ? DataMapper.auto_migrate! : DataMapper.auto_upgrade!
   end
