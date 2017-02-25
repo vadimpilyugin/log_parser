@@ -1,30 +1,5 @@
 require_relative 'tools'
-
-# module Regexes
-# 	Word = "\\b[a-zA-Z0-9]+\\b"
-# 	Ip = "\\b[.\d]+\\b"
-# 	Path = "[^\\s\\?]+"
-# 	Code = "\\d+"
-# 	Pid = Code
-# 	Port = Pid
-# 	Username = "\\b[a-zA-Z0-9]+\\b"
-# 	#Date = "\\b\\w{3}\\s+\\d{1,2}\\s+[\\d:]+\\b"
-# 	Date = "(\\S+\\s+){3}"
-# 	Apache = %r{
-# 		^(?<user_ip>\S+)									# 141.8.142.23
-# 		[^"]+"										# - - [09/Oct/2016:06:35:46 +0300]"
-# 		(?<method>\S+)\s (?<path>#{Path})			# GET /images/logos/russia/vmk.gif
-# 		[^"]+"\s (?<code>\S+)						# HTTP/1.0" 404
-# 	}x
-# 	Syslog = %r{
-# 		^#{Date}	 								# Oct  9 06:36:12 - три первых слова
-# 		(?<server>\S+)\s+ 							# newserv
-# 		(?<service>[^\[:]+)							# systemd-logind - все, вплоть до квадратной скобки или :
-# 		(\[(?<pid>#{Pid})\])?						# [10405] - может идти, а может и не идти за именем сервиса
-# 		:\s+(?<msg>.*)								# : Accepted publickey for autocheck
-# 	}x
-# 	Unidentified = %r{.*}
-# end
+require_relative 'config'
 
 class MatchData
   def to_h
@@ -45,12 +20,12 @@ class Templates
   Date = "(\\S+\\s+){3}"
   SyslogTime = %r{ ^
     (?<month>\S+)\s+    # Oct
-    (?<day>\S+)\s+)     # 9
+    (?<day>\S+)\s+      # 9
     (?<hour>[^:]+):     # 06:
     (?<minute>[^:]+):   # 08:
     (?<second>[^\s]+)   # 05
   }x
-  ApacheTime = %r{
+  ApacheTime = %r{  ^
     ^(\S+)              # 141.8.142.23
     [^\[]+\[            # - - [
     (?<day>[^\/]+)\/    # 09/
@@ -61,7 +36,7 @@ class Templates
     (?<second>[^\s]+)\s # 46
   }x
   def self.syslog(service)
-    return %r{
+    return %r{  ^
       ^#{Date}                  # Oct  9 06:36:12 - три первых слова
       (?<server>\S+)\s+               # newserv
       (?<service>#{service})             # systemd-logind - все, вплоть до квадратной скобки или :
@@ -69,7 +44,7 @@ class Templates
       :\s+(?<msg>.*)                # : Accepted publickey for autocheck
     }x
   end
-  Apache = %r{
+  Apache = %r{  ^
     ^(?<user_ip>\S+)                              # 141.8.142.23
     [^"]+"                                        # - - [09/Oct/2016:06:35:46 +0300]"
     (?<method>\S+)\s (?<path>#{Templates::Path})   # GET /images/logos/russia/vmk.gif
@@ -78,9 +53,9 @@ class Templates
   def Templates.load(service)
     services_dir = Config["parser"]["services_dir"]
     filename = "#{services_dir}/#{service.downcase}"
-    assert(file_exists?(filename), "Шаблоны для сервиса не найдены", "Path to services files":services_dir, "Service":service)
+    Printer::assert(Tools.file_exists?(filename), "Шаблоны для сервиса не найдены", "Path to services files":services_dir, "Service":service)
     hsh = YAML.load_file(filename)
-    assert(hsh != nil, "Templates for service have not been loaded", "Service":service)
+    Printer::assert(hsh != nil, "Templates for service have not been loaded", "Service":service)
     hsh.each_value do |ar|
       ar.map! do |s|
         Regexp.new(s)
@@ -91,15 +66,11 @@ class Templates
 end
 
 class Service
-  @@service_name = nil
-  @@service_template = nil
-  @@service_regexes = nil
-  @@msg_field = nil
-  @@time_regex = nil
 
   def Service.build_datetime(hsh)
-    year = hsh[:year].to_i
-    month = hsh[:month]
+    # Printer::debug("Got a datetime request", hsh)
+    year = hsh["year"].to_i
+    month = hsh["month"]
     month = case month
       when "Jan", "01" then 1
       when "Feb", "02" then 2
@@ -113,12 +84,12 @@ class Service
       when "Oct", "10" then 10
       when "Nov", "11" then 11
       when "Dec", "12" then 12
-      else printf("Something went wrong: Unknown month #{month}")
+      else Printer::note(true, "Something went wrong: Unknown month", "Month":month, "Service":@service_name)
     end
-    day = hsh[:day].to_i
-    hour = hsh[:hour].to_i
-    minute = hsh[:minute].to_i
-    second = hsh[:second].to_i
+    day = hsh["day"].to_i
+    hour = hsh["hour"].to_i
+    minute = hsh["minute"].to_i
+    second = hsh["second"].to_i
     Printer::assert(year >= 1900 && year <= 2100, "Something went wrong", "Year":year)
     Printer::assert(month >= 1 && month <= 12, "Something went wrong", "Month":month)
     Printer::assert(day >= 1 && day <= 31, "Something went wrong", "Day":day)
@@ -126,25 +97,33 @@ class Service
     Printer::assert(minute >= 0 && minute <= 60, "Something is wrong", "Minute":minute)
     Printer::assert(second >= 0 && second <= 60, "Something went wrong", "Second":second)
     # return "#{year}-#{month}-#{day}T#{hours}-#{minutes}-#{seconds}-0600"
-    return [year,month,day,hour,minute,second]
+    return Time.new(year,month,day,hour,minute,second)
+  end
+  def self.init
+    # @service_name = nil
+    # @service_template = nil
+    # @service_regexes = nil
+    # @msg_field = nil
+    # @time_regex = nil
+    self
   end
   def self.get_datetime(logline)
-    Printer::assert(@@time_regex != nil, "You should assign a value to @@time_regex or redefine get_datetime!")
-    logline =~ @@time_regex
-    return self.build_datetime($~.to_h)
+    Printer::assert(@time_regex != nil, "You should assign a value to @time_regex or redefine get_datetime!")
+    logline =~ @time_regex
+    return build_datetime($~.to_h)
   end
   def self.get_data(logline)
-    if @@msg_field
-      assert(@@msg_field.class == Symbol, "You should assign a Symbol value to @@msg_field", "Value":@@msg_field)
-      logline =~ @@service_template
-      logline = $~[@@msg_field]
-      assert(logline != nil, "No such field in @@service_template", "Field":@@msg_field, 
-                              "Available fields":@@service_template.named_captures.keys,
-                              "Service":@@service_name)
+    if @msg_field
+      Printer::assert(@msg_field.class == Symbol, "You should assign a Symbol value to @msg_field", "Value":@msg_field)
+      logline =~ @service_template
+      logline = $~[@msg_field]
+      Printer::assert(logline != nil, "No such field in @service_template", "Field":@msg_field, 
+                              "Available fields":@service_template.named_captures.keys,
+                              "Service":@service_name)
     end
     s = nil
     res = nil
-    @@service_regexes.each do |key,value|
+    @service_regexes.each do |key,value|
       break if s
       value.each do |regex|
         if logline =~ regex
@@ -155,17 +134,22 @@ class Service
       end
     end
     if s == nil || res == nil
-      Printer::note(s == nil || res == nil, "Не удалось распарсить строку", "Line":logline, "Service":@@service_name)
+      Printer::note(s == nil || res == nil, "Не удалось распарсить строку", "Line":logline, "Service":@service_name)
       return {:descr => "Undefined line", :md => {"Logline" => logline}}
     end
-    return {:descr => s, :md => res}
+    data = []
+    res.each_pair do |key,value|
+      data << {:name => key, :value => value}
+    end
+    return {:descr => s, :md => data}
   end
 public
   def self.services
     ObjectSpace.each_object(Class).select { |klass| klass < self }
   end
   def self.check (logline)
-  	if logline =~ @@service_template
+    Printer::assert(@service_template, "Template is empty! Check that you have assigned a value to @service_template in your class")
+  	if logline =~ @service_template
   	  return true
   	else
   	  return false
@@ -173,13 +157,13 @@ public
   end
   def self.parse!(logline)
     server_name = get_server_name(logline)
-    service_name = @@service_name
+    service_name = @service_name
     datetime = self.get_datetime(logline)
     match_data = self.get_data(logline)
     descr = match_data[:descr]
     data = match_data[:md]
 
-    return {:server_name => server_name, :service_name => service_name, 
-            :datetime => datetime, :descr => descr, :data => data}
+    return {:server => server_name, :service => service_name, 
+            :time => datetime, :descr => descr, :data_values => data}
   end
 end

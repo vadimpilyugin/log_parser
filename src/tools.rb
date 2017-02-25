@@ -6,7 +6,8 @@ class Tools
   @@homedir = nil
 
   def initialize
-    @@tools ? return @@tools : @@tools = "New tools"
+    return @@tools if @@tools
+    @@tools = "New tools"
     @@homedir = File.expand_path("../../", __FILE__)
   end
   def Tools.rprint(str)
@@ -16,7 +17,7 @@ class Tools
   end
 public
   def Tools.abs_path(path)
-    @@homedir+path
+    @@homedir[-1] == '/' ? @@homedir+path : @@homedir+'/'+path
   end
   # def Tools.clean
   # 	`mkdir tmp`
@@ -31,16 +32,23 @@ public
   def Tools.file_exists? (filename)
     Printer::debug("Checking if file exists", "Filename":filename)
     s = File.exists? Tools.abs_path(filename)
-    puts s ? "File exists" : "File does not exist"
+    Printer::debug(s ? "File exists" : "File does not exist", "Absolute path":Tools.abs_path(filename))
     return s
   end
 
   def Tools.mkdir(path)
-    printf "Created folder: "
+    Printer::debug "Created folder"
     puts @@homedir+path
     Dir.mkdir(@@homedir+path) if !Dir.exists? @@homedir+path
   end
 
+  def Tools.rm(path)
+    Printer::debug("Removing file", "Path":path)
+    b = Tools.file_exists? path
+    File.delete(Tools.abs_path(path)) if b
+    Printer::debug(b ? "Successfully removed file" : "File does not exist, so not removed", "Path":path)
+  end
+  
   # def Tools.assert(hsh)
   #   raise "Assertion::Not a hash" if hsh.class != Hash
   #   raise "Assertion::Empty condition!" if hsh.size == 0
@@ -68,7 +76,6 @@ public
   #     printf "\n"
   #     raise str    
   #   end
-  end
 end
 
 class String 
@@ -87,6 +94,9 @@ class String
   def white
     return colorize(37)
   end
+  def perc_esc
+    self.index('%') ? self.gsub!('%','%%') : self
+  end
   # def method_missing(m, *args, &block)
   #   printf "Method missing: #{m}, with args = #{args}\n"
   #   i = case m.to_s
@@ -102,6 +112,16 @@ class String
   # end
 end
 
+class Hash
+  def pretty_print
+    self.each_pair do |s1,s2|
+      # s1 = first.to_s.index('%') ? first.to_s.gsub!('%','%%') : first.to_s 
+      # s2 = second.to_s.index('%') ? second.to_s.gsub!('%','%%') : second.to_s
+      printf "\t#{s1.to_s.perc_esc.white}:\t#{s2.to_s.perc_esc.white}\n"
+    end
+  end
+end
+
 class Printer
   @@printer = nil
   Debug = true
@@ -115,10 +135,8 @@ class Printer
 public
   def self.assert(bool_expr, str, params = {})
     if !bool_expr and Assertion
-      printf "#{@@assert_msg.red}: #{str.white}\n"
-      params.each_pair do |first,second|
-        printf "\t#{first.to_s.white}: \t#{second.to_s.white}\n"
-      end
+      printf "#{@@assert_msg.to_s.perc_esc.red}: #{str.to_s.perc_esc.white}\n"
+      params.pretty_print
       # puts caller
       # exit 1
       raise "Assertion failed"
@@ -129,17 +147,18 @@ public
   end
   def self.note(bool_expr, str, params = {})
     if bool_expr
-      printf "#{@@note_msg.yellow}: #{str.white}\n"
-      params.each_pair do |first,second|
-        printf "\t#{first.to_s.white}: \t#{second.to_s.white}\n"
-      end
+      printf "#{@@note_msg.to_s.perc_esc.yellow}: #{str.to_s.perc_esc.white}\n"
+      params.pretty_print
     end
   end
   def self.debug(str, params = {})
-    printf "#{@@debug_msg.green}: #{str.white}\n"
-    params.each_pair do |first,second|
-      printf "\t#{first.to_s.white}: \t#{second.to_s.white}\n"
+    msg = @@debug_msg
+    if params[:debug_msg]
+      msg = params[:debug_msg]
+      params.delete(:debug_msg)
     end
+    printf "#{msg.to_s.perc_esc.green}: #{str.to_s.perc_esc.white}\n"
+    params.pretty_print
   end
 end
 

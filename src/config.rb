@@ -1,4 +1,5 @@
 require 'yaml/store'
+require_relative 'tools'
 
 class Config
   @@config = nil
@@ -6,12 +7,10 @@ class Config
 
   def initialize(hsh)
     filename = hsh[:filename]
-    return @@config if @@config && filename == @@filename
+    return @@config if @@config != nil && filename == @@filename
     @@filename = filename
-    Tools.assert Tools.file_exists? filename, "Config file does not exist! (#{filename})" 
-    @@config = YAML.load_file filename
-    puts "Checking file and directory names: "
-    check_all_paths()
+    Printer::assert(Tools.file_exists?(filename), "Config file does not exist!", "Filename":@@filename)
+    @@config = YAML.load_file Tools.abs_path(filename)
   end
 
   def Config.[] (arg)
