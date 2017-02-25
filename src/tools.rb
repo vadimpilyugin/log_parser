@@ -48,7 +48,7 @@ public
     File.delete(Tools.abs_path(path)) if b
     Printer::debug(b ? "Successfully removed file" : "File does not exist, so not removed", "Path":path)
   end
-  
+
   # def Tools.assert(hsh)
   #   raise "Assertion::Not a hash" if hsh.class != Hash
   #   raise "Assertion::Empty condition!" if hsh.size == 0
@@ -135,7 +135,12 @@ class Printer
 public
   def self.assert(bool_expr, str, params = {})
     if !bool_expr and Assertion
-      printf "#{@@assert_msg.to_s.perc_esc.red}: #{str.to_s.perc_esc.white}\n"
+      msg = @@assert_msg
+      if params[:msg]
+        msg = params[:msg]
+        params.delete(:msg)
+      end
+      printf "#{msg.to_s.perc_esc.red}: #{str.to_s.perc_esc.white}\n"
       params.pretty_print
       # puts caller
       # exit 1
@@ -147,7 +152,12 @@ public
   end
   def self.note(bool_expr, str, params = {})
     if bool_expr
-      printf "#{@@note_msg.to_s.perc_esc.yellow}: #{str.to_s.perc_esc.white}\n"
+      msg = @@note_msg
+      if params[:msg]
+        msg = params[:msg]
+        params.delete(:msg)
+      end
+      printf "#{msg.to_s.perc_esc.yellow}: #{str.to_s.perc_esc.white}\n"
       params.pretty_print
     end
   end

@@ -4,17 +4,18 @@ overall:
   # Место для сброса отчетов об ошибках
   error_log: parser.log
 parser:
-  log_file: logs/access.log
+  log_file: logs/access-test.log
   # Путь к папке с шаблонами сервисов
   services_dir: default.conf/services
 database:
   # Файл, куда будет писать база данных
   database_file: archive/access.sqlite3
   # Нужно ли удалять предыдущие данные
-  drop: true
+  drop: false
 aggregator:
   # Файл, из которого будет читать агрегатор
-  database_file: archive/auth-access-big.sqlite3
+  # Совпадает с database.database_file
+  # database_file: archive/access.sqlite3
 reporter:
   # Файл, в который будет выдан основной отчет
   report_file: report/report.html

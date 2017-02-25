@@ -67,7 +67,7 @@ class Database
     @@filename = Config["database"]["database_file"]
     drop = Config["database"]["drop"]
     Printer::note(Tools.file_exists?(@@filename), "Database file not found", "Filename":@@filename)
-    
+    DataMapper::Logger.new(STDOUT, :debug)
     DataMapper.setup(:default, "sqlite3://#{Tools.abs_path(@@filename)}")
     DataMapper.finalize
     drop ? DataMapper.auto_migrate! : DataMapper.auto_upgrade!
@@ -75,8 +75,8 @@ class Database
 public
   def Database.save(table)
     resources = []
-    table.each do |hsh|
-      # Printer::debug("Got a new Logline request", hsh)
+    table.each_with_index do |hsh, i|
+      Printer::debug("Got a new Logline request ##{i}", debug_msg:"Database.save")
       resources << Logline.new(
         server: hsh[:server],
         service: hsh[:service],
