@@ -66,7 +66,7 @@ class Database
     @@db = self
     @@filename = Config["database"]["database_file"]
     drop = Config["database"]["drop"]
-    Printer::note(Tools.file_exists?(@@filename), "Database file not found", "Filename":@@filename)
+    Printer::note(!Tools.file_exists?(@@filename), "Database file not found", "Filename":@@filename)
     DataMapper::Logger.new(STDOUT, :debug)
     DataMapper.setup(:default, "sqlite3://#{Tools.abs_path(@@filename)}")
     DataMapper.finalize

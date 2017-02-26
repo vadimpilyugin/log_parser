@@ -4,7 +4,7 @@ overall:
   # Место для сброса отчетов об ошибках
   error_log: parser.log
 parser:
-  log_file: logs/access-test.log
+  log_file: logs/access.log
   # Путь к папке с шаблонами сервисов
   services_dir: default.conf/services
 database:

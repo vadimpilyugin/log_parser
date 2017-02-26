@@ -3,36 +3,117 @@ require_relative "config"
 require_relative "tools"
 
 class Aggregator
-  @@aggregator = nil
-  @@filename = nil
-  @@lines = nil
+  # @@aggregator = nil
+  # @@filename = nil
+  @lines = Logline.all
 
-  def initialize()
-    return @@aggregator if @@aggregator
-    @@aggregator = self
-    # @@filename = Config["aggregator"]["database_file"]
-    # Printer::assert(Tools.file_exists?(@@filename), "Database file does not exist", msg:"Aggregator.initialize()")
-    @@lines = Logline.all
+  # def initialize()
+  #   return @@aggregator if @@aggregator
+  #   @@aggregator = self
+  #   # @@filename = Config["aggregator"]["database_file"]
+  #   # Printer::assert(Tools.file_exists?(@@filename), "Database file does not exist", msg:"Aggregator.initialize()")
+  #   @lines = Logline.all
+  # end
+  def Aggregator.hash_cnt(cnt)
+    if cnt > 0
+      Hash.new {|hash, key| hash[key] = hash_cnt(cnt-1)}
+    else
+      0
+    end
+  end
+  def self.loglines_ids
+    Printer::note(@lines == nil, "Request for loglines_ids when there are no lines")
+    return "(0)" if @lines == nil
+    str = "("
+    @lines.each do |line|
+      str << "#{line.id},"
+    end
+    str[-1] = ")"
+    str
+  end
+  def self.collection(request)
+    repository(:default).adapter.select(request)
+  end
+  def self.sql_group_by(keys)
+<<STR
+    select d1.value,d2.value,count(*) FROM linedata d1,linedata d2 WHERE
+      d1.name = 'user_ip' and
+       d2.name = 'path'  and 
+      d1.logline_id = d2.logline_id  GROUP BY d1.value, d2.value
+    ORDER BY (select count(*) FROM linedata WHERE name = 'user_ip' and value = d1.value) DESC
+STR
+    request = ""
+    if keys.size == 1
+      name = keys[0]
+      request << "SELECT value as #{name}, count(*) as count FROM linedata WHERE name = #{name} and logline_id IN #{loglines_ids} ORDER BY count(*) DESC"
+    else
+      request << "SELECT "
+      keys.each_with_index do |key,i|
+        request << "d#{i+1}.value as #{key},"
+      end
+      request << "count(*) as count FROM \n"
+      keys.each_with_index do |key,i|
+        request << "\tlinedata d#{i+1},\n"
+      end
+      request[-2] = ""
+      request << "WHERE \n"
+      keys.each_with_index do |key,i|
+        request << "\td#{i+1}.name = '#{key}' and \n"
+      end
+      keys[0..-2].each_with_index do |key,i|
+        request << "\td#{i+1}.logline_id = d#{i+2}.logline_id and \n"
+      end
+      # request[-5..-2] = ""
+      request << "d1.logline_id IN #{loglines_ids}\n"
+      request << "GROUP BY "
+      keys.each_with_index do |key,i|
+        request << "d#{i+1}.value,"
+      end
+      request[-1] = "\n"
+      request << "ORDER BY (SELECT count(*) FROM linedata WHERE name = '#{keys[0]}' and value = d1.value) DESC\n"
+    end
+    request
   end
 public
+  class << self; attr_accessor(:lines) end
+
+  def self.reset
+    @lines = Logline.all
+  end
+
   def self.group_by(keys)
     Printer::assert(keys.class == Array, "Not an array", msg:"Aggregator.group_by()")
     Printer::assert(keys.size != 0, "No keys specified for aggregation", msg:"Aggregator.group_by()")
-    
-    collection = Logline.all(linedatas: {:name => "user_ip"})
-    collection = collection.all(:service => "apache")
-    query = collection.query
-    Printer::debug(query.to_s)
-    collection.first
+    keys.each do |key|
+      Printer::assert(key.class == String, "Key is not a string", "Key class":key.class, "Key":key)
+    end
+    request = sql_group_by(keys)
+    ar = collection(request)
+    return {} if ar.class == nil || ar.empty?
+    if keys.size == 1
+      result = {}
+      ar.each do |struct|
+        result.store(*(struct.values))
+      end
+      return result
+    end
+    result = hash_cnt(keys.size)
+    ar.each do |struct|
+      tmp = result
+      struct.values[0..-3].each do |value|
+        tmp = tmp[value]
+      end
+      tmp[struct.values[-2]] = struct.values[-1]
+    end
+    return result
+    # pp result.to_a[0..10].to_h
   end
 end
 
 
-Aggregator.new
-Aggregator.group_by(["user_ip", "path"])
+# Aggregator.group_by(["user_ip", "path"])
 
-
-
+# Aggregator.lines = Aggregator.lines.all(service:"apache")
 
 
 
@@ -72,13 +153,7 @@ Aggregator.group_by(["user_ip", "path"])
 #   # 	end
 #   # end
 
-# def Aggregator.hash_cnt(cnt)
-#     if cnt > 0
-#       Hash.new {|hash, key| hash[key] = hash_cnt(cnt-1)}
-#     else
-#       0
-#     end
-#   end
+
 
 #   def Aggregator.hash_inc(hash,*args)
 #     hsh = hash

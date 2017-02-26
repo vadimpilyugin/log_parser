@@ -22,9 +22,6 @@ end
 
 class Reporter
   def initialize
-    Chdir.chdir
-    Config.new
-    Aggregator::Aggregator.new
     folder = Config["reporter"]["config_folder"]
     Tools.assert !Dir.entries(folder).empty?,  "Report directory does not exist: #{folder}"
     Tools.assert Dir.entries(folder).size > 2, "No templates found at report dir: #{folder}"
@@ -85,11 +82,12 @@ end
 class Distribution
   def initialize(service, params)
   	@descr = params["Distribution"]		# Описание, которое в первой строке
+    Printer::note(@descr == nil, "No description provided for distribution", "Service")
   	# Распределение имеет следующие параметры:
   	# Поля - показывает их взаимное распределение. Например, какие IP по каким портам заходили(распределение user_ip, server_port)
   	# Группировка - не показывать полное распределение, а по отношению к какому-то значению. Например, коды ошибок 200/не 200
   	# Исключение - в распределении убрать из рассмотрения определенное поле. Например, в распределении по кодам ошибок убрать код 200
-  	Tools.assert service.class == String, "Service is not a string! #{service}"
+  	Printer::assert(service.class == String, "Service is not a string! #{service}")
     @keys = params["fields"]
   	@value = Aggregator::Aggregator.reset.select(metas: {"service" => service})
     @value = Aggregator::Aggregator.select(datas: {@keys.last => "not "+params["exclude"]}) if params["exclude"]  # убрать строки со значением params[exclude] 

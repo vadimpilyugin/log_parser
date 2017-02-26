@@ -1,5 +1,5 @@
 require 'fileutils'
-require 'colorize'
+require 'pp'
 
 class Tools
   @@tools = nil
@@ -113,7 +113,7 @@ class String
 end
 
 class Hash
-  def pretty_print
+  def my_pp
     self.each_pair do |s1,s2|
       # s1 = first.to_s.index('%') ? first.to_s.gsub!('%','%%') : first.to_s 
       # s2 = second.to_s.index('%') ? second.to_s.gsub!('%','%%') : second.to_s
@@ -141,7 +141,7 @@ public
         params.delete(:msg)
       end
       printf "#{msg.to_s.perc_esc.red}: #{str.to_s.perc_esc.white}\n"
-      params.pretty_print
+      params.my_pp
       # puts caller
       # exit 1
       raise "Assertion failed"
@@ -158,7 +158,7 @@ public
         params.delete(:msg)
       end
       printf "#{msg.to_s.perc_esc.yellow}: #{str.to_s.perc_esc.white}\n"
-      params.pretty_print
+      params.my_pp
     end
   end
   def self.debug(str, params = {})
@@ -168,7 +168,7 @@ public
       params.delete(:debug_msg)
     end
     printf "#{msg.to_s.perc_esc.green}: #{str.to_s.perc_esc.white}\n"
-    params.pretty_print
+    params.my_pp
   end
 end
 

@@ -2,9 +2,9 @@ require_relative 'tools'
 require_relative 'config'
 require_relative 'parser'
 require_relative 'db'
-require_relative 'aggregator'
-require_relative 'reporter'
-require_relative 'server'
+# require_relative 'aggregator'
+# require_relative 'reporter'
+# require_relative 'server'
 
 parse_logs = true # чтобы не парсить логи заново, можно пропустить эту часть
 create_report = false
