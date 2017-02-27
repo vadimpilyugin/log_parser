@@ -53,7 +53,7 @@ class Linedata
 
   property :id, Serial
   property :name, String, :required => true
-  property :value, String, :required => true
+  property :value, String, :required => true, :length => 256
   belongs_to :logline
 end
 
@@ -76,7 +76,8 @@ public
   def Database.save(table)
     resources = []
     table.each_with_index do |hsh, i|
-      Printer::debug("Got a new Logline request ##{i}", debug_msg:"Database.save")
+      Printer::debug("Got a new Logline request ##{i}", debug_msg:"Database.save",
+      "Parameters":hsh)
       resources << Logline.new(
         server: hsh[:server],
         service: hsh[:service],

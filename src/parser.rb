@@ -26,8 +26,13 @@ class Parser
         if i == nil
           Printer::note(i == nil, "Для данной строки не найдено совпадений: она не подходит ни под один сервис", "Services":Services, "Line":logline)
         else
-          Printer::debug("Line ##{$.} passed")
-          @@table << Services[i].parse!(logline)
+          parsed_line = Services[i].parse!(logline)
+          if parsed_line[:descr] == "__UNDEFINED__"
+            Printer::note(true, "Неопознанная строка для сервиса #{parsed_line[:service]}")
+          else
+            Printer::debug("Line ##{$.} passed")
+            @@table << parsed_line
+          end
         end
       end
     end

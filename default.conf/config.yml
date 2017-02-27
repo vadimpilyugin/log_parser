@@ -3,13 +3,15 @@
 overall:
   # Место для сброса отчетов об ошибках
   error_log: parser.log
+  parse_logs: true
+  create_report: false
 parser:
-  log_file: logs/access.log
+  log_file: logs/syslog.1
   # Путь к папке с шаблонами сервисов
   services_dir: default.conf/services
 database:
   # Файл, куда будет писать база данных
-  database_file: archive/access.sqlite3
+  database_file: archive/syslog.sqlite3
   # Нужно ли удалять предыдущие данные
   drop: false
 aggregator:

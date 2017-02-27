@@ -135,7 +135,7 @@ class Service
     end
     if s == nil || res == nil
       Printer::note(s == nil || res == nil, "Не удалось распарсить строку", "Line":logline, "Service":@service_name)
-      return {:descr => "Undefined line", :md => {"Logline" => logline}}
+      return {:descr => "__UNDEFINED__", :md => [{"logline" => logline}]}
     end
     data = []
     res.each_pair do |key,value|

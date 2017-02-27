@@ -6,20 +6,15 @@ require_relative 'db'
 # require_relative 'reporter'
 # require_relative 'server'
 
-parse_logs = false # чтобы не парсить логи заново, можно пропустить эту часть
-create_report = false
+parse_logs = Config['overall']['parse_logs']
+create_report = Config['overall']['create_report']
+# parse_logs = false # чтобы не парсить логи заново, можно пропустить эту часть
+# create_report = false
 
 if parse_logs
   Parser.parse!  
   # Выгружаем распарсенный лог в базу данных
   Database.save(Parser.table)
-end
-
-require 'haml'
-require 'sinatra'
-get '/' do 
-  haml :list
-  "Hello, world"
 end
 
 # Создаем отчеты по базе данных
