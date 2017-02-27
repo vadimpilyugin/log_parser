@@ -62,20 +62,20 @@ class Parser
     max = 3
     Printer::debug("",debug_msg:"==================")
     Printer::debug("",debug_msg:"Parsing finished")
-    Printer::debug("",debug_msg:"#{stat[:success]} successfull attempts")
-    Printer::debug("",debug_msg:"#{stat[:ignored_services_lines]} lines were explicitly ignored")
-    Printer::debug("",stat[:ignored_services].update(debug_msg:"#{ignored_services_num} services that were explicitly ignored"))
-    Printer::debug("",debug_msg:"#{no_template_provided_num} lines that were not provided with template")
+    Printer::debug("",debug_msg:"#{stat[:success].to_s.red+"".green} successfull attempts")
+    Printer::debug("",debug_msg:"#{stat[:ignored_services_lines].to_s.red+"".green} lines were explicitly ignored")
+    Printer::debug("",stat[:ignored_services].update(debug_msg:"#{ignored_services_num.to_s.red+"".green} services that were explicitly ignored"))
+    Printer::debug("",debug_msg:"#{no_template_provided_num.to_s.red+"".green} lines that were not provided with template")
     stat[:no_template_provided].each do |service,hsh|
       size = hsh.values.size
       hsh = hsh.to_a[0..max].to_h
-      Printer::debug("#{size} lines", hsh.update(debug_msg:"#{service}"))
-      Printer::debug("",debug_msg:"\tShow #{size-max} more") if size > max
+      Printer::debug("#{size.to_s.red+"".green} lines", hsh.update(debug_msg:"#{service}"))
+      Printer::debug("",debug_msg:"\tShow #{(size-max).to_s.red+"".green} more") if size > max
     end
     size = stat[:unknown_lines].values.size
     stat[:unknown_lines] = stat[:unknown_lines].to_a[0..max].to_h
-    Printer::debug("",stat[:unknown_lines].update(debug_msg:"#{unknown_lines_num} lines that were not recognized"))
-    Printer::debug("",debug_msg:"\tShow #{size-max} more") if size > max
+    Printer::debug("",stat[:unknown_lines].update(debug_msg:"#{unknown_lines_num.to_s.red+"".green} lines that were not recognized"))
+    Printer::debug("",debug_msg:"\tShow #{(size-max).to_s.red+"".green} more") if size > max
     Printer::debug("",debug_msg:"==================")
     Printer::assert(0!=0, "",msg:"Breakpoint")
   end

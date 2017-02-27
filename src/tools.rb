@@ -80,7 +80,7 @@ end
 
 class String 
   def colorize(i)
-    return "\x1b[1;#{i}m#{self}\x1b[0m"
+    return "\x1b[1;#{i}m#{self}" # \x1b[0m"
   end
   def red
     return colorize(31)
