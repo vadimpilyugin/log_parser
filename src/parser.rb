@@ -1,6 +1,6 @@
-require_relative 'services'
 require_relative 'config'
 require_relative 'tools'
+require_relative '../services/services.rb'
 
 
 class Parser
@@ -59,18 +59,25 @@ class Parser
     stat[:ignored_services] = stat[:ignored_services].each do |key,value|
       value.to_s + " lines"
     end
+    max = 3
     Printer::debug("",debug_msg:"==================")
     Printer::debug("",debug_msg:"Parsing finished")
     Printer::debug("",debug_msg:"#{stat[:success]} successfull attempts")
     Printer::debug("",debug_msg:"#{stat[:ignored_services_lines]} lines were explicitly ignored")
     Printer::debug("",stat[:ignored_services].update(debug_msg:"#{ignored_services_num} services that were explicitly ignored"))
-    Printer::debug("",debug_msg:"#{no_template_provided_num} lines were not provided with template")
+    Printer::debug("",debug_msg:"#{no_template_provided_num} lines that were not provided with template")
     stat[:no_template_provided].each do |service,hsh|
-      Printer::debug("#{hsh.values.size} lines", hsh.update(debug_msg:"#{service}"))
+      size = hsh.values.size
+      hsh = hsh.to_a[0..max].to_h
+      Printer::debug("#{size} lines", hsh.update(debug_msg:"#{service}"))
+      Printer::debug("",debug_msg:"\tShow #{size-max} more") if size > max
     end
+    size = stat[:unknown_lines].values.size
+    stat[:unknown_lines] = stat[:unknown_lines].to_a[0..max].to_h
     Printer::debug("",stat[:unknown_lines].update(debug_msg:"#{unknown_lines_num} lines that were not recognized"))
+    Printer::debug("",debug_msg:"\tShow #{size-max} more") if size > max
     Printer::debug("",debug_msg:"==================")
-    Printer::assert(0!=0, "Parsing finished")
+    Printer::assert(0!=0, "",msg:"Breakpoint")
   end
 end
 
