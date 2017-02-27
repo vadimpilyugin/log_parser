@@ -76,8 +76,7 @@ public
   def Database.save(table)
     resources = []
     table.each_with_index do |hsh, i|
-      Printer::debug("Got a new Logline request ##{i}", debug_msg:"Database.save",
-      "Parameters":hsh)
+      Printer::debug("Got a new Logline request ##{i}", hsh.update(debug_msg:"Database.save"))
       resources << Logline.new(
         server: hsh[:server],
         service: hsh[:service],

@@ -16,6 +16,8 @@ class Templates
   Pid = Code
   Port = Pid
   Username = "\\b[a-zA-Z0-9]+\\b"
+  # Ip = /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/
+  Ip = "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}"
   #Date = "\\b\\w{3}\\s+\\d{1,2}\\s+[\\d:]+\\b"
   Date = "(\\S+\\s+){3}"
   SyslogTime = %r{ ^
@@ -45,7 +47,7 @@ class Templates
     }x
   end
   Apache = %r{  ^
-    ^(?<user_ip>\S+)                              # 141.8.142.23
+    ^(?<user_ip>#{Ip})                              # 141.8.142.23
     [^"]+"                                        # - - [09/Oct/2016:06:35:46 +0300]"
     (?<method>\S+)\s (?<path>#{Templates::Path})   # GET /images/logos/russia/vmk.gif
     [^"]+"\s (?<code>\S+)                         # HTTP/1.0" 404
@@ -69,35 +71,39 @@ class Service
 
   def Service.build_datetime(hsh)
     # Printer::debug("Got a datetime request", hsh)
-    year = hsh["year"].to_i
-    month = hsh["month"]
-    month = case month
-      when "Jan", "01" then 1
-      when "Feb", "02" then 2
-      when "Mar", "03" then 3
-      when "Apr", "04" then 4
-      when "May", "05" then 5
-      when "Jun", "06" then 6
-      when "Jul", "07" then 7
-      when "Aug", "08" then 8
-      when "Sep", "09" then 9
-      when "Oct", "10" then 10
-      when "Nov", "11" then 11
-      when "Dec", "12" then 12
-      else Printer::note(true, "Something went wrong: Unknown month", "Month":month, "Service":@service_name)
+    if hsh.empty?
+      return Time.new(1917,"Oct",7,1,0,0,0)
+    else
+      year = hsh["year"].to_i
+      month = hsh["month"]
+      month = case month
+        when "Jan", "01" then 1
+        when "Feb", "02" then 2
+        when "Mar", "03" then 3
+        when "Apr", "04" then 4
+        when "May", "05" then 5
+        when "Jun", "06" then 6
+        when "Jul", "07" then 7
+        when "Aug", "08" then 8
+        when "Sep", "09" then 9
+        when "Oct", "10" then 10
+        when "Nov", "11" then 11
+        when "Dec", "12" then 12
+        # else Printer::note(true, "Something went wrong: Unknown month", "Month":month, "Service":@service_name)
+      end
+      day = hsh["day"].to_i
+      hour = hsh["hour"].to_i
+      minute = hsh["minute"].to_i
+      second = hsh["second"].to_i
+      Printer::assert(year >= 1900 && year <= 2100, "Year is incorrect", hsh.update(:msg => "Parser"))
+      Printer::assert(month >= 1 && month <= 12, "Month is incorrect", hsh.update(:msg => "Parser"))
+      Printer::assert(day >= 1 && day <= 31, "Day is incorrect", hsh.update(:msg => "Parser"))
+      Printer::assert(hour >= 0 && hour <= 24, "Hour is incorrect", hsh.update(:msg => "Parser"))
+      Printer::assert(minute >= 0 && minute <= 60, "Minute is incorrect", hsh.update(:msg => "Parser"))
+      Printer::assert(second >= 0 && second <= 60, "Second is incorrect", hsh.update(:msg => "Parser"))
+      # return "#{year}-#{month}-#{day}T#{hours}-#{minutes}-#{seconds}-0600"
+      return Time.new(year,month,day,hour,minute,second)
     end
-    day = hsh["day"].to_i
-    hour = hsh["hour"].to_i
-    minute = hsh["minute"].to_i
-    second = hsh["second"].to_i
-    Printer::assert(year >= 1900 && year <= 2100, "Something went wrong", "Year":year)
-    Printer::assert(month >= 1 && month <= 12, "Something went wrong", "Month":month)
-    Printer::assert(day >= 1 && day <= 31, "Something went wrong", "Day":day)
-    Printer::assert(hour >= 0 && hour <= 24, "Something is wrong", "Hour":hour)
-    Printer::assert(minute >= 0 && minute <= 60, "Something is wrong", "Minute":minute)
-    Printer::assert(second >= 0 && second <= 60, "Something went wrong", "Second":second)
-    # return "#{year}-#{month}-#{day}T#{hours}-#{minutes}-#{seconds}-0600"
-    return Time.new(year,month,day,hour,minute,second)
   end
   def self.init
     # @service_name = nil
@@ -109,8 +115,12 @@ class Service
   end
   def self.get_datetime(logline)
     Printer::assert(@time_regex != nil, "You should assign a value to @time_regex or redefine get_datetime!")
-    logline =~ @time_regex
-    return build_datetime($~.to_h)
+    success = (logline =~ @time_regex)
+    if !success
+      Printer::note(true, "Date was not parsed",msg:"Parser","Line":logline,"Time regex":@time_regex)
+    end
+    datetime = $~.to_h
+    return build_datetime(datetime)
   end
   def self.get_data(logline)
     if @msg_field
@@ -154,6 +164,12 @@ public
   	else
   	  return false
   	end
+  end
+  def self.ignore?
+    return @ignore
+  end
+  def self.name
+    return @service_name
   end
   def self.parse!(logline)
     server_name = get_server_name(logline)

@@ -1,2 +1,15 @@
 Session activity:
 - 'pam_unix\(systemd-user:session\): session (?<action>\S+) for user (?<username>\S+)'
+- 'Started Session (\d+) of user (\S+)'
+Killed:
+- 'Received (?<signal>\S+) from PID (?<killer_pid>\S+) \(kill\)'
+Ignore:
+- 'Started (.*) for UID (\S+)'
+- 'Starting (.*)[for user (\S+)]'
+- 'Stopped target (.*)\.'
+- 'Reached target (\S+)'
+- 'Stopping (.*) for UID (\S+)'
+- 'Stopped (.*) for UID (\S+)'
+- 'Removed slice User Slice of autocheck'
+- '(?<action>\S+) finished in (?<time_ms>\d+)'
+- 'Created slice User Slice of autocheck.'

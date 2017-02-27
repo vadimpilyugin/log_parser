@@ -18,6 +18,7 @@ require 'yaml'
 #           @msg_field - may contain a symbol which represents a field in the 
 #                         @service_template. nil by default. Change it if you
 #                         want to parse only a part of logline
+#           @ignore - just ignore this service. Don't store its lines in the database, don't parse its lines.
 #           Additionally, each subclass can redefine these methods from the base class:
 #           get_data(logline) - returns a hash of form {:descr => descr_str, :md => data}
 #                               redefine this method if your service is like sshd, i.e., needs to compare
@@ -53,7 +54,8 @@ class SyslogService<Service
   def self.init
     @service_template = Templates::syslog(@service_name)
     @msg_field = :msg
-    @service_regexes = Templates::load(@service_name)
+    @service_regexes = @service_regexes ? @service_regexes : Templates::load(@service_name) # you can choose to write templates to file
+                                                                                            # or to keep them in code
     self
   end
   def self.get_server_name(logline)
@@ -82,4 +84,37 @@ class Su<SyslogService
   @service_name = "su"
 end
 
-Services = [Apache, Sshd, Cron, SystemdLogind, Systemd, Su].map {|cl| cl.init}
+class IgnoredSyslogService<SyslogService
+  def self.get_datetime(logline)
+    Printer::assert(false, "Called get_datetime for ignored service", msg:"Parser")
+  end
+  def self.init
+    @service_template = Templates::syslog(@service_name)
+    @ignore = true
+    self
+  end
+  def self.get_server_name(logline)
+    Printer::assert(false, "Called get_server_name for ignored service", msg:"Parser")
+  end
+end
+
+class ConsoleKitDaemon<IgnoredSyslogService
+  @service_name = "console-kit-daemon"
+  @service_regexes = {
+    "Ignore" => [
+        /GLib-CRITICAL: Source ID \S+ was not found when attempting to remove it/,
+        /\(process:(\d+)\): GLib-CRITICAL \*\*: g_slice_set_config: assertion 'sys_page_size == 0' failed/,
+        /missing action/
+    ]
+  }
+end
+
+class Rsyslogd<IgnoredSyslogService
+  @service_name = "rsyslogd"
+end
+
+class Dnsproxy<IgnoredSyslogService
+  @service_name = "dnsproxy"
+end
+
+Services = [Apache,Sshd,Cron,SystemdLogind,Systemd,Su,ConsoleKitDaemon,Rsyslogd,Dnsproxy].map {|cl| cl.init}

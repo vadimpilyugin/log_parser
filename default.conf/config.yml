@@ -6,7 +6,7 @@ overall:
   parse_logs: true
   create_report: false
 parser:
-  log_file: logs/syslog.1
+  log_file: logs/syslog
   # Путь к папке с шаблонами сервисов
   services_dir: default.conf/services
 database:

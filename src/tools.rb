@@ -143,7 +143,7 @@ public
       printf "#{msg.to_s.perc_esc.red}: #{str.to_s.perc_esc.white}\n"
       params.my_pp
       # puts caller
-      # exit 1
+      exit 1
       raise "Assertion failed"
     end
   end
