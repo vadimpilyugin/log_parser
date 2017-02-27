@@ -61,7 +61,7 @@ class Parser
     end
     max = 3
     Printer::debug("",debug_msg:"==================")
-    Printer::debug("",debug_msg:"Parsing finished")
+    Printer::debug("#{total.to_s.red+" lines total".green}",debug_msg:"Parsing finished")
     Printer::debug("",debug_msg:"#{stat[:success].to_s.red+"".green} successfull attempts")
     Printer::debug("",debug_msg:"#{stat[:ignored_services_lines].to_s.red+"".green} lines were explicitly ignored")
     Printer::debug("",stat[:ignored_services].update(debug_msg:"#{ignored_services_num.to_s.red+"".green} services that were explicitly ignored"))

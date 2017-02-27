@@ -155,4 +155,4 @@ require_relative './apache/apache.rb'
 require_relative './fail2ban/fail2ban.rb'
 
 
-Services = [Apache,Sshd,Cron,SystemdLogind,Systemd,Su,ConsoleKitDaemon,Rsyslogd,Dnsproxy,Fail2Ban].map {|service| service.init}
+Services = [Fail2Ban,Apache,Sshd,Cron,SystemdLogind,Systemd,Su,ConsoleKitDaemon,Rsyslogd,Dnsproxy].map {|service| service.init}

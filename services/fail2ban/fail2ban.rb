@@ -10,9 +10,30 @@ class Fail2Ban<Service
     (?<msg>.*)            # rollover performed on /var/log/fail2ban.log
   }x
   @service_regexes = {
+    "Ban/unban action" => [
+        /\[(ssh|pam-generic)\] Ban (?<user_ip>\S+)/,
+        /\[(ssh|pam-generic)\] Unban (?<user_ip>\S+)/,
+        /\[(ssh|pam-generic)\] \S+ already banned/,
+      ],
+    "Failed ban/unban action" => [
+        /Failed to execute ban jail/,
+        /Failed to execute unban jail/
+      ],
     "Log rotation" => [
-        /Log rotation detected for \/var\/log\/auth\.log/
-    ]
+        /Log rotation detected for (?<path>\S+)/,
+        /rollover performed on (\S+)/
+      ],
+    "DDOS detected" => [
+        /\[ssh-ddos\] Found (?<user_ip>\S+)/
+      ],
+    "Strange errors" => [
+        /Invariant check failed\. Trying to restore a sane environment/,
+        /iptables (.*) -- stderr/
+      ],
+    "Ignore" => [
+        /\[(ssh|pam-generic)\] Found \S+/,
+        /iptables/
+      ],
   }
   @time_regex = %r{ ^
     (?<year>\d+)-       # 2017-
@@ -26,5 +47,5 @@ class Fail2Ban<Service
     logline =~ @service_template
     return $~["server"]
   end
-  @msg_field = :msg
+  # @msg_field = :msg
 end
