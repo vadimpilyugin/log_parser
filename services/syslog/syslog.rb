@@ -15,6 +15,7 @@ class SyslogService<Service
     @service_regexes = @service_regexes ? @service_regexes : Templates::load(@service_name, 'services/syslog') 
                                                             # you can choose to write templates to file
                                                             # or to keep them in code
+    super
     self
   end
   def self.get_server_name(logline)

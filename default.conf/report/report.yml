@@ -1,0 +1,37 @@
+---
+- Counter: "Число пользователей"
+  field: user_ip
+
+- Distribution: "На какие порты заходили пользователи"
+  fields:
+  - user_ip
+  - server_port
+
+- Flag: "Попытка подбора пароля? "
+  look_for: "Auth fail"
+  threshold: 5
+  fields:
+  - user_ip
+
+- Counter: "Число уникальных IP"
+  field: user_ip
+
+- Counter: "Число уникальных страниц"
+  field: path
+
+- Distribution: "Число успешных/неуспешных запросов"
+  fields:
+  - code
+  group_by: "200"
+
+- Distribution: "Распределение кодов ошибок по пользователям"
+  fields: 
+  - user_ip
+  - code
+  group_by: "404"
+  exclude: "200"
+
+- Distribution: "Распределение кодов ошибок по страницам"
+  fields:
+  - path
+  - code

@@ -1,3 +1,6 @@
+system "clear"
+puts("Preparation: Initialization started")
+
 require_relative 'tools'
 require_relative 'config'
 require_relative 'parser'
@@ -10,8 +13,8 @@ parse_logs = Config['overall']['parse_logs']
 create_report = Config['overall']['create_report']
 # parse_logs = false # чтобы не парсить логи заново, можно пропустить эту часть
 # create_report = false
-system "clear"
-Printer::debug("============= Log Parser v1.2 ============", debug_msg:"Main")
+
+Printer::debug("============= Log Parser v1.2 ============"+"\n\n", debug_msg:"\n\nMain")
 # Printer::debug("Parse log file at #{}", debug_msg:"Main")
 
 

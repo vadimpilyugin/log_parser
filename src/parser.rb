@@ -13,6 +13,7 @@ class Parser
     @@parser = "New parser"
     @@filename = Config["parser"]["log_file"]	# отсюда читаем лог
     Printer::assert(Tools.file_exists?(@@filename), "Файл лога не найден", "Path":@@filename)
+    Printer::debug("Parser was initialized!", debug_msg:"Preparations")
     @@table = []
   end
   def self.table

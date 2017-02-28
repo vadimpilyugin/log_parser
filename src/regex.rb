@@ -62,6 +62,7 @@ class Templates
         Regexp.new(s)
       end
     end
+    Printer::debug("Successfully loaded template file for #{service}!", debug_msg:"Preparations")
     return hsh
   end
 end

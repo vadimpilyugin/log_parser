@@ -69,7 +69,7 @@ class Database
     Printer::note(!Tools.file_exists?(@@filename), "Database file not found", "Filename":@@filename)
     # DataMapper::Logger.new(STDOUT, :debug)
     DataMapper.setup(:default, "sqlite3://#{Tools.abs_path(@@filename)}")
-    Printer::debug("Connection to database was established", debug_msg:"Database", "Database file":@@filename)
+    Printer::debug("Connection to database was established", debug_msg:"Preparations", "Database file":@@filename)
     DataMapper.finalize
     drop ? DataMapper.auto_migrate! : DataMapper.auto_upgrade!
   end
@@ -102,7 +102,6 @@ public
         # Printer::debug(success, debug_msg:"Запись ##{i} сохранена")
       end
     end
-    puts
     max = 10
     Printer::debug("",debug_msg:"\n==================")
     Printer::debug("#{stat[:requests].to_s.red+" total requests".green}",debug_msg:"Saving finished")

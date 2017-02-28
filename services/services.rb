@@ -77,6 +77,9 @@ class Service
     # @service_regexes = nil
     # @msg_field = nil
     # @time_regex = nil
+
+    Printer::assert("No name provided for service", "Service":self.class, msg:"Preparations")
+    Printer::debug("Found new service: #{@service_name}", debug_msg:"Preparations")
     self
   end
   def self.get_datetime(logline)

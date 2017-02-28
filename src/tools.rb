@@ -9,6 +9,7 @@ class Tools
     return @@tools if @@tools
     @@tools = "New tools"
     @@homedir = File.expand_path("../../", __FILE__)
+    Printer::debug("Root directory of the project was set to #{@@homedir}", debug_msg:"Preparations")
   end
   def Tools.rprint(str)
     puts str.red
@@ -47,6 +48,13 @@ public
     b = Tools.file_exists? path
     File.delete(Tools.abs_path(path)) if b
     Printer::debug(b ? "Successfully removed file" : "File does not exist, so not removed", "Path":path)
+  end
+
+  def Tools.load(path)
+    Printer::assert(Tools.file_exists?(path), "File does not exist", "Filename":path)
+    file = YAML.load_file(path)
+    Printer::assert(file != nil, "File is not in YAML format", "Filename":path)
+    return file
   end
 
   # def Tools.assert(hsh)
@@ -167,7 +175,7 @@ public
       msg = params[:debug_msg]
       params.delete(:debug_msg)
     end
-    if params[:in_place] == 1234
+    if params.has_key?(:in_place) && params[:in_place] == 1234
       printf "#{msg.to_s.perc_esc.green}: #{str.to_s.perc_esc.white}\r"
       params.delete(:in_place)
     else

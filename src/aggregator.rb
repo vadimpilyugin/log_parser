@@ -6,6 +6,7 @@ class Aggregator
   # @@aggregator = nil
   # @@filename = nil
   @lines = Logline.all
+  Printer::debug("Aggregator was initialized!", debug_msg:"Preparations")
 
   # def initialize()
   #   return @@aggregator if @@aggregator

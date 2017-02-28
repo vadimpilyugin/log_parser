@@ -12,12 +12,13 @@ class Config
     @@filename = filename
     Printer::assert(Tools.file_exists?(filename), "Config file does not exist!", "Filename":@@filename)
     @@config = ParseConfig.new Tools.abs_path(filename)
+    Printer::assert(@@config, "Config file is not loaded or nil")
+    Printer::debug("Config file was found at #{@@filename}",debug_msg:"Preparations")
     # @@config = YAML.load_file Tools.abs_path(filename)
 
   end
 
   def Config.[] (arg)
-    Printer::assert(@@config, "Config file is not loaded or nil")
     return @@config[arg]
   end
 
