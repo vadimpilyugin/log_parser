@@ -10,6 +10,10 @@ parse_logs = Config['overall']['parse_logs']
 create_report = Config['overall']['create_report']
 # parse_logs = false # чтобы не парсить логи заново, можно пропустить эту часть
 # create_report = false
+system "clear"
+Printer::debug("============= Log Parser v1.2 ============", debug_msg:"Main")
+# Printer::debug("Parse log file at #{}", debug_msg:"Main")
+
 
 if parse_logs
   Parser.parse!  

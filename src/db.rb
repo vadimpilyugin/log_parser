@@ -67,16 +67,19 @@ class Database
     @@filename = Config["database"]["database_file"]
     drop = Config["database"]["drop"]
     Printer::note(!Tools.file_exists?(@@filename), "Database file not found", "Filename":@@filename)
-    DataMapper::Logger.new(STDOUT, :debug)
+    # DataMapper::Logger.new(STDOUT, :debug)
     DataMapper.setup(:default, "sqlite3://#{Tools.abs_path(@@filename)}")
+    Printer::debug("Connection to database was established", debug_msg:"Database", "Database file":@@filename)
     DataMapper.finalize
     drop ? DataMapper.auto_migrate! : DataMapper.auto_upgrade!
   end
 public
   def Database.save(table)
     resources = []
+    stat = {:requests => 0, :success => 0, :errors => {},:errors_cnt => 0}
     table.each_with_index do |hsh, i|
-      Printer::debug("Got a new Logline request ##{i}", hsh.update(debug_msg:"Database.save"))
+      stat[:requests] += 1
+      Printer::debug("Creating resources #{stat[:requests].to_s.red+'/'.white+table.size.to_s.red}", debug_msg:"Database", in_place:1234)
       resources << Logline.new(
         server: hsh[:server],
         service: hsh[:service],
@@ -85,12 +88,31 @@ public
         descr: hsh[:descr]
       )
     end
-    Printer::debug("Закончили создание ресурсов, начинаем сохранение")
+    Printer::debug("Закончили создание ресурсов, начинаем сохранение", debug_msg:"\nDatabase")
     Logline.transaction do |t|
-      resources.each_with_index do |r, i|
-        Printer::debug(r.save!, debug_msg:"Запись ##{i} сохранена")
+      resources.each_with_index do |resource, i|
+        Printer::debug("Saving to database #{(i+1).to_s.red+'/'.white+stat[:requests].to_s.red}", debug_msg:"Database", in_place:1234)
+        success = resource.save
+        if success
+          stat[:success] += 1
+        else
+          stat[:errors].update(resource.id => resource.full_messages)
+          stat[:errors_cnt] += 1
+        end
+        # Printer::debug(success, debug_msg:"Запись ##{i} сохранена")
       end
     end
+    puts
+    max = 10
+    Printer::debug("",debug_msg:"\n==================")
+    Printer::debug("#{stat[:requests].to_s.red+" total requests".green}",debug_msg:"Saving finished")
+    Printer::debug("",debug_msg:"#{stat[:success].to_s.red+"".green} resources successfully saved")
+    size = stat[:errors].values.size
+    stat[:errors] = stat[:errors].to_a[0..max].to_h
+    Printer::debug("",stat[:errors].update(debug_msg:"#{stat[:errors_cnt].to_s.red+"".green} resources were not saved"))
+    Printer::debug("",debug_msg:"\tShow #{(size-max).to_s.red+"".green} more") if size > max
+    Printer::debug("",debug_msg:"==================")
+    Printer::assert(0 == 1, "",msg:"Breakpoint")
   end
 end
 

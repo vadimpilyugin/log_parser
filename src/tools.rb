@@ -30,9 +30,9 @@ public
     @@homedir
   end
   def Tools.file_exists? (filename)
-    Printer::debug("Checking if file exists", "Filename":filename)
+    # Printer::debug("Checking if file exists", "Filename":filename)
     s = File.exists? Tools.abs_path(filename)
-    Printer::debug(s ? "File exists" : "File does not exist", "Absolute path":Tools.abs_path(filename))
+    # Printer::debug(s ? "File exists" : "File does not exist", "Absolute path":Tools.abs_path(filename))
     return s
   end
 
@@ -167,7 +167,12 @@ public
       msg = params[:debug_msg]
       params.delete(:debug_msg)
     end
-    printf "#{msg.to_s.perc_esc.green}: #{str.to_s.perc_esc.white}\n"
+    if params[:in_place] == 1234
+      printf "#{msg.to_s.perc_esc.green}: #{str.to_s.perc_esc.white}\r"
+      params.delete(:in_place)
+    else
+      printf "#{msg.to_s.perc_esc.green}: #{str.to_s.perc_esc.white}\n"
+    end
     params.my_pp
   end
 end

@@ -27,35 +27,42 @@ class Parser
     no_template_provided_num = 0
     unknown_lines_num = 0
     File.open(@@filename, 'r') do |f|
-      Printer::debug("File opened, scanning started")
+      Printer::debug("File opened", "Filename":@@filename, debug_msg:"Parser")
+      Printer::debug("Parser started to do its work", debug_msg:"Parser")
+
       f.each_with_index do |logline|
         total += 1
+        # Printer::debug("#{total} lines were read\t\t\t", debug_msg:"Paser")
+        # printf "Parser: ".green+"#{total.to_s.red+"".white} lines were read\r"
+        Printer::debug("#{total.to_s.red+"".white} lines were read", debug_msg:"Parser", in_place:1234)
+
         i = Services.index {|service| service.check(logline)}
         if i == nil
-          Printer::note(i == nil, "Found an unknown line at ##{$.}")
+          # Printer::note(i == nil, "Found an unknown line at ##{$.}")
           stat[:unknown_lines].update($. => logline)
           unknown_lines_num += 1
         elsif Services[i].ignore?
-          Printer::note(true, "Ignored #{Services[i].name} at line ##{$.}")
+          # Printer::note(true, "Ignored #{Services[i].name} at line ##{$.}")
           stat[:ignored_services][Services[i].name] += 1
           ignored_services_num += 1
         else
           parsed_line = Services[i].parse!(logline)
           if parsed_line[:descr] == "__UNDEFINED__"
-            Printer::note(true, "No template was provided from #{parsed_line[:service]} for line ##{$.}")
+            # Printer::note(true, "No template was provided from #{parsed_line[:service]} for line ##{$.}")
             stat[:no_template_provided][parsed_line[:service]].update($. => logline)
             no_template_provided_num += 1
           elsif parsed_line[:descr] == "Ignore"
-            Printer::debug("Line ##{$.} from #{Services[i].name} was ignored")
+            # Printer::debug("Line ##{$.} from #{Services[i].name} was ignored")
             stat[:ignored_services_lines] += 1
           else
-            Printer::debug("Line ##{$.} passed")
+            # Printer::debug("Line ##{$.} passed")
             @@table << parsed_line
             stat[:success] += 1
           end
         end
       end
     end
+    puts
     stat[:ignored_services] = stat[:ignored_services].each do |key,value|
       value.to_s + " lines"
     end
@@ -77,7 +84,7 @@ class Parser
     Printer::debug("",stat[:unknown_lines].update(debug_msg:"#{unknown_lines_num.to_s.red+"".green} lines that were not recognized"))
     Printer::debug("",debug_msg:"\tShow #{(size-max).to_s.red+"".green} more") if size > max
     Printer::debug("",debug_msg:"==================")
-    Printer::assert(0!=0, "",msg:"Breakpoint")
+    # Printer::assert(0 == 1, "",msg:"Breakpoint")
   end
 end
 
