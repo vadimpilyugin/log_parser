@@ -20,14 +20,42 @@ class Su<SyslogService
 end
 
 
-class ConsoleKitDaemon<IgnoredSyslogService
+class ConsoleKitDaemon<SyslogService
   @service_name = "console-kit-daemon"
+  @service_regexes = {
+    "Strange errors" => [
+        /assertion '.*' failed/,
+        /missing action/,
+        /Source ID (\S+) was not found when attempting to remove it/
+      ],
+  	"Ignore" => [
+  	    /pam_unix/
+  	  ]
+  }
 end
 
-class Rsyslogd<IgnoredSyslogService
+class Rsyslogd<SyslogService
   @service_name = "rsyslogd"
+  @service_regexes = {
+    "Strange errors" => [
+        /rsyslogd was HUPed/
+      ],
+    "Ignore" => [
+        /-- MARK --/
+      ]
+  }
 end
 
-class Dnsproxy<IgnoredSyslogService
+class KernelService<SyslogService
+  @service_name = "kernel"
+  @service_regexes = {
+    "Segmentation fault" => [
+        /segfault/
+      ]
+  }  
+end
+
+class Dnsproxy<SyslogService
   @service_name = "dnsproxy"
+  @ignore = true
 end

@@ -11,9 +11,11 @@ class Fail2Ban<Service
   }x
   @service_regexes = {
     "Ban/unban action" => [
-        /\[(ssh|pam-generic)\] Ban (?<user_ip>\S+)/,
-        /\[(ssh|pam-generic)\] Unban (?<user_ip>\S+)/,
-        /\[(ssh|pam-generic)\] \S+ already banned/,
+        /\[(?<service>\S+)\] Found \S+/,
+        /\[(?<service>\S+)\] Ban (?<user_ip>\S+)/,
+        /\[(?<service>\S+)\] Unban (?<user_ip>\S+)/,
+        /\[(?<service>\S+)\] \S+ already banned/,
+        /\[(?<service>\S+)\] Ignore (?<user_ip>\S+) by ip/,
       ],
     "Failed ban/unban action" => [
         /Failed to execute ban jail/,
@@ -23,15 +25,11 @@ class Fail2Ban<Service
         /Log rotation detected for (?<path>\S+)/,
         /rollover performed on (\S+)/
       ],
-    "DDOS detected" => [
-        /\[ssh-ddos\] Found (?<user_ip>\S+)/
-      ],
     "Strange errors" => [
         /Invariant check failed\. Trying to restore a sane environment/,
         /iptables (.*) -- stderr/
       ],
     "Ignore" => [
-        /\[(ssh|pam-generic)\] Found \S+/,
         /iptables/
       ],
   }

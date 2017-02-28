@@ -10,7 +10,6 @@ end
 
 class Templates
   Word = "\\b[a-zA-Z0-9]+\\b"
-  Ip = "\\b[.\d]+\\b"
   Path = "[^\\s\\?]+"
   Code = "\\d+"
   Pid = Code

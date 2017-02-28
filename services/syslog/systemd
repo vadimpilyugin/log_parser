@@ -4,12 +4,9 @@ Session activity:
 Killed:
 - 'Received (?<signal>\S+) from PID (?<killer_pid>\S+) \(kill\)'
 Ignore:
-- 'Started (.*) for UID (\S+)'
-- 'Starting (.*)[for user (\S+)]'
-- 'Stopped target (.*)\.'
-- 'Reached target (\S+)'
-- 'Stopping (.*) for UID (\S+)'
-- 'Stopped (.*) for UID (\S+)'
-- 'Removed slice User Slice of autocheck'
+- '(Started|Starting|Stopped|Stopping) (.*)( for UID (\S+))?'
+- '(\S+) target (.*)\.'
+- 'Removed slice User Slice of (\S+)'
 - '(?<action>\S+) finished in (?<time_ms>\d+)'
-- 'Created slice User Slice of autocheck.'
+- '(Created|Removed) slice User Slice of (\S+)'
+- '(Created|Removed) slice user-(\d+)\.slice'

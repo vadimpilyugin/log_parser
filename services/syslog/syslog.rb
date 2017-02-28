@@ -10,6 +10,7 @@ class SyslogService<Service
   end
   def self.init
     @service_template = Templates::syslog(@service_name)
+    return self if @ignore
     @msg_field = :msg
     @service_regexes = @service_regexes ? @service_regexes : Templates::load(@service_name, 'services/syslog') 
                                                             # you can choose to write templates to file
@@ -23,18 +24,18 @@ class SyslogService<Service
 end
 
 
-class IgnoredSyslogService<SyslogService
-  def self.get_datetime(logline)
-    Printer::assert(false, "Called get_datetime for ignored service", msg:"Parser")
-  end
-  def self.init
-    @service_template = Templates::syslog(@service_name)
-    @ignore = true
-    self
-  end
-  def self.get_server_name(logline)
-    Printer::assert(false, "Called get_server_name for ignored service", msg:"Parser")
-  end
-end
+# class IgnoredSyslogService<SyslogService
+#   def self.get_datetime(logline)
+#     Printer::assert(false, "Called get_datetime for ignored service", msg:"Parser")
+#   end
+#   def self.init
+#     @service_template = Templates::syslog(@service_name)
+#     @ignore = true
+#     self
+#   end
+#   def self.get_server_name(logline)
+#     Printer::assert(false, "Called get_server_name for ignored service", msg:"Parser")
+#   end
+# end
 
 require_relative 'syslog_services.rb'
