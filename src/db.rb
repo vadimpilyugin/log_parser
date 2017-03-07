@@ -6,111 +6,113 @@ require  'dm-aggregates'
 require 'dm-transactions'
 
 require_relative 'tools'
-
-module Database
-
+require_relative 'config'
 
 
 class Logline
-include DataMapper::Resource
+  include DataMapper::Resource
 
-property :filename, String, :key => true   # имя файла лога
-property :line, Integer, :key => true      # и номер строки в файле однозначно идентифицируют содержимое
-has n, :datas
-has n, :metas
+  property :id, Serial
+  property :server, String, :required => true
+  property :service, String, :required => true
+  property :time, DateTime, :required => true
+                            # 2010-11-03T21:33:00-0600; all(:time => start_t..end_t)
+                            # Logline.create(:time => DateTime.new(2011,1,1,0,0,4)) 
+                            # Logline.all(:time => DateTime.parse('2011-1-1T00:00:04+0100'))
+  property :descr, String
+  has n, :linedatas  
+end                            
 
-  def [](hsh)
-    if hsh.keys[0] == :data
-      a = self.datas.first(:name => hsh[:data])
-    elsif hsh.keys[0] == :meta
-      a = self.metas.first(:name => hsh[:meta])
-    else
-      Tools.assert false, "No such key #{hsh}"
-    end
-    return a.value if a
-    return nil
-  end
+#   def [](hsh)
+#     if hsh.keys[0] == :data
+#       a = self.datas.first(:name => hsh[:data])
+#     else
+#       Tools.assert false, "No such key #{hsh}"
+#     end
+#     return a.value if a
+#     return nil
+#   end
 
-  def to_a
-    a = []
-    a << self.filename
-    a << self.line
-    data_hash = {}
-    self.datas.each do |data|
-      data_hash.update(data.name => data.value)
-    end
-    a << data_hash
-    meta_hash = {}
-    self.metas.each do |meta|
-      meta_hash.update(meta.name => meta.value)
-    end
-    a << meta_hash
-    return a
-  end
-end
+#   def to_a
+#     a = []
+#     a << self.id
+#     a << self.server
+#     a << self.service
+#     a << self.time
+#     data_hash = {}
+#     self.datas.each do |data|
+#       data_hash.update(data.name => data.value)
+#     end
+#     a << data_hash
+#     return a
+#   end
+# end
 
-class Data
-include DataMapper::Resource
+class Linedata
+  include DataMapper::Resource
 
-property :id, Serial
-property :name, String
-property :value, String
-
-belongs_to :logline
-end
-
-class Meta
-include DataMapper::Resource
-
-property :id, Serial
-property :name, String
-property :value, String
-
-belongs_to :logline
+  property :id, Serial
+  property :name, String, :required => true
+  property :value, String, :required => true, :length => 256
+  belongs_to :logline
 end
 
 class Database
+  @@db = nil
   @@filename = nil
 
   def initialize(hsh = {})
-    Config.new
-    drop = hsh[:drop] ? hsh[:drop] : false                                              # нужно ли очищать базу
-    filename = hsh[:filename] ? hsh[:filename] : Config["database"]["database_file"]    # можно задать файл базы
-    @@filename == filename ? return : @@filename = filename
-    Chdir.chdir
-    Dir.mkdir("archive") if !Dir.exists? "archive"
-    DataMapper.setup(:default, "sqlite3://#{Dir.pwd}/#{filename}")                      # подключаемся к базе
+    return self if @@db
+    @@db = self
+    @@filename = Config["database"]["database_file"]
+    drop = Config["database"]["drop"]
+    Printer::note(!Tools.file_exists?(@@filename), "Database file not found", "Filename":@@filename)
+    # DataMapper::Logger.new(STDOUT, :debug)
+    DataMapper.setup(:default, "sqlite3://#{Tools.abs_path(@@filename)}")
+    Printer::debug("Connection to database was established", debug_msg:"Preparations", "Database file":@@filename)
     DataMapper.finalize
     drop ? DataMapper.auto_migrate! : DataMapper.auto_upgrade!
   end
 public
   def Database.save(table)
-    # DataMapper.auto_migrate!
     resources = []
-    table.each do |ar|
-      data = []
-      meta = []
-      ar[2].each_pair do |k, v|
-        data << {:name => k, :value => v}
-      end
-      ar[3].each_pair do |k, v|
-        meta << {:name => k, :value => v}
-      end
+    stat = {:requests => 0, :success => 0, :errors => {},:errors_cnt => 0}
+    table.each_with_index do |hsh, i|
+      stat[:requests] += 1
+      Printer::debug("Creating resources #{stat[:requests].to_s.red+'/'.white+table.size.to_s.red}", debug_msg:"Database", in_place:1234)
       resources << Logline.new(
-        filename: ar[0],
-        line: ar[1], 
-        datas: data, 
-        metas: meta
+        server: hsh[:server],
+        service: hsh[:service],
+        time: hsh[:time],
+        linedatas: hsh[:data_values],
+        descr: hsh[:descr]
       )
     end
-    puts
-    puts "Закончили создание ресурсов, начинаем сохранение:"
+    Printer::debug("Закончили создание ресурсов, начинаем сохранение", debug_msg:"\nDatabase")
     Logline.transaction do |t|
-      resources.each_with_index do |r, i|
-        puts "Запись ##{i} сохранена: #{r.save!}"
+      resources.each_with_index do |resource, i|
+        Printer::debug("Saving to database #{(i+1).to_s.red+'/'.white+stat[:requests].to_s.red}", debug_msg:"Database", in_place:1234)
+        success = resource.save
+        if success
+          stat[:success] += 1
+        else
+          stat[:errors].update(resource.id => resource.full_messages)
+          stat[:errors_cnt] += 1
+        end
+        # Printer::debug(success, debug_msg:"Запись ##{i} сохранена")
       end
     end
-    puts
+    max = 10
+    Printer::debug("",debug_msg:"\n==================")
+    Printer::debug("#{stat[:requests].to_s.red+" total requests".green}",debug_msg:"Saving finished")
+    Printer::debug("",debug_msg:"#{stat[:success].to_s.red+"".green} resources successfully saved")
+    size = stat[:errors].values.size
+    stat[:errors] = stat[:errors].to_a[0..max].to_h
+    Printer::debug("",stat[:errors].update(debug_msg:"#{stat[:errors_cnt].to_s.red+"".green} resources were not saved"))
+    Printer::debug("",debug_msg:"\tShow #{(size-max).to_s.red+"".green} more") if size > max
+    Printer::debug("",debug_msg:"==================")
+    Printer::assert(0 == 1, "",msg:"Breakpoint")
   end
 end
-end
+
+Database.new

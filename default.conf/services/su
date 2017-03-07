@@ -1,6 +1,0 @@
-Successfull attempt:
-- Successful su for nobody by root
-Something:
-- '\+ \?\?\? root:nobody'
-pam session activity:
-- 'pam_unix\(su:session\): session (\S+) for user nobody'

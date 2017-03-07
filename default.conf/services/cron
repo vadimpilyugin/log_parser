@@ -1,2 +1,0 @@
-Session activity:
-- 'pam_unix\(cron:session\): session (?<action>\S+) for user (?<username>\S+)'

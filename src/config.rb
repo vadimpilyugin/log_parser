@@ -1,36 +1,30 @@
 require 'yaml/store'
+require_relative 'tools'
+require 'parseconfig'
 
 class Config
   @@config = nil
   @@filename = nil
 
-  def initialize(filename = "")
-    filename = 'default.conf/config.yml' if filename == ""
-    return @@config if @@config && filename == @@filename
+  def initialize(hsh)
+    filename = hsh[:filename]
+    return @@config if @@config != nil && filename == @@filename
     @@filename = filename
-    Chdir.chdir
-    throw "Config file does not exist! (#{filename})" unless File.exists? filename
-    @@config = YAML.load_file filename
+    Printer::assert(Tools.file_exists?(filename), "Config file does not exist!", "Filename":@@filename)
+    @@config = ParseConfig.new Tools.abs_path(filename)
+    Printer::assert(@@config, "Config file is not loaded or nil")
+    Printer::debug("Config file was found at #{@@filename}",debug_msg:"Preparations")
+    # @@config = YAML.load_file Tools.abs_path(filename)
+
   end
 
   def Config.[] (arg)
     return @@config[arg]
   end
 
-  def Config.hsh
-    return @@config
-  end
+  # def Config.hsh
+  #   return @@config
+  # end
 end
 
-class Chdir
-  @@chdir = nil
-public
-  def Chdir.chdir()
-    if @@chdir == nil
-      Dir.chdir(File.expand_path("../../", __FILE__)) # переходим в корень проекта
-      @@chdir = Dir.pwd
-    else
-      return
-    end
-  end
-end
+Config.new filename: "default.conf/config.cfg"

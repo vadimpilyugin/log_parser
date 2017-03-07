@@ -1,111 +1,92 @@
-require_relative 'regex.rb'
-require_relative 'config.rb'
+require_relative 'config'
+require_relative 'tools'
+require_relative '../services/services.rb'
 
-class MatchData
-  def to_h
-    a = self.captures.delete_if {|e| e == nil}
-    self.names.zip(a).to_h
-  end
-end
-
-module Parser
 
 class Parser
-  include Regexes
+  @@parser = nil
+  @@filename = nil
+  @@table = nil
 
-  attr_reader :table
+  def initialize()
+    return @@parser if @@parser
+    @@parser = "New parser"
+    @@filename = Config["parser"]["log_file"]	# отсюда читаем лог
+    Printer::assert(Tools.file_exists?(@@filename), "Файл лога не найден", "Path":@@filename)
+    Printer::debug("Parser was initialized!", debug_msg:"Preparations")
+    @@table = []
+  end
+  def self.table
+    @@table
+  end
+  def self.parse!()
+    stat = {:unknown_lines => {}, :ignored_services => Hash.new {|hash, key| hash[key] = 0}, 
+            :no_template_provided => Hash.new {|hash, key| hash[key] = {}}, 
+            :ignored_services_lines => 0, :success => 0}
+    total = 0
+    ignored_services_num = 0
+    no_template_provided_num = 0
+    unknown_lines_num = 0
+    File.open(@@filename, 'r') do |f|
+      Printer::debug("File opened", "Filename":@@filename, debug_msg:"Parser")
+      Printer::debug("Parser started to do its work", debug_msg:"Parser")
 
-  def include?(array, line)
-    a = array.index {|rxp| line =~ rxp} # дан массив регулярок и строка. Определить вхождение или не вхождение
-    @md = $~
-    if @ind == -1 and a != nil
-      printf "Array of regexes: #{array}\n"
-      printf "Line: #{line}\n"
-      printf "Index found at #{a}\n"
-      printf "MatchData is #{@md.to_h}\n"
-      line =~ array[a]
-      @md = $~
-      printf "And now MatchData is #{@md.to_h}\n"
-    end
-    return a
-  end
+      f.each_with_index do |logline|
+        total += 1
+        # Printer::debug("#{total} lines were read\t\t\t", debug_msg:"Paser")
+        # printf "Parser: ".green+"#{total.to_s.red+"".white} lines were read\r"
+        Printer::debug("#{total.to_s.red+"".white} lines were read", debug_msg:"Parser", in_place:1234)
 
-  def initialize(hsh = {})
-	Config.new
-    Chdir.chdir
-    @error_log = File.new(Config["overall"]["error_log"], File::CREAT|File::TRUNC|File::RDWR, 0644)	# сюда пишем ошибки
-    @filename = hsh[:filename] ? hsh[:filename] : Config["parser"]["log_file"]	# отсюда читаем лог
-    Tools.assert File.exists?(@filename), "Log file does not exist: #{@filename}"
-    @services_dir = Config["parser"]["services_dir"]  # здесь храним описания сервисов
-    Tools.assert !Dir.entries(@services_dir).empty?, "Services directory does not exist: #{@services_dir}"
-    Tools.assert Dir.entries(@services_dir).size > 2, "No templates found at services dir: #{@services_dir}"
-    @log_template = case @filename	# определяем тип лога по имени файла
-      when /auth.*log/ then Syslog	
-      when /access/ then Apache
-      else
-        @error_log.puts "Неопознанный формат лога: имя файла #{@filename}\n"
-        puts "Неопознанный формат лога: имя файла #{@filename}\n"
-        Tools.assert false, "Неопознанный формат лога"
-    end
-    @thing = {} 	# {sshd => {Name1 => [Patterns], ...}, CRON => {Name1 => [Patterns1], ...}, ...}
-    @table = [] 	# [filename, line, data => {key:value}, meta => {key:value}]    
-  end
-
-# подгрузка сервиса по имени
-def load_service(service, f)
-  filename = "#{@services_dir}/#{service.downcase}"		# имя файла это путь до директории плюс имя сервиса в lowercase
-  if !File.exists? filename
-    @error_log.puts "Неопознанный сервис: #{service}, строка #{f.lineno}, файл #{@filename}\n"
-    puts "Неопознанный сервис: #{service}, строка #{f.lineno}, файл #{@filename}\n"
-    return nil
-  end
-  hsh = YAML.load_file(filename)	# загружаем в хэш из файла
-  hsh.each_value do |ar|			# и проходимся по нему, чтобы строки скомпилить в регулярки
-    ar.map! do |s|
-  	  Regexp.new(s)
-  	end
-  end
-  return hsh
-end
-public
-  def parse!
-    f = File.open(@filename)
-    f.each_line{ |line|
-      @ind = f.lineno
-      puts "Парсим строку #{@ind}"
-      if line !~ @log_template													# сравниваем строку с шаблоном, определенным по имени файла
-        @error_log.puts "Строка не соответствует шаблону( #{@filename}) #{f.lineno}:1): #{line}\n"
-        puts "Строка не соответствует шаблону( #{@filename}) #{f.lineno}:1): #{line}\n"
-      end
-      if @log_template == Apache 												# для апача просто сбрасываем в таблицу все именованные группы из регулярки
-        @table << [@filename, f.lineno, $~.to_h, {"service" => "apache"}]
-      elsif @log_template == Syslog
-        service = $~[:service]
-        msg = $~[:msg]
-        server = $~[:server]
-        if !@thing.has_key?(service)											# подгружаем сервисы по мере надобности, изначально нет ни одного
-          if hsh = load_service(service, f)										# проверяем, что файл с шаблонами существует
-            @thing.store(service, hsh)											# и включаем хэш регулярок в хэш по всем сервисам
-          else																	# если набора шаблонов для такого сервиса не существует
-            next																# пропускаем эту строку
+        i = Services.index {|service| service.check(logline)}
+        if i == nil
+          # Printer::note(i == nil, "Found an unknown line at ##{$.}")
+          stat[:unknown_lines].update($. => logline)
+          unknown_lines_num += 1
+        elsif Services[i].ignore?
+          # Printer::note(true, "Ignored #{Services[i].name} at line ##{$.}")
+          stat[:ignored_services][Services[i].name] += 1
+          ignored_services_num += 1
+        else
+          parsed_line = Services[i].parse!(logline)
+          if parsed_line[:descr] == "__UNDEFINED__"
+            # Printer::note(true, "No template was provided from #{parsed_line[:service]} for line ##{$.}")
+            stat[:no_template_provided][parsed_line[:service]].update($. => logline)
+            no_template_provided_num += 1
+          elsif parsed_line[:descr] == "Ignore"
+            # Printer::debug("Line ##{$.} from #{Services[i].name} was ignored")
+            stat[:ignored_services_lines] += 1
+          else
+            # Printer::debug("Line ##{$.} passed")
+            @@table << parsed_line
+            stat[:success] += 1
           end
         end
-        i = @thing[service].to_a.index { |ar|									# поиск совпадений по указанному сервису
-          include?(ar[1], msg)												# описывается ли данное сообщение какой-нибудь регуляркой?
-        }
-        # printf "#{md_h($~)}\n"
-        if i
-          elem = @thing[service].to_a[i]			# если описывается, то MatchData из него выгружаем целиком
-          																    # плюс описание, из какой команды мы ее получили
-          @table << [@filename, f.lineno, @md.to_h, {"service" => service, "server" => server, "type" => elem[0]}] unless elem[0] == "Ignore" 
-          else
-          																    # все сообщения сервиса, для которых не нашлось
-          																    # регулярки, идут в таблицу с типом undefined
-          @table << [@filename, f.lineno, {"msg" => msg}, {"service" => service, "type" => "undefined"}] 	
-        end
       end
-    }
-    self
+    end
+    puts
+    stat[:ignored_services] = stat[:ignored_services].each do |key,value|
+      value.to_s + " lines"
+    end
+    max = 3
+    Printer::debug("",debug_msg:"==================")
+    Printer::debug("#{total.to_s.red+" lines total".green}",debug_msg:"Parsing finished")
+    Printer::debug("",debug_msg:"#{stat[:success].to_s.red+"".green} successfull attempts")
+    Printer::debug("",debug_msg:"#{stat[:ignored_services_lines].to_s.red+"".green} lines were explicitly ignored")
+    Printer::debug("",stat[:ignored_services].update(debug_msg:"#{ignored_services_num.to_s.red+"".green} services that were explicitly ignored"))
+    Printer::debug("",debug_msg:"#{no_template_provided_num.to_s.red+"".green} lines that were not provided with template")
+    stat[:no_template_provided].each do |service,hsh|
+      size = hsh.values.size
+      hsh = hsh.to_a[0..max].to_h
+      Printer::debug("#{size.to_s.red+"".green} lines", hsh.update(debug_msg:"#{service}"))
+      Printer::debug("",debug_msg:"\tShow #{(size-max).to_s.red+"".green} more") if size > max
+    end
+    size = stat[:unknown_lines].values.size
+    stat[:unknown_lines] = stat[:unknown_lines].to_a[0..max].to_h
+    Printer::debug("",stat[:unknown_lines].update(debug_msg:"#{unknown_lines_num.to_s.red+"".green} lines that were not recognized"))
+    Printer::debug("",debug_msg:"\tShow #{(size-max).to_s.red+"".green} more") if size > max
+    Printer::debug("",debug_msg:"==================")
+    # Printer::assert(0 == 1, "",msg:"Breakpoint")
   end
 end
-end
+
+Parser.new

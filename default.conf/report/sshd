@@ -1,8 +1,10 @@
 ---
 - Counter: "Число пользователей"
+  look_for: "New connection"
   field: user_ip
 
 - Distribution: "На какие порты заходили пользователи"
+  look_for: "New connection"
   fields:
   - user_ip
   - server_port
@@ -10,5 +12,5 @@
 - Flag: "Попытка подбора пароля? "
   look_for: "Auth fail"
   threshold: 5
-  fields:
+  field:
   - user_ip
