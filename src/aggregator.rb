@@ -3,18 +3,10 @@ require_relative "config"
 require_relative "tools"
 
 class Aggregator
-  # @@aggregator = nil
-  # @@filename = nil
   @lines = Logline.all
+  
   Printer::debug("Aggregator was initialized!", debug_msg:"Preparations")
 
-  # def initialize()
-  #   return @@aggregator if @@aggregator
-  #   @@aggregator = self
-  #   # @@filename = Config["aggregator"]["database_file"]
-  #   # Printer::assert(Tools.file_exists?(@@filename), "Database file does not exist", msg:"Aggregator.initialize()")
-  #   @lines = Logline.all
-  # end
   def Aggregator.hash_cnt(cnt)
     if cnt > 0
       Hash.new {|hash, key| hash[key] = hash_cnt(cnt-1)}

@@ -1,4 +1,4 @@
-require_relative '../src/regex'
+require_relative 'regex'
 
 #           Each Service's subclass should define these variables:
 #           @service_name - a string that contains the name of the service

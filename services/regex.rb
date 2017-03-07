@@ -1,5 +1,5 @@
-require_relative 'tools'
-require_relative 'config'
+require_relative '../src/tools'
+require_relative '../src/config'
 
 class MatchData
   def to_h
@@ -53,7 +53,7 @@ class Templates
   }x
   def Templates.load(service,services_dir)
     # services_dir = Config["parser"]["services_dir"]
-    filename = "#{services_dir}/#{service.downcase}"
+    filename = "#{services_dir}/#{service.downcase}.yml"
     Printer::assert(Tools.file_exists?(filename), "Templates have not been found", "Path to services files":services_dir, "Service":service)
     hsh = YAML.load_file(filename)
     Printer::assert(hsh != nil, "Templates for service have not been loaded", "Service":service)

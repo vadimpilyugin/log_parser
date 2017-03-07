@@ -3,10 +3,6 @@ puts("Preparation: Initialization started")
 
 require_relative 'tools'
 require_relative 'config'
-require_relative 'parser'
-require_relative 'db'
-# require_relative 'aggregator'
-# require_relative 'reporter'
 # require_relative 'server'
 
 parse_logs = Config['overall']['parse_logs']
@@ -19,6 +15,9 @@ Printer::debug("============= Log Parser v1.2 ============"+"\n\n", debug_msg:"\
 
 
 if parse_logs
+  require_relative 'parser'
+  require_relative 'db'
+  
   Parser.parse!  
   # Выгружаем распарсенный лог в базу данных
   Database.save(Parser.table)
@@ -26,21 +25,21 @@ end
 
 # Создаем отчеты по базе данных
 if create_report
-  a = Reporter::Reporter.new
-  a.report()
+  require_relative 'reporter'
+  Reporter.init
 
   # Запускаем сервер
-  require 'sinatra'
+  # require 'sinatra'
 
-  set :bind, "138.68.105.137"
-  set :port, 4567
+  # set :bind, "138.68.105.137"
+  # set :port, 4567
 
-  report_file = Config["reporter"]["report_file"]
-  get '/' do
-    send_file report_file
-  end
+  # report_file = Config["reporter"]["report_file"]
+  # get '/' do
+  #   send_file report_file
+  # end
 
-  get '/id/:id' do |id|
-    Reference[id]
-  end
+  # get '/id/:id' do |id|
+  #   Reference[id]
+  # end
 end

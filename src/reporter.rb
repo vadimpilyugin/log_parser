@@ -32,8 +32,10 @@ class Counter<Statistics
   def initialize(params)
     super
     # Printer::assert(@fields, "No field specified for Counter", msg:"Reporter", "Description":@descr)
-    Printer::debug("Created a Counter!", "Description":@descr, msg:"Reporter")
+    Printer::debug("Created a Counter!", "Description":@descr, debug_msg:"Reporter")
+    Printer::debug("Projected view: #{@request}", debug_msg:"Reporter")
     @result = Aggregator.aggregate_by_keys(@fields).keys.size
+    Printer::debug("Counter value", "Description":@descr, "Value":@result)
   end
 end
 
@@ -43,7 +45,7 @@ class Distribution<Statistics
     @exclude_val = params["exclude"]
     super
     # Printer::assert(@fields, "No fields specified for Distribution", msg:"Reporter", "Description":@descr)
-    Printer::debug("Created a Distribution!", "Description":@descr, msg:"Reporter")
+    Printer::debug("Created a Distribution!", "Description":@descr, debug_msg:"Reporter")
     @result = Aggregator.aggregate_by_keys(@fields,@group_by,@exclude_val)
   end
 end
@@ -53,7 +55,7 @@ class Flag<Statistics
     @threshold = params["threshold"]
     super
     Printer::assert(@service, "No service specified for Flag", msg:"Reporter", "Description":@descr)
-    Printer::debug("Created a Flag!", "Description":@descr, msg:"Reporter")
+    Printer::debug("Created a Flag!", "Description":@descr, debug_msg:"Reporter")
     @result = Aggregator.aggregate_by_keys(@fields)
     @result = @result.to_a.delete_if { |ar|  ar[1] < @threshold }.to_h
   end
@@ -69,8 +71,6 @@ class Report
     end
   end
 end
-
-Report.init
 
 
 
