@@ -82,30 +82,54 @@ public
     @lines = Logline.all
   end
 
-  def self.group_by(keys)
-    Printer::assert(keys.class == Array, "Not an array", msg:"Aggregator.group_by()")
-    Printer::assert(keys.size != 0, "No keys specified for aggregation", msg:"Aggregator.group_by()")
+  def self.aggregate_by_keys(keys,exclude_val = nil,group_by = nil)
+    Printer::assert(keys.class == Array, "Not an array", msg:"Aggregator.aggregate_by_keys()")
+    Printer::assert(keys.size != 0, "No keys specified for aggregation", msg:"Aggregator.aggregate_by_keys()")
     keys.each do |key|
       Printer::assert(key.class == String, "Key is not a string", "Key class":key.class, "Key":key)
     end
     request = sql_group_by(keys)
-    ar = collection(request)
-    return {} if ar.class == nil || ar.empty?
-    if keys.size == 1
-      result = {}
-      ar.each do |struct|
-        result.store(*(struct.values))
-      end
-      return result
-    end
-    result = hash_cnt(keys.size)
-    ar.each do |struct|
-      tmp = result
-      struct.values[0..-3].each do |value|
-        tmp = tmp[value]
-      end
-      tmp[struct.values[-2]] = struct.values[-1]
-    end
+    sql_response = collection(request)
+    result = {}
+    if sql_response.class == nil || sql_response.empty?
+      ;  #  do nothing
+    # elsif keys.size == 1
+    #   result = {}
+    #   sql_response.each do |struct|
+    #     result.store(*(struct.values))
+    #   end
+    #   if exclude_val
+    #     result.delete exclude_val
+    #   end
+    #   if group_by
+    #     key1 = group_by
+    #     cnt1 = result[group_by] ? result[group_by] : 0
+    #     result.delete group_by
+    #     key2 = "else"
+    #     cnt2 = result.values.reduce {|memo,obj| memo+obj}
+    #     result = {key1 => cnt1, key2 => cnt2}
+    #   end
+    # end
+    else
+      result = hash_cnt(keys.size)
+      sql_response.each do |struct|
+        tmp = result
+        struct.values[0..-3].each do |value|
+          tmp = tmp[value]
+        end
+        key = struct.values[-2]
+        count = struct.values[-1]
+        if key == exclude_val
+          ;  #  discard it
+        elsif group_by
+            if key == group_by
+              tmp[key] = value
+            else
+              tmp["else"] = tmp["else"] + value
+            end
+        else
+          tmp[key] = value
+        end
     return result
     # pp result.to_a[0..10].to_h
   end

@@ -1,30 +1,39 @@
 ---
 - Counter: "Число пользователей"
+  service: "sshd"
+  look_for: "New connection"
   field: user_ip
 
 - Distribution: "На какие порты заходили пользователи"
+  service: "sshd"
+  look_for: "New connection"
   fields:
   - user_ip
   - server_port
 
 - Flag: "Попытка подбора пароля? "
+  service: "sshd"
   look_for: "Auth fail"
   threshold: 5
   fields:
   - user_ip
 
 - Counter: "Число уникальных IP"
+  service: "apache"
   field: user_ip
 
 - Counter: "Число уникальных страниц"
+  service: "apache"
   field: path
 
 - Distribution: "Число успешных/неуспешных запросов"
+  service: "apache"
   fields:
   - code
   group_by: "200"
 
 - Distribution: "Распределение кодов ошибок по пользователям"
+  service: "apache"
   fields: 
   - user_ip
   - code
@@ -32,6 +41,8 @@
   exclude: "200"
 
 - Distribution: "Распределение кодов ошибок по страницам"
+  service: "apache"
   fields:
   - path
   - code
+  exclude: "200"

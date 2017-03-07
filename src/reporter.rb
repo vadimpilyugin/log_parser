@@ -1,11 +1,22 @@
-# require_relative 'tools'
-# require_relative 'config'
+require_relative 'tools'
+require_relative 'config'
 require_relative 'aggregator'
 
 class Statistics
   def initialize(params)
     @descr = params[self.class.to_s]
+    @service = params["service"]  #  may be nil
+    @fields = params["fields"]
+    @server = params["server"]  #  may be nil
+    @event_type = params["look_for"]  #  may be nil
     Printer::assert(@descr, "No description specified for #{self.class}", params.update(msg:"Reporter"))
+    Printer::assert(@fields, "No fields specified for #{self.class}", msg:"Reporter", "Description":@descr)
+    # filter all lines using the provided parameters
+    @request = {}
+    @request[:server] = @server if @server
+    @request[:service] = @service if @service
+    @request[:descr] = @event_type if @event_type
+    Aggregator.lines = Aggregator.lines(@request)
   end
   def Statistics.create(params)
     stat_type,stat_descr = params.to_a[0]
@@ -19,35 +30,34 @@ end
 
 class Counter<Statistics
   def initialize(params)
-    @service = params["service"]
-    @field = params["field"]
-    @event_type = params["event"]
     super
-    Printer::assert(@field, "No field specified for Counter", msg:"Reporter", "Description":@descr)
+    # Printer::assert(@fields, "No field specified for Counter", msg:"Reporter", "Description":@descr)
     Printer::debug("Created a Counter!", "Description":@descr, msg:"Reporter")
+    @result = Aggregator.aggregate_by_keys(@fields).keys.size
   end
 end
 
 class Distribution<Statistics
   def initialize(params)
-    @service = params["service"]
-    @fields = params["fields"]
-    @event_type = params["event"]
     @group_by_val = params["group_by"]
     @exclude_val = params["exclude"]
     super
-    Printer::assert(@fields, "No fields specified for Distribution", msg:"Reporter", "Description":@descr)
+    # Printer::assert(@fields, "No fields specified for Distribution", msg:"Reporter", "Description":@descr)
     Printer::debug("Created a Distribution!", "Description":@descr, msg:"Reporter")
+    @result = Aggregator.aggregate_by_keys(@fields,@group_by,@exclude_val)
   end
 end
 
 class Flag<Statistics
   def initialize(params)
-    @service = params["service"]
-    @field = params["field"]
-    @event_type = params["look_for"]
     @threshold = params["threshold"]
-    
+    super
+    Printer::assert(@service, "No service specified for Flag", msg:"Reporter", "Description":@descr)
+    Printer::debug("Created a Flag!", "Description":@descr, msg:"Reporter")
+    @result = Aggregator.aggregate_by_keys(@fields)
+    @result = @result.to_a.delete_if { |ar|  ar[1] < @threshold }.to_h
+  end
+end
 
 class Report
   def self.init
