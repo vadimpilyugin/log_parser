@@ -1,92 +1,139 @@
 require_relative 'config'
 require_relative 'tools'
-require_relative '../services/services.rb'
+require_relative '../services/service.rb'
+require_relative 'date.rb'
+require_relative '../services/log_formats.rb'
+require_relative 'stats'
 
+# Парсер имеет следующие методы:
+# Parser.parse! (filename, server_name)
+# filename - полное имя файла, начиная от корня
+# server_name - имя сервера, с которого этот файл пришел
+
+# Парсит файл и возвращает результат в виде массива хэшей.
+# Каждой строке соответствует ровно один хэш в итоговом массиве.
+# Хэш имеет следующие поля:
+# :server - имя сервера, строка, берется из входных параметров
+# :service - имя сервиса, который сделал данную запись в логе
+# :date - время записи в лог. Если отсуствует, берется текущее время
+# :data - хэш, содержащий распарсенное сообщение, уже на уровне сервиса.
+#         Хэш, ключом является название поля, значением-значение поля.
+# :descr - описание данной записи. Берется из шаблона сервиса
+
+# Если строка не подходит ни под один формат лога, записывает ровно эту строку
+# Если строка подходит под формат лога, но не подходит ни под
+# один сервис, то поля data и descr будут содержать следующие значения:
+# :data => {"logline" => <unknown line>},
+# :descr => "Service not found"
+# Если строка подошла под формат и сервис известен, но в нем не описан
+# шаблон, под который подошла бы строка, то поля data и descr будут содержать 
+# следующие значения:
+# :data => {"logline" => <unknown line>},
+# :descr => "Template not found"
 
 class Parser
-  @@parser = nil
-  @@filename = nil
-  @@table = nil
 
-  def initialize()
-    return @@parser if @@parser
-    @@parser = "New parser"
-    @@filename = Config["parser"]["log_file"]	# отсюда читаем лог
-    Printer::assert(Tools.file_exists?(@@filename), "Файл лога не найден", "Path":@@filename)
-    Printer::debug("Parser was initialized!", debug_msg:"Preparations")
-    @@table = []
-  end
-  def self.table
-    @@table
-  end
-  def self.parse!()
-    stat = {:unknown_lines => {}, :ignored_services => Hash.new {|hash, key| hash[key] = 0}, 
-            :no_template_provided => Hash.new {|hash, key| hash[key] = {}}, 
-            :ignored_services_lines => 0, :success => 0}
-    total = 0
-    ignored_services_num = 0
-    no_template_provided_num = 0
-    unknown_lines_num = 0
-    File.open(@@filename, 'r') do |f|
-      Printer::debug("File opened", "Filename":@@filename, debug_msg:"Parser")
-      Printer::debug("Parser started to do its work", debug_msg:"Parser")
-
+  def Parser.parse!(filename, server_name)
+    Printer::assert(expr:File.exists?(filename), msg:"Файл лога по пути #{filename} не найден")
+    table = []
+    log_format = nil
+    File.open(filename, 'r') do |f|
+      Printer::debug(msg:"Файл лога успешно открыт",who:"Parser")
       f.each_with_index do |logline|
-        total += 1
-        # Printer::debug("#{total} lines were read\t\t\t", debug_msg:"Paser")
-        # printf "Parser: ".green+"#{total.to_s.red+"".white} lines were read\r"
-        Printer::debug("#{total.to_s.red+"".white} lines were read", debug_msg:"Parser", in_place:1234)
-
-        i = Services.index {|service| service.check(logline)}
-        if i == nil
-          # Printer::note(i == nil, "Found an unknown line at ##{$.}")
-          stat[:unknown_lines].update($. => logline)
-          unknown_lines_num += 1
-        elsif Services[i].ignore?
-          # Printer::note(true, "Ignored #{Services[i].name} at line ##{$.}")
-          stat[:ignored_services][Services[i].name] += 1
-          ignored_services_num += 1
-        else
-          parsed_line = Services[i].parse!(logline)
-          if parsed_line[:descr] == "__UNDEFINED__"
-            # Printer::note(true, "No template was provided from #{parsed_line[:service]} for line ##{$.}")
-            stat[:no_template_provided][parsed_line[:service]].update($. => logline)
-            no_template_provided_num += 1
-          elsif parsed_line[:descr] == "Ignore"
-            # Printer::debug("Line ##{$.} from #{Services[i].name} was ignored")
-            stat[:ignored_services_lines] += 1
-          else
-            # Printer::debug("Line ##{$.} passed")
-            @@table << parsed_line
-            stat[:success] += 1
+        if log_format == nil
+          # Формат лога определяется его первой строкой
+          log_format = LogFormat.find(logline)
+          # Если первая строка плохая, будет взята следующая и т.д.
+          if log_format == nil
+            table << logline[0...-1]  #  убрать \n
+            next
           end
         end
+        # Основной цикл: получить имя сервиса из формата лога, распарсить сообщение,
+        # преобразовать дату и время в класс Ruby, записать результат в таблицу
+        parsed_line = log_format.parse!(logline)
+        if parsed_line == nil
+          table << logline[0...-1]
+          next
+        end
+        service_name = log_format.get_service_name(logline)
+        # Далее нужно парсить только часть строки лога или всю строку целиком?
+        # Если есть поле msg, то оно берется в качестве части строки
+        message = parsed_line["msg"] ? parsed_line["msg"] : logline
+        service = Services[service_name]
+        data = {}
+        descr = ""
+        if service == nil
+          # Нет такого сервиса среди описанных => 
+          data = {"logline" => message}
+          descr = "Service not found"
+        else
+          parsed_msg = Services[service_name].parse!(message)
+          if parsed_msg == nil
+            # Нет такого шаблона в сервисе
+            data = {"logline" => message}
+            descr = "Template not found"
+          else
+            # Все хорошо, сообщение распарсено
+            data = parsed_msg["data"]
+            descr = parsed_msg["descr"]
+          end
+        end
+        date = CreateDate.create(
+          year: parsed_line["year"],
+          month: parsed_line["month"],
+          day: parsed_line["day"],
+          hour: parsed_line["hour"],
+          minute: parsed_line["minute"],
+          second: parsed_line["second"]
+        )
+        table << {
+          :server => server_name,
+          :service => service_name,
+          :date => date,
+          :data => data,
+          :descr => descr
+        }
       end
     end
-    puts
-    stat[:ignored_services] = stat[:ignored_services].each do |key,value|
-      value.to_s + " lines"
-    end
-    max = 3
-    Printer::debug("",debug_msg:"==================")
-    Printer::debug("#{total.to_s.red+" lines total".green}",debug_msg:"Parsing finished")
-    Printer::debug("",debug_msg:"#{stat[:success].to_s.red+"".green} successfull attempts")
-    Printer::debug("",debug_msg:"#{stat[:ignored_services_lines].to_s.red+"".green} lines were explicitly ignored")
-    Printer::debug("",stat[:ignored_services].update(debug_msg:"#{ignored_services_num.to_s.red+"".green} services that were explicitly ignored"))
-    Printer::debug("",debug_msg:"#{no_template_provided_num.to_s.red+"".green} lines that were not provided with template")
-    stat[:no_template_provided].each do |service,hsh|
-      size = hsh.values.size
-      hsh = hsh.to_a[0..max].to_h
-      Printer::debug("#{size.to_s.red+"".green} lines", hsh.update(debug_msg:"#{service}"))
-      Printer::debug("",debug_msg:"\tShow #{(size-max).to_s.red+"".green} more") if size > max
-    end
-    size = stat[:unknown_lines].values.size
-    stat[:unknown_lines] = stat[:unknown_lines].to_a[0..max].to_h
-    Printer::debug("",stat[:unknown_lines].update(debug_msg:"#{unknown_lines_num.to_s.red+"".green} lines that were not recognized"))
-    Printer::debug("",debug_msg:"\tShow #{(size-max).to_s.red+"".green} more") if size > max
-    Printer::debug("",debug_msg:"==================")
-    # Printer::assert(0 == 1, "",msg:"Breakpoint")
+    Parser.stats(table)
+    return table
   end
-end
+  def Parser.stats(table)
+    st = Stats::Stats.new( [
+      ["Counter", "total_lines", "Всего прочитано строк"],
+      ["Counter", "successfully_parsed", "Полностью распознанных"],
+      ["Counter", "ignored_services_lines", "Проигнорировано строк"],
+      ["HashCounter", "unknown_lines", "Строки, не подходящие под формат лога"],
+      ["HashCounter", "unrecognized_services", "Неопознанные сервисы"],
+      ["HashCounter", "no_template_provided", "Строки, для которых не найдено шаблона"],
+      ["HashCounter", "services_distr", "Распределение по сервисам"]
+    ])    
 
-Parser.new
+    table.each do |line|
+      st.total_lines.increment
+      if line.class == String
+        # Не распарсена, т.к. не подошла под формат
+        st.unknown_lines.increment(line)
+      elsif line[:descr] == "Service not found"
+        # Подошла под формат, но сервис не был найден
+        st.unrecognized_services.increment(line[:service])
+        st.services_distr.increment(line[:service])
+      elsif line[:descr] == "Template not found"
+        # Подошла под сервис, но не нашлось шаблона
+        st.no_template_provided.increment(line[:data]["logline"])
+        st.services_distr.increment(line[:service])
+      elsif line[:descr] == "Ignore"
+        # Полностью распознана, но проигнорирована
+        st.services_distr.increment(line[:service])
+        st.successfully_parsed.increment
+        st.ignored_services_lines.increment
+      else
+        # Полностью распарсенная строка
+        st.services_distr.increment(line[:service])
+        st.successfully_parsed.increment
+      end
+    end
+    st.print
+  end
+end 

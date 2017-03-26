@@ -1,0 +1,15 @@
+Ban/unban:
+- 'Found \S+'
+- 'Ban (?<user_ip>\S+)'
+- 'Unban (?<user_ip>\S+)'
+- '\S+ already banned/'
+- 'Ignore (?<user_ip>\S+) by ip'
+Fail to ban/unban:
+- 'Failed to execute ban jail'
+- 'Failed to execute unban jail'
+Log rotation:
+- 'Log rotation detected for (?<path>\S+)'
+- 'rollover performed on (\S+)'
+Strange errors:
+- 'Invariant check failed\. Trying to restore a sane environment'
+- 'iptables (.*) -- stderr'

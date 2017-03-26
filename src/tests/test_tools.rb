@@ -5,16 +5,28 @@ require_relative "../tools"
 
 class TestReport < Minitest::Test
 
-  def test_assertions
-    Printer::note(0==0, "Пифагоровы штаны во все стороны равны", "Штаны.х": 5, "Штаны.у": 5, "Штаны.х ==? Штаны.у":5==5)
-    Printer::assert(0==1, "Пифагоровы штаны во все стороны равны", "Штаны.х": 5, "Штаны.у": 5, "Штаны.х ==? Штаны.у":5==5)
-
-    # Tools::assert(0==1, "Пифагоровы штаны во все стороны равны")
-  end
-
-  def test_non_existent
-    Printer::debug("Пифагоровы штаны во все стороны равны", "Штаны.х": 5, "Штаны.у": 5, "Штаны.х ==? Штаны.у":5==5)
-    Printer::refute(0==0, "Пифагоровы штаны во все стороны равны", "Штаны.х": 5, "Штаны.у": 5, "Штаны.х ==? Штаны.у":5==5)
-
+  def test_assert
+  	begin
+  	  Printer::assert(expr:2+2 == 5, msg:"2+2 = 5")
+  	rescue RuntimeError
+  	  assert true, "Not true?"
+  	end
+  	begin
+  	  Printer::assert(expr:2+2 == 5, msg:"2+2 = 5", who:"test_assert")
+  	rescue RuntimeError
+  	  assert true, "Not true?"
+  	end
+  	begin
+  	  Printer::fatal(msg:"2+2 = 5 is false!", who:"test_assert")
+  	rescue RuntimeError
+  	  assert true, "Not true?"
+  	end
+  	Printer::note(msg:"Файл не существует, создаю...", who:"test_assert")
+  	100.times do |i|
+  	  Printer::debug(msg:"#{i+1} файлов создано...", in_place:true)
+  	  sleep(0.02)
+  	end
+  	puts
+  	Printer::debug(msg:"Все файлы созданы!",who:"test_assert", params:{"Число файлов" => 100, "Успешно ли созданы" => "Да"})
   end
 end

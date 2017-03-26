@@ -2,7 +2,8 @@
 - Counter: "Число пользователей"
   service: "sshd"
   look_for: "New connection"
-  field: user_ip
+  fields: 
+  - user_ip
 
 - Distribution: "На какие порты заходили пользователи"
   service: "sshd"
@@ -20,25 +21,27 @@
 
 - Counter: "Число уникальных IP"
   service: "apache"
-  field: user_ip
+  fields: 
+  - user_ip
 
 - Counter: "Число уникальных страниц"
   service: "apache"
-  field: path
+  fields:
+  - path
 
 - Distribution: "Число успешных/неуспешных запросов"
   service: "apache"
   fields:
   - code
-  group_by: "200"
+  #group_by: "200"
 
 - Distribution: "Распределение кодов ошибок по пользователям"
   service: "apache"
   fields: 
   - user_ip
   - code
-  group_by: "404"
-  exclude: "200"
+  #group_by: "404"
+  #exclude: "200"
 
 - Distribution: "Распределение кодов ошибок по страницам"
   service: "apache"

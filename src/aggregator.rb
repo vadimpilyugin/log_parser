@@ -15,8 +15,9 @@ class Aggregator
     end
   end
   def self.loglines_ids
-    Printer::note(@lines == nil, "Request for loglines_ids when there are no lines")
-    return "(0)" if @lines == nil
+    Printer::note(@lines == nil, "Request for loglines_ids when lines is nil")
+    Printer::note(@lines.size == 0, "Request for loglines_ids when there are no lines")
+    return "" if @lines == nil || @lines.size == 0
     str = "("
     @lines.each do |line|
       str << "#{line.id},"
@@ -38,11 +39,15 @@ STR
     request = ""
     if keys.size == 1
       name = keys[0]
-      request << "SELECT value as #{name}, count(*) as count FROM linedata WHERE name = #{name} and logline_id IN #{loglines_ids} ORDER BY count(*) DESC"
+      in_option = ""
+      if loglines_ids != ""
+        in_option = " and logline_id IN #{loglines_ids}"
+      end
+      request << "SELECT value as '#{name}', count(*) as count FROM linedata WHERE name = '#{name}' #{in_option} GROUP BY value ORDER BY count(*) DESC"
     else
       request << "SELECT "
       keys.each_with_index do |key,i|
-        request << "d#{i+1}.value as #{key},"
+        request << "d#{i+1}.value as '#{key}',"
       end
       request << "count(*) as count FROM \n"
       keys.each_with_index do |key,i|
@@ -57,14 +62,22 @@ STR
         request << "\td#{i+1}.logline_id = d#{i+2}.logline_id and \n"
       end
       # request[-5..-2] = ""
-      request << "d1.logline_id IN #{loglines_ids}\n"
+      # puts "-----"
+      # puts loglines_ids == ""
+      # puts "-----"
+      if loglines_ids != ""
+        request << "d1.logline_id IN #{loglines_ids}\n"
+      else
+        request[-5..-2] = ""
+      end
       request << "GROUP BY "
       keys.each_with_index do |key,i|
         request << "d#{i+1}.value,"
       end
       request[-1] = "\n"
-      request << "ORDER BY (SELECT count(*) FROM linedata WHERE name = '#{keys[0]}' and value = d1.value) DESC\n"
+      request << "ORDER BY (SELECT count(*) FROM linedata WHERE name = '#{keys[0]}' and value = 'd1.value') DESC\n"
     end
+    # Printer::debug("Real request to database", "Request":request)
     request
   end
 public
@@ -82,26 +95,11 @@ public
     end
     request = sql_group_by(keys)
     sql_response = collection(request)
+    Printer::note(sql_response.size == 0, "Empty aggregation result!")
+    Printer::debug("Aggregation parameters", "Excluding":exclude_val, "Grouping":group_by)
     result = {}
     if sql_response.class == nil || sql_response.empty?
       ;  #  do nothing
-    # elsif keys.size == 1
-    #   result = {}
-    #   sql_response.each do |struct|
-    #     result.store(*(struct.values))
-    #   end
-    #   if exclude_val
-    #     result.delete exclude_val
-    #   end
-    #   if group_by
-    #     key1 = group_by
-    #     cnt1 = result[group_by] ? result[group_by] : 0
-    #     result.delete group_by
-    #     key2 = "else"
-    #     cnt2 = result.values.reduce {|memo,obj| memo+obj}
-    #     result = {key1 => cnt1, key2 => cnt2}
-    #   end
-    # end
     else
       result = hash_cnt(keys.size)
       sql_response.each do |struct|
@@ -110,7 +108,7 @@ public
           tmp = tmp[value]
         end
         key = struct.values[-2]
-        count = struct.values[-1]
+        value = struct.values[-1]
         if key == exclude_val
           ;  #  discard it
         elsif group_by
@@ -122,6 +120,8 @@ public
         else
           tmp[key] = value
         end
+      end
+    end
     return result
     # pp result.to_a[0..10].to_h
   end

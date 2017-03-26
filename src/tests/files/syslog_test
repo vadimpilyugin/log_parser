@@ -1,0 +1,7 @@
+Oct  9 06:36:11 newserv sshd[10547]: Connection from 93.180.9.182 port 43718 on 93.180.9.8 port 22
+Oct  9 06:36:11 newserv sshd[10547]: Accepted publickey for autocheck from 93.180.9.182 port 43718 ssh2: RSA SHA256:EMJlgs25cBdZgixd0cGU31Uc1SoASY4IM2NLVq8LqlQ
+Oct  9 06:36:11 newserv session-manager[778]: New session 124403 of user autocheck.
+Oct  9 06:36:11 newserv systemd: pam_unix(systemd-user:session): session opened for user autocheck by (uid=0)
+Oct  9 06:36:12 newserv pid-master[10547]: User child is on pid 10801
+kernel_panic: traceback: Received disconnect from 93.180.9.182: 11: disconnected by user
+Oct  9 06:36:12 newserv sshd[10801]: Disconnected client autocheck: no more lies

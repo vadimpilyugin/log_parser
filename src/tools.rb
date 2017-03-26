@@ -1,6 +1,17 @@
 require 'fileutils'
 require 'pp'
 
+class MatchData
+  def to_h
+    a = self.captures.delete_if {|e| e == nil}
+    self.names.zip(a).to_h
+  end
+end
+
+# Tools.file_exists?(filename) - проверяет, существует ли файл с заданным именем
+# filename - путь от корня проекта
+# Возвращает true, если файл найден, или false, если не найден
+
 class Tools
   @@tools = nil
   @@homedir = nil
@@ -9,7 +20,7 @@ class Tools
     return @@tools if @@tools
     @@tools = "New tools"
     @@homedir = File.expand_path("../../", __FILE__)
-    Printer::debug("Root directory of the project was set to #{@@homedir}", debug_msg:"Preparations")
+    Printer::debug(msg:"Root directory of the project was set to #{@@homedir}", who:"Preparations")
   end
   def Tools.rprint(str)
     puts str.red
@@ -125,65 +136,111 @@ class Hash
     self.each_pair do |s1,s2|
       # s1 = first.to_s.index('%') ? first.to_s.gsub!('%','%%') : first.to_s 
       # s2 = second.to_s.index('%') ? second.to_s.gsub!('%','%%') : second.to_s
-      printf "\t#{s1.to_s.perc_esc.white}:\t#{s2.to_s.perc_esc.white}\n"
+      printf "\t#{s1.to_s.perc_esc.white}:  #{s2.to_s.perc_esc.white}\n"
     end
   end
 end
 
+# Printer.debug(hsh) - напечатать отладочное сообщение
+# Printer.assert(hsh) - проверить выражение, если не true, то завершить программу и напечатать сообщение
+# Printer.error(hsh) - напечатать сообщение и вернуть управление
+# Printer.fatal - напечатать и завершить
+# Printer.note - то же самое, что error
+# Параметры:
+# who - от кого пришло сообщение
+# msg - само сообщение
+# in_place - true/false - переводить ли строку
+# expr - true/false - делать что-либо только если значение выражения равно true
+# params - Hash - дополнительные параметры
+
 class Printer
-  @@printer = nil
-  Debug = true
-  Assertion = true
-  @@assert_msg = "Assertion failed"
-  @@note_msg = "Note"
-  @@debug_msg = "Debug"
-  def initialize
-    @@printer ? return : @@printer = 'New printer'
+  @debug_msg_color = 'green'
+  @assert_msg_color = 'red'
+  @error_msg_color = 'red'
+  @fatal_msg_color = 'red'
+  @note_msg_color = 'yellow'
+  @msg_color = 'white'
+
+  @debug_msg = "Debug"
+  @assert_msg = "Assertion failed"
+  @error_msg = "Error"
+  @fatal_msg = "Fatal error"
+  @note_msg = "Note"
+
+  def Printer.debug(hsh)
+    msg = hsh[:msg] ? hsh[:msg] : ""
+    who = hsh[:who] ? hsh[:who] : @debug_msg
+    msg = msg.to_s.perc_esc.send(@msg_color)
+    who = who.to_s.perc_esc.send(@debug_msg_color)
+
+    in_place = hsh[:in_place] ? hsh[:in_place] : false
+    if in_place
+      printf "#{who}: #{msg}\r"
+    else
+      printf "#{who}: #{msg}\n"
+    end
+    if hsh[:params]
+      hsh[:params].my_pp
+    end
   end
-public
-  def self.assert(bool_expr, str, params = {})
-    if !bool_expr and Assertion
-      msg = @@assert_msg
-      if params[:msg]
-        msg = params[:msg]
-        params.delete(:msg)
+  def Printer.assert(hsh)
+    msg = hsh[:msg] ? hsh[:msg] : ""
+    who = hsh[:who] ? hsh[:who] : @assert_msg
+    msg = msg.to_s.perc_esc.send(@msg_color)
+    who = who.to_s.perc_esc.send(@assert_msg_color)
+
+    expr = hsh[:expr]
+    if !expr
+      printf "#{who}: #{msg}\n"
+      if hsh[:params]
+        hsh[:params].my_pp
       end
-      printf "#{msg.to_s.perc_esc.red}: #{str.to_s.perc_esc.white}\n"
-      params.my_pp
-      # puts caller
-      exit 1
       raise "Assertion failed"
     end
   end
-  def self.refute(bool_expr, str, params = {})
-    self.assert(!bool_expr, str, params)
+  def Printer.error(hsh)
+    msg = hsh[:msg] ? hsh[:msg] : ""
+    who = hsh[:who] ? hsh[:who] : @error_msg
+    msg = msg.to_s.perc_esc.send(@msg_color)
+    who = who.to_s.perc_esc.send(@error_msg_color)
+
+    printf "#{who}: #{msg}\n"
+    if hsh[:params]
+      hsh[:params].my_pp
+    end
   end
-  def self.note(bool_expr, str, params = {})
-    if bool_expr
-      msg = @@note_msg
-      if params[:msg]
-        msg = params[:msg]
-        params.delete(:msg)
+  def Printer.fatal(hsh)
+    msg = hsh[:msg] ? hsh[:msg] : ""
+    who = hsh[:who] ? hsh[:who] : @fatal_msg
+    msg = msg.to_s.perc_esc.send(@msg_color)
+    who = who.to_s.perc_esc.send(@fatal_msg_color)
+    printf "#{who}: #{msg}\n"
+    if hsh[:params]
+      hsh[:params].my_pp
+    end
+    raise "Fatal error"
+  end
+  def Printer.note(hsh)
+    msg = hsh[:msg] ? hsh[:msg] : ""
+    who = hsh[:who] ? hsh[:who] : @note_msg
+    msg = msg.to_s.perc_esc.send(@msg_color)
+    who = who.to_s.perc_esc.send(@note_msg_color)
+
+    in_place = hsh[:in_place] ? hsh[:in_place] : false
+    expr = hsh[:expr] ? hsh[:expr] : true
+    if expr
+      if in_place
+        printf "#{who}: #{msg}\r"
+      else
+        printf "#{who}: #{msg}\n"
       end
-      printf "#{msg.to_s.perc_esc.yellow}: #{str.to_s.perc_esc.white}\n"
-      params.my_pp
+      if hsh[:params]
+        hsh[:params].my_pp
+      end
     end
-  end
-  def self.debug(str, params = {})
-    msg = @@debug_msg
-    if params[:debug_msg]
-      msg = params[:debug_msg]
-      params.delete(:debug_msg)
-    end
-    if params.has_key?(:in_place) && params[:in_place] == 1234
-      printf "#{msg.to_s.perc_esc.green}: #{str.to_s.perc_esc.white}\r"
-      params.delete(:in_place)
-    else
-      printf "#{msg.to_s.perc_esc.green}: #{str.to_s.perc_esc.white}\n"
-    end
-    params.my_pp
   end
 end
 
+
 Tools.new
-Printer.new
+

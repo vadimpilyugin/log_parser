@@ -1,0 +1,4 @@
+192.168.0.1 - - [13/Feb/2017:06:48:26 +0300] "POST /form.aspx HTTP/1.0" 200 177 "-" "Wget/1.12 (linux-gnu)" - - newserv.srcc.msu.ru
+192.168.0.1 - - [13/Feb/2017:06:52:59 +0300] "GET /robots.txt?yandex=ru&google=com HTTP/1.1" 301 177 "-" "Wget/1.12 (linux-gnu)" - - newserv.srcc.msu.ru
+Feb 13 06:47:41 newserv systemd[7279]: Reached target Timers.
+127.0.0.1 - - [13/Feb/2017:07:06:24 +0300] "GET /robots_are_good HTTP/2.0" 404 177 "-" "Wget/1.12 (linux-gnu)" - - newserv.srcc.msu.ru

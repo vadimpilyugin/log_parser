@@ -21,57 +21,30 @@ class Logline
                             # Logline.all(:time => DateTime.parse('2011-1-1T00:00:04+0100'))
   property :descr, String
   has n, :linedatas  
-end                            
-
-#   def [](hsh)
-#     if hsh.keys[0] == :data
-#       a = self.datas.first(:name => hsh[:data])
-#     else
-#       Tools.assert false, "No such key #{hsh}"
-#     end
-#     return a.value if a
-#     return nil
-#   end
-
-#   def to_a
-#     a = []
-#     a << self.id
-#     a << self.server
-#     a << self.service
-#     a << self.time
-#     data_hash = {}
-#     self.datas.each do |data|
-#       data_hash.update(data.name => data.value)
-#     end
-#     a << data_hash
-#     return a
-#   end
-# end
+end
 
 class Linedata
   include DataMapper::Resource
 
   property :id, Serial
   property :name, String, :required => true
-  property :value, String, :required => true, :length => 256
+  property :value, String, :required => true, :length => 512
   belongs_to :logline
 end
 
-class Database
-  @@db = nil
-  @@filename = nil
+# Database.save!(table,filename) - сохраняет массив в базу данных
+# table - массив хэшей(такой же формат, как у парсера)
+# filename - путь до базы данных от корня
 
-  def initialize(hsh = {})
-    return self if @@db
-    @@db = self
-    @@filename = Config["database"]["database_file"]
-    drop = Config["database"]["drop"]
-    Printer::note(!Tools.file_exists?(@@filename), "Database file not found", "Filename":@@filename)
-    # DataMapper::Logger.new(STDOUT, :debug)
-    DataMapper.setup(:default, "sqlite3://#{Tools.abs_path(@@filename)}")
-    Printer::debug("Connection to database was established", debug_msg:"Preparations", "Database file":@@filename)
+class Database
+  def save!(table, filename)
+
+    Printer::note(!File.exists?(filename), "Database file not found", "Filename":filename)
+    DataMapper.setup(:default, "sqlite3://#{filename}")
+    Printer::debug("Connection to database was established", debug_msg:"Database", "Database file":filename)
     DataMapper.finalize
-    drop ? DataMapper.auto_migrate! : DataMapper.auto_upgrade!
+    DataMapper.auto_upgrade!
+    Printer::note(Logline.all.size == 0, "Database is empty!", msg:"Database")
   end
 public
   def Database.save(table)
@@ -111,7 +84,7 @@ public
     Printer::debug("",stat[:errors].update(debug_msg:"#{stat[:errors_cnt].to_s.red+"".green} resources were not saved"))
     Printer::debug("",debug_msg:"\tShow #{(size-max).to_s.red+"".green} more") if size > max
     Printer::debug("",debug_msg:"==================")
-    Printer::assert(0 == 1, "",msg:"Breakpoint")
+    # Printer::assert(0 == 1, "",msg:"Breakpoint")
   end
 end
 

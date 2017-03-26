@@ -4,6 +4,22 @@ require_relative 'aggregator'
 
 class Statistics
   def initialize(params)
+    # @params = {
+    #   "stat_description" => nil,
+    #   "server" => nil,
+    #   "service" => nil,
+    #   "fields" => nil,
+    #   "look_for" => nil,
+    #   "group_by" => nil,
+    #   "exclude_val" => nil,
+    #   "threshold" => nil
+    # }
+    # @params.each do |param_name|
+    #   @params[param_name] = params[param_name]
+    # end
+    # @stat_description = params[self.class.to_s]
+    Printer::debug("", debug_msg:"=====================")
+
     @descr = params[self.class.to_s]
     @service = params["service"]  #  may be nil
     @fields = params["fields"]
@@ -11,12 +27,17 @@ class Statistics
     @event_type = params["look_for"]  #  may be nil
     Printer::assert(@descr, "No description specified for #{self.class}", params.update(msg:"Reporter"))
     Printer::assert(@fields, "No fields specified for #{self.class}", msg:"Reporter", "Description":@descr)
+    Printer::debug("Created a #{self.class.to_s}!", "Description":@descr, debug_msg:"Reporter", "Service":@service)
     # filter all lines using the provided parameters
+    Aggregator.reset
     @request = {}
     @request[:server] = @server if @server
     @request[:service] = @service if @service
     @request[:descr] = @event_type if @event_type
-    Aggregator.lines = Aggregator.lines(@request)
+    Printer::debug("Request to database: #{@request}", debug_msg:"Reporter")
+
+    Aggregator.lines = Aggregator.lines.all(@request)
+    Printer::note(Aggregator.lines.size == 0, "The Statistics is empty!", msg:"Reporter", "Type":(self.class), "Description":@descr, "Service":@service)
   end
   def Statistics.create(params)
     stat_type,stat_descr = params.to_a[0]
@@ -26,16 +47,20 @@ class Statistics
       when /Flag/ then Flag.new(params)
     end
   end
+  attr_accessor :descr, :service, :fields, :server, :event_type, :request, :result
+  def empty?
+    return Aggregator.lines.empty?
+  end
 end
 
 class Counter<Statistics
   def initialize(params)
     super
     # Printer::assert(@fields, "No field specified for Counter", msg:"Reporter", "Description":@descr)
-    Printer::debug("Created a Counter!", "Description":@descr, debug_msg:"Reporter")
-    Printer::debug("Projected view: #{@request}", debug_msg:"Reporter")
-    @result = Aggregator.aggregate_by_keys(@fields).keys.size
-    Printer::debug("Counter value", "Description":@descr, "Value":@result)
+    if Aggregator.lines.size != 0
+      @result = Aggregator.aggregate_by_keys(@fields).keys.size
+      Printer::debug("Counter value", "Description":@descr, "Value":@result)
+    end
   end
 end
 
@@ -44,9 +69,12 @@ class Distribution<Statistics
     @group_by_val = params["group_by"]
     @exclude_val = params["exclude"]
     super
+    Printer::debug("Grouping? #{@group_by_val ? "Yes, "+@group_by_val : "No"} Excluding? #{@exclude_val ? "Yes, "+@exclude_val : "No"}")
     # Printer::assert(@fields, "No fields specified for Distribution", msg:"Reporter", "Description":@descr)
-    Printer::debug("Created a Distribution!", "Description":@descr, debug_msg:"Reporter")
-    @result = Aggregator.aggregate_by_keys(@fields,@group_by,@exclude_val)
+    if Aggregator.lines.size != 0
+      @result = Aggregator.aggregate_by_keys(@fields,@exclude_val,@group_by_val)
+      # Printer::debug("Distribution result", @result)
+    end
   end
 end
 
@@ -55,19 +83,22 @@ class Flag<Statistics
     @threshold = params["threshold"]
     super
     Printer::assert(@service, "No service specified for Flag", msg:"Reporter", "Description":@descr)
-    Printer::debug("Created a Flag!", "Description":@descr, debug_msg:"Reporter")
-    @result = Aggregator.aggregate_by_keys(@fields)
-    @result = @result.to_a.delete_if { |ar|  ar[1] < @threshold }.to_h
+    if Aggregator.lines.size != 0
+      @result = Aggregator.aggregate_by_keys(@fields)
+      @result = @result.to_a.delete_if { |ar|  ar[1] < @threshold }.to_h
+    end
   end
 end
 
 class Report
+  @stats = []
+  class << self; attr_accessor(:stats) end
   def self.init
     @report_file = Tools.load(Config["report"]["report_config"])
     Printer::debug("Loaded configuration for Report from #{Config["report"]["report_config"]}", debug_msg:"Preparations")
-    stats = []
     @report_file.each do |stat|
-      stats << Statistics.create(stat)
+      st = Statistics.create(stat)
+      @stats << st unless st.empty?
     end
   end
 end
