@@ -7,6 +7,7 @@ require 'dm-transactions'
 
 require_relative 'tools'
 require_relative 'config'
+require_relative 'stats'
 
 
 class Logline
@@ -32,60 +33,60 @@ class Linedata
   belongs_to :logline
 end
 
-# Database.save!(table,filename) - сохраняет массив в базу данных
+# Database.save!(table) - сохраняет массив в базу данных
 # table - массив хэшей(такой же формат, как у парсера)
-# filename - путь до базы данных от корня
+# Database.init - создать соединение с базой
+# filename - полный путь до базы
 
 class Database
-  def save!(table, filename)
-
-    Printer::note(!File.exists?(filename), "Database file not found", "Filename":filename)
-    DataMapper.setup(:default, "sqlite3://#{filename}")
-    Printer::debug("Connection to database was established", debug_msg:"Database", "Database file":filename)
+  def Database.init(filename)
     DataMapper.finalize
+    Printer::note(expr:!File.exists?(filename), msg:"Database file not found: #{filename}")
+    DataMapper.setup(:default, "sqlite3://#{filename}")
+    Printer::debug(msg:"Connection to database #{filename} was established", who:"Database")
     DataMapper.auto_upgrade!
-    Printer::note(Logline.all.size == 0, "Database is empty!", msg:"Database")
+    Printer::note(expr:Logline.all.size == 0, msg:"Database is empty!")
   end
-public
-  def Database.save(table)
+  def Database.save!(table)
     resources = []
-    stat = {:requests => 0, :success => 0, :errors => {},:errors_cnt => 0}
-    table.each_with_index do |hsh, i|
-      stat[:requests] += 1
-      Printer::debug("Creating resources #{stat[:requests].to_s.red+'/'.white+table.size.to_s.red}", debug_msg:"Database", in_place:1234)
-      resources << Logline.new(
-        server: hsh[:server],
-        service: hsh[:service],
-        time: hsh[:time],
-        linedatas: hsh[:data_values],
-        descr: hsh[:descr]
-      )
-    end
-    Printer::debug("Закончили создание ресурсов, начинаем сохранение", debug_msg:"\nDatabase")
-    Logline.transaction do |t|
-      resources.each_with_index do |resource, i|
-        Printer::debug("Saving to database #{(i+1).to_s.red+'/'.white+stat[:requests].to_s.red}", debug_msg:"Database", in_place:1234)
-        success = resource.save
-        if success
-          stat[:success] += 1
-        else
-          stat[:errors].update(resource.id => resource.full_messages)
-          stat[:errors_cnt] += 1
+    stat = Stats::Stats.new(  [
+      ["Counter", :requests, "Всего запросов"],
+      ["Counter", :success, "Успешно сохранено"],
+      ["HashCounter", :errors, "Не сохранено"],
+      ["Counter", :ignored, "Проигнорировано"]
+    ])
+    table.each_with_index do |logline, i|
+      stat.requests.increment
+      Printer::debug(msg:"Creating resources #{(i+1).to_s.red+'/'.white+table.size.to_s.red}", who:"Database", in_place:true)
+      if logline[:descr] != "Wrong format" && logline[:descr] != "Ignore"
+        linedata = []
+        logline[:data].each_pair do |key,value|
+          linedata << {:name => key, :value => value}
         end
-        # Printer::debug(success, debug_msg:"Запись ##{i} сохранена")
+        resources << Logline.new(
+          server: logline[:server],
+          service: logline[:service],
+          time: logline[:date],
+          linedatas: linedata,
+          descr: logline[:descr]
+        )
+      else
+        stat.ignored.increment
       end
     end
-    max = 10
-    Printer::debug("",debug_msg:"\n==================")
-    Printer::debug("#{stat[:requests].to_s.red+" total requests".green}",debug_msg:"Saving finished")
-    Printer::debug("",debug_msg:"#{stat[:success].to_s.red+"".green} resources successfully saved")
-    size = stat[:errors].values.size
-    stat[:errors] = stat[:errors].to_a[0..max].to_h
-    Printer::debug("",stat[:errors].update(debug_msg:"#{stat[:errors_cnt].to_s.red+"".green} resources were not saved"))
-    Printer::debug("",debug_msg:"\tShow #{(size-max).to_s.red+"".green} more") if size > max
-    Printer::debug("",debug_msg:"==================")
-    # Printer::assert(0 == 1, "",msg:"Breakpoint")
+    puts
+    Printer::debug(msg:"Закончили создание ресурсов, начинаем сохранение", who:"Database")
+    Logline.transaction do |t|
+      resources.each_with_index do |resource, i|
+        Printer::debug(msg:"Saving to database #{(i+1).to_s.red+'/'.white+stat.requests.to_s.red}", who:"Database", in_place:true)
+        if resource.save
+          stat[:success].increment
+        else
+          stat[:errors].increment
+        end
+      end
+    end
+    puts
+    stat.print
   end
 end
-
-Database.new

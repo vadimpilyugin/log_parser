@@ -21,6 +21,9 @@ module Stats
     def print
       Printer::debug(who:@descr, msg:@value.to_s.red)
     end
+    def to_s
+      "#{@value}"
+    end
   end
   class HashCounter
     def initialize(name,descr)

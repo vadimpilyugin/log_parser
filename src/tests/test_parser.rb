@@ -8,6 +8,12 @@ require_relative "../config"
 require_relative "../tools"
 
 class TestParser < Minitest::Test
+
+  def test_parser_syslog
+    fn = "logs/newserv/auth.log"
+    result = Parser.parse!(Tools.abs_path(fn), "newserv")
+  end
+
   def test_parser_apache_file
   	fn = "src/tests/files/apache_test"
   	result = Parser.parse!(Tools.abs_path(fn), "newserv")
@@ -36,7 +42,12 @@ class TestParser < Minitest::Test
   	  	},
   	  	:descr => "Connection information"
   	  },
-  	  "Feb 13 06:47:41 newserv systemd[7279]: Reached target Timers.",
+      {
+        :data => {
+          "logline" => "Feb 13 06:47:41 newserv systemd[7279]: Reached target Timers."
+        },
+        :descr => "Wrong format"
+      },
   	  {
   	  	:server => "newserv",
   	  	:service => "apache",
@@ -122,7 +133,12 @@ class TestParser < Minitest::Test
   	  	},
   	  	:descr => "Service not found"
   	  },
-  	  "kernel_panic: traceback: Received disconnect from 93.180.9.182: 11: disconnected by user",
+      {
+        :data => {
+          "logline" => "kernel_panic: traceback: Received disconnect from 93.180.9.182: 11: disconnected by user"
+        },
+        :descr => "Wrong format"
+      },
   	  {
   	  	:server => "newserv",
   	  	:service => "sshd",

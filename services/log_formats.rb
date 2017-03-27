@@ -34,7 +34,7 @@ class LogFormat
     if $~ == nil
       return nil
     else
-    	return $~["service"]
+    	return $~["service"].downcase
     end
   end
 
@@ -98,7 +98,7 @@ class Fail2BanFormat<LogFormat
     (?<msecond>\d+)		# 390
     \s+
     # Server, type
-    (?<server>[^\.]+)
+    (?<service>[^\.]+)
     \.
     (?<type>\S+)
     \s+
@@ -109,7 +109,7 @@ class Fail2BanFormat<LogFormat
     (?<level>\S+)        # INFO
     \s+
     # Service name
-    (\[(?<service>[\w\-]+)\])? # [pam-generic]
+    (\[([\w\-]+)\])? # [pam-generic]
     \s+
     (?<msg>.*)             # rollover performed on /var/log/fail2ban.log
   }x

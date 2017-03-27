@@ -20,7 +20,10 @@ require_relative 'stats'
 #         Хэш, ключом является название поля, значением-значение поля.
 # :descr - описание данной записи. Берется из шаблона сервиса
 
-# Если строка не подходит ни под один формат лога, записывает ровно эту строку
+# Если строка не подходит ни под один формат лога, то хэш будет содержать
+# два поля: descr и data:
+# :data => {"logline" => <unknown_line>}
+# :descr => "Wrong format"
 # Если строка подходит под формат лога, но не подходит ни под
 # один сервис, то поля data и descr будут содержать следующие значения:
 # :data => {"logline" => <unknown line>},
@@ -38,22 +41,27 @@ class Parser
     table = []
     log_format = nil
     File.open(filename, 'r') do |f|
-      Printer::debug(msg:"Файл лога успешно открыт",who:"Parser")
-      f.each_with_index do |logline|
+      Printer::debug(msg:"Файл лога успешно открыт: #{filename}",who:"Parser")
+      f.each_with_index do |logline, i|
+        Printer::debug(who:"Обработано строк", msg:"#{i+1}".red, in_place:true)
         if log_format == nil
           # Формат лога определяется его первой строкой
           log_format = LogFormat.find(logline)
-          # Если первая строка плохая, будет взята следующая и т.д.
+          # Если первая строка плохая, будет взята следующая и т.д. до 10 строки
           if log_format == nil
-            table << logline[0...-1]  #  убрать \n
-            next
+            table << {:descr => "Wrong format", :data => {"logline" => logline[0...-1]}}  #  убрать \n
+            if i == 10
+              break
+            else
+              next
+            end
           end
         end
         # Основной цикл: получить имя сервиса из формата лога, распарсить сообщение,
         # преобразовать дату и время в класс Ruby, записать результат в таблицу
         parsed_line = log_format.parse!(logline)
         if parsed_line == nil
-          table << logline[0...-1]
+          table << {:descr => "Wrong format", :data => {"logline" => logline[0...-1]}}
           next
         end
         service_name = log_format.get_service_name(logline)
@@ -92,7 +100,7 @@ class Parser
           :service => service_name,
           :date => date,
           :data => data,
-          :descr => descr
+          :descr => descr,
         }
       end
     end
@@ -109,12 +117,12 @@ class Parser
       ["HashCounter", "no_template_provided", "Строки, для которых не найдено шаблона"],
       ["HashCounter", "services_distr", "Распределение по сервисам"]
     ])    
-
+    puts
     table.each do |line|
       st.total_lines.increment
-      if line.class == String
+      if line[:descr] == "Wrong format"
         # Не распарсена, т.к. не подошла под формат
-        st.unknown_lines.increment(line)
+        st.unknown_lines.increment(line[:data]["logline"])
       elsif line[:descr] == "Service not found"
         # Подошла под формат, но сервис не был найден
         st.unrecognized_services.increment(line[:service])

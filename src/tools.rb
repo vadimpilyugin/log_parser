@@ -114,7 +114,7 @@ class String
     return colorize(37)
   end
   def perc_esc
-    self.index('%') ? self.gsub!('%','%%') : self
+    self.index('%') ? self.gsub('%','%%') : self
   end
   # def method_missing(m, *args, &block)
   #   printf "Method missing: #{m}, with args = #{args}\n"
