@@ -1,51 +1,73 @@
 ---
-- Counter: "Число пользователей"
+- Counter: "Сколько пользователей посетили сайт 10 октября"
+  service: "apache"
+  aggregate_by_field: "user_ip"
+  time:
+  - "10 Oct 2016"
+  - "11 Oct 2016"
+
+- Counter: "Сколько всего было запросов к сайту 10 октября"
+  service: "apache"
+  time:
+  - "10 Oct 2016"
+  - "11 Oct 2016"
+
+- Counter: "Сколько было запросов к главной странице"
+  look_for:
+  - key: "path"
+  - value: "/"
+  service: "apache"
+
+- Counter: "Неудавшихся попыток входа по ssh"
   service: "sshd"
-  look_for: "New connection"
-  fields: 
-  - user_ip
+  type: "Auth fail"
 
-- Distribution: "На какие порты заходили пользователи"
+- Counter: "Успешных входов по ssh кроме autocheck"
   service: "sshd"
-  look_for: "New connection"
-  fields:
-  - user_ip
-  - server_port
+  type: "Accepted publickey"
+  except:
+  - key: "username"
+  - value: "autocheck"
 
-- Flag: "Попытка подбора пароля? "
-  service: "sshd"
-  look_for: "Auth fail"
-  threshold: 5
-  fields:
-  - user_ip
+- Counter: "Сколько всего разных IP подключалось к нашим серверам"
+  aggregate_by_field: "user_ip"
 
-- Counter: "Число уникальных IP"
+- Distribution: "Распределение по кодам ошибок"
   service: "apache"
-  fields: 
-  - user_ip
+  aggregate_by_field:
+  - "code"
+  time:
+  - "10 Oct 2016"
+  - "11 Oct 2016"
 
-- Counter: "Число уникальных страниц"
+- Distribution: "Самые популярные страницы"
   service: "apache"
-  fields:
-  - path
+  aggregate_by_field:
+  - "path"
+  time:
+  - "10 Oct 2016"
+  - "11 Oct 2016"
+  top: 5
 
-- Distribution: "Число успешных/неуспешных запросов"
-  service: "apache"
-  fields:
-  - code
-  #group_by: "200"
+- Distribution: "Какие ip в каких сервисах засветились"
+  aggregate_by_field:
+  - "user_ip"
+  - "service"
+  top: 20
+  sort_by: "service"
 
-- Distribution: "Распределение кодов ошибок по пользователям"
-  service: "apache"
-  fields: 
-  - user_ip
-  - code
-  #group_by: "404"
-  #exclude: "200"
+- Distribution: "Перебор серверов с ip"
+  aggregate_by_field:
+  - "user_ip"
+  - "server"
+  top: 20
+  sort_by: "server"
 
-- Distribution: "Распределение кодов ошибок по страницам"
-  service: "apache"
-  fields:
-  - path
-  - code
-  exclude: "200"
+- Distribution: "Какие ip какие события вызывали"
+  aggregate_by_field: 
+  - "user_ip"
+  - "descr"
+  top: 10
+  except:
+  - key: "username"
+  - value: "autocheck"
