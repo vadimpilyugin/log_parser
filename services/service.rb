@@ -1,11 +1,12 @@
 require_relative '../src/tools.rb'
 require_relative '../src/config.rb'
 
-# Метод parse! возвращает хэш, содержащий два поля: 
-# data и descr. Поле data содержит хэш, в котором лежит вся
+# Метод parse! возвращает хэш, содержащий поля: 
+# uid, data и descr. Поле data содержит хэш, в котором лежит вся
 # информация, полученная из шаблонов сервиса. Поле descr содержит
-# описание подошедшего шаблона. Метод вернет nil, если
-# строка не подходит ни под один шаблон сервиса.
+# описание подошедшего шаблона. Поле uid содержит уникальный код
+# того регулярного выражения, под которое подошла строка. Метод 
+# вернет nil, если строка не подходит ни под один шаблон сервиса.
 # "data" => {"user_ip" => 127.0.0.1, "user_port" => 2222}
 # "descr" => "New connection"
 
@@ -27,12 +28,14 @@ public
   def parse!(logline)
   	data = nil
     descr = nil
+    reg = nil
     @service_templates.each do |key,value|
       break if data != nil
       value.each do |regex|
         if logline =~ regex
           descr = key
           data = $~.to_h
+          reg = regex
           break
         end
       end
@@ -40,7 +43,7 @@ public
     if data == nil
       return nil
     else
-      return {"data" => data, "descr" => descr}
+      return {"data" => data, "descr" => descr, "uid" => reg.hash}
     end
   end
 end

@@ -15,8 +15,8 @@ class Aggregator
     end
   end
   def self.loglines_ids
-    Printer::note(@lines == nil, "Request for loglines_ids when lines is nil")
-    Printer::note(@lines.size == 0, "Request for loglines_ids when there are no lines")
+    Printer::note(expr: @lines == nil, msg:"Request for loglines_ids when lines is nil")
+    Printer::note(expr: @lines.size == 0, msg:"Request for loglines_ids when there are no lines")
     return "" if @lines == nil || @lines.size == 0
     str = "("
     @lines.each do |line|

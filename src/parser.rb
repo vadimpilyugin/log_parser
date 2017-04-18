@@ -19,24 +19,29 @@ require_relative 'stats'
 # :data - хэш, содержащий распарсенное сообщение, уже на уровне сервиса.
 #         Хэш, ключом является название поля, значением-значение поля.
 # :descr - описание данной записи. Берется из шаблона сервиса
+# :uid - уникальный номер регулярного выражения, под который подошла строка
+#        Равен 0, если строка подошла под формат лога, но не под сервис
 
 # Если строка не подходит ни под один формат лога, то хэш будет содержать
 # два поля: descr и data:
 # :data => {"logline" => <unknown_line>}
 # :descr => "Wrong format"
+# :uid => -1
 # Если строка подходит под формат лога, но не подходит ни под
 # один сервис, то поля data и descr будут содержать следующие значения:
 # :data => {"logline" => <unknown line>},
 # :descr => "Service not found"
+# :uid => -2
 # Если строка подошла под формат и сервис известен, но в нем не описан
 # шаблон, под который подошла бы строка, то поля data и descr будут содержать 
 # следующие значения:
 # :data => {"logline" => <unknown line>},
 # :descr => "Template not found"
+# :uid => -3
 
 class Parser
 
-  def Parser.parse!(filename, server_name)
+  def Parser.parse!(filename, server_name = 'n/a')
     Printer::assert(expr:File.exists?(filename), msg:"Файл лога по пути #{filename} не найден")
     table = []
     log_format = nil
@@ -49,7 +54,7 @@ class Parser
           log_format = LogFormat.find(logline)
           # Если первая строка плохая, будет взята следующая и т.д. до 10 строки
           if log_format == nil
-            table << {:descr => "Wrong format", :data => {"logline" => logline[0...-1]}}  #  убрать \n
+            table << {:descr => "Wrong format", :data => {"logline" => logline[0...-1]}, :uid => -1}  #  убрать \n
             if i == 10
               break
             else
@@ -61,7 +66,7 @@ class Parser
         # преобразовать дату и время в класс Ruby, записать результат в таблицу
         parsed_line = log_format.parse!(logline)
         if parsed_line == nil
-          table << {:descr => "Wrong format", :data => {"logline" => logline[0...-1]}}
+          table << {:descr => "Wrong format", :data => {"logline" => logline[0...-1]}, :uid => -1}
           next
         end
         service_name = log_format.get_service_name(logline)
@@ -71,20 +76,24 @@ class Parser
         service = Services[service_name]
         data = {}
         descr = ""
+        uid = 0
         if service == nil
           # Нет такого сервиса среди описанных => 
           data = {"logline" => message}
           descr = "Service not found"
+          uid = -2
         else
           parsed_msg = Services[service_name].parse!(message)
           if parsed_msg == nil
             # Нет такого шаблона в сервисе
             data = {"logline" => message}
             descr = "Template not found"
+            uid = -3
           else
             # Все хорошо, сообщение распарсено
             data = parsed_msg["data"]
             descr = parsed_msg["descr"]
+            uid = parsed_msg["uid"]
           end
         end
         date = CreateDate.create(
@@ -101,6 +110,7 @@ class Parser
           :date => date,
           :data => data,
           :descr => descr,
+          :uid => uid
         }
       end
     end
@@ -143,5 +153,37 @@ class Parser
       end
     end
     st.print
+  end
+  def Parser.transform(input_file, output_file, descr=true, server="n/a")
+    result = Parser.parse!(input_file,server)
+    numbers = Parser.stream_of_numbers(result)
+    f = File.open(output_file, "w")
+    result.each_with_index do |hsh,i|
+      if !descr
+        f.puts(numbers[i])
+      elsif numbers[i] == -1 or numbers[i] == -2 or numbers[i] == -3
+          f.printf "#{numbers[i]}\t-\t(#{hsh[:service] ? hsh[:service] : 'unknown'})::#{hsh[:descr]['logline']}\n"
+      else
+        f.printf "#{numbers[i]}\t-\t#{hsh[:service]}::#{hsh[:descr]} ( "
+        hsh[:data].to_a[0..1].to_h.each_pair do |key,value|
+          f.printf "#{key} : #{value}, "
+        end
+        f.printf " )\n"
+      end
+    end
+    f.close
+  end
+  def Parser.stream_of_numbers(table)
+    result = []
+    hash_table = {}
+    i = 1
+    table.each do |hsh|
+      if !hash_table.has_key?(hsh[:uid])
+        hash_table[hsh[:uid]] = i
+        i += 1
+      end
+      result << hash_table[hsh[:uid]]
+    end
+    return result
   end
 end 

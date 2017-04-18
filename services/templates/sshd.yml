@@ -10,14 +10,13 @@ Accepted publickey:
 Session activity:
 - 'pam_unix\(sshd:session\): session (?<action>\S+) for user (?<username>\S+)'
 Auth fail:
-- Failed (\S+) for invalid user (?<username>\S+) from (?<user_ip>\S+) port (?<user_port>\S+) ssh2
-- Failed (\S+) for (?<username>\S+) from (?<user_ip>\S+) port (?<user_port>\S+) ssh2
-Invalid user:
 - Invalid user (?<username>\S+) from (?<user-ip>\S+)
+- Failed (\S+) for (?<username>\S+) from (?<user_ip>\S+) port (?<user_port>\S+) ssh2
+Too many connections:
+- 'maximum authentication attempts exceeded'
 Postponed publickey:
 - Postponed publickey for (?<username>\S+) from (?<user-ip>\S+) port (?<user-port>\S+)
 Ignore:
-- '^(PAM|pam_unix|error: PAM|Disconnecting)'
 - '^input_userauth_request'
 - '^User child is on pid'
 - '^Starting session: command for \S+'
@@ -26,5 +25,4 @@ Ignore:
 - '^Did not receive identification string'
 - '^Starting session: shell on \S+'
 - 'Received SIGHUP; restarting.|Server listening'
-- 'maximum authentication attempts exceeded'
 - 'Bad protocol version identification'

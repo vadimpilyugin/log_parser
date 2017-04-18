@@ -1,7 +1,17 @@
 ---
+# Counter: 
+# Возвращает число после всех операций отсеивания
+# server: отсеять по имени сервера
+# service: отсеять по имени сервиса
+# time: отсеять по времени
+# type: отсеять по типу события
+# except: отсеять те строки, в которых есть данное поле с данным значением
+# unique: сколько уникальных значений по данному полю
+
 - Counter: "Сколько пользователей посетили сайт 10 октября"
+  unique: "user_ip"
+  server: "newserv"
   service: "apache"
-  aggregate_by_field: "user_ip"
   time:
   - "10 Oct 2016"
   - "11 Oct 2016"
@@ -13,10 +23,8 @@
   - "11 Oct 2016"
 
 - Counter: "Сколько было запросов к главной странице"
-  look_for:
-  - key: "path"
-  - value: "/"
   service: "apache"
+  path: "/"
 
 - Counter: "Неудавшихся попыток входа по ssh"
   service: "sshd"
@@ -26,48 +34,56 @@
   service: "sshd"
   type: "Accepted publickey"
   except:
-  - key: "username"
-  - value: "autocheck"
+    username: "autocheck"
 
 - Counter: "Сколько всего разных IP подключалось к нашим серверам"
-  aggregate_by_field: "user_ip"
+  unique: "user_ip"
+
+# Distribution
+#
+# server
+# service
+# time
+# type
+# aggregate_by - по каким полям проводить агрегацию
+# top - сколько результатов выводить
+# sort_by - по количеству значений какого поля сортировать результат
 
 - Distribution: "Распределение по кодам ошибок"
   service: "apache"
-  aggregate_by_field:
-  - "code"
   time:
   - "10 Oct 2016"
   - "11 Oct 2016"
+  aggregate_by:
+  - "code"
 
 - Distribution: "Самые популярные страницы"
   service: "apache"
-  aggregate_by_field:
-  - "path"
   time:
   - "10 Oct 2016"
   - "11 Oct 2016"
+  aggregate_by:
+  - "path"
   top: 5
 
 - Distribution: "Какие ip в каких сервисах засветились"
-  aggregate_by_field:
+  aggregate_by:
   - "user_ip"
   - "service"
   top: 20
   sort_by: "service"
 
 - Distribution: "Перебор серверов с ip"
-  aggregate_by_field:
+  aggregate_by:
   - "user_ip"
   - "server"
   top: 20
   sort_by: "server"
 
 - Distribution: "Какие ip какие события вызывали"
-  aggregate_by_field: 
+  aggregate_by: 
   - "user_ip"
   - "descr"
   top: 10
   except:
-  - key: "username"
-  - value: "autocheck"
+    username: "autocheck"

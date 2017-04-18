@@ -15,4 +15,20 @@ class CreateDate
   	  hsh[:second] ? hsh[:second] : default_time.sec,
   	)
   end
+  def self.create_from(string, regex = /(?<day>\d+)\s+(?<month>\S+)\s+(?<year>\d+)\s*/, cond)
+    if (string =~ regex) == nil
+      return Time.new(0)
+    else
+      date = {}
+      $~.names.each do |key|
+        date.update({key.to_sym => $~[key.to_sym]})
+      end
+      if cond == "max"
+        date.update(hour: "23", minute: "59", second: "59")
+      elsif cond == "min"
+        date.update(hour: "00", minute: "00", second: "00")
+      end
+      return CreateDate.create(date)
+    end
+  end
 end

@@ -62,9 +62,9 @@ public
   end
 
   def Tools.load(path)
-    Printer::assert(Tools.file_exists?(path), "File does not exist", "Filename":path)
+    Printer::assert(expr:Tools.file_exists?("init.rb"), msg:"File does not exist: #{path}")
     file = YAML.load_file(path)
-    Printer::assert(file != nil, "File is not in YAML format", "Filename":path)
+    Printer::assert(expr:(file != nil), msg:"File is not in YAML format: #{path}")
     return file
   end
 

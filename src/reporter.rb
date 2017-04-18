@@ -111,6 +111,91 @@ end
 
 
 
+def classifier(key)
+  key = key.to_s
+  if ["server", "service", "time", "type"].include? key
+    return "Main key"
+  elsif ["except", "unique"].include? key
+    return "Conditional key"
+  else
+    return "Data key"
+  end
+end
+
+def request_builder(cond, type)
+  key = cond.to_a[0].to_s
+  value = cond.to_a[1].to_s
+  if classifier(key) == "Main key"
+    if type == "except"
+      return {key.to_sym.not => value}
+    else
+      return {key.to_sym => value}
+    end
+  elsif classifier(key) == "Data key"
+    if type == "except"
+      return {data: {:name => key, :value.not => value}}
+    else
+      return {data: {:name => key, :value => value}}
+    end
+  else
+    return {}
+  end
+end
+
+class Hash
+  def my_update(hsh)
+    if hsh[:data] and self[:data]
+      self[:data].update(hsh[:data])
+    else
+      self.update hsh
+    end
+  end
+end
+
+require_relative 'date'
+
+class Counter
+  def initialize(hsh)
+    @descr = hsh["Counter"]
+    hsh.delete "Counter"
+    request = {}
+    for i in ["server", "service", "type"]
+      request.update { i.to_sym => hsh[i] }
+      hsh.delete i
+    end
+    if hsh["time"]
+      request.my_update({ :time.gt => DateTime.create_from(hsh["time"][0], "min"), 
+                          :time.lt => DateTime.create_from(hsh["time"][1], "max")})
+      hsh.delete "time"
+    end
+    if hsh["except"]
+      hsh["except"].each do |cond|
+        request.my_update request_builder(cond, "except")
+      end
+      hsh.delete "except"
+    end
+    unique = hsh["unique"]
+    hsh.delete "unique"
+    hsh.each_pair do |key,value|
+      request.my_update request_builder({key => value})
+    end
+    lines = Aggregator.lines.all request
+    Printer::debug(msg:"Counter: #{@descr}", params:request)
+    Printer::error(expr:lines != nil, msg:"No lines left after a request", params: request)
+    if unique
+      Aggregator.
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

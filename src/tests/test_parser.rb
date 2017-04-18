@@ -9,9 +9,45 @@ require_relative "../tools"
 
 class TestParser < Minitest::Test
 
-  def test_parser_syslog
-    fn = "logs/newserv/auth.log"
-    result = Parser.parse!(Tools.abs_path(fn), "newserv")
+  def test_log_to_numbers
+    fn = Tools.abs_path "logs/fail2ban/fail2ban.log"
+    output_file = Tools.abs_path "src/tests/files/fail2ban.numbers"
+    output_file_desc = Tools.abs_path "src/tests/files/fail2ban.descr"
+    Parser.transform(fn, output_file, false)
+    Parser.transform(fn, output_file_desc, true)
+    # hash_table = {}
+    # i = 1
+    # result.map! do |hsh|
+    #   if hsh[:uid] == -1 or hsh[:uid] == -2 or hsh[:uid] == -3
+    #     nil
+    #   elsif hash_table.has_key? hsh[:uid]
+    #     hsh[:uid] = hash_table[hsh[:uid]]
+    #     hsh
+    #   else
+    #     hash_table[hsh[:uid]] = i
+    #     hsh[:uid] = i
+    #     i += 1
+    #     hsh
+    #   end
+    # end
+    # numbers = Parser.stream_of_numbers(result)
+    # result.each_with_index do |hsh,i|
+    #   if numbers[i] == -1 or numbers[i] == -2 or numbers[i] == -3
+    #     next
+    #   end
+    #   printf "#{numbers[i]}\t-\t#{hsh[:service]}::#{hsh[:descr]} ( "
+    #   hsh[:data].to_a[0..1].to_h.each_pair do |key,value|
+    #     printf "#{key} : #{value}, "
+    #   end
+    #     printf " )\n"
+    # end
+    # output_file = 'files/newserv_auth.num'
+    # File.open(output_file, "w") do |f|
+    #   numbers.each do |num|
+    #     f.puts(num);
+    #   end
+    # end
+
   end
 
   def test_parser_apache_file

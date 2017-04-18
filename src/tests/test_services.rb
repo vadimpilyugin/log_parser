@@ -79,7 +79,13 @@ class TestSaving < Minitest::Test
       nil
     ]
     true_result.each_with_index do |true_res,i|
-      assert true_res == Services["fail2ban"].parse!(str[i])
+      if true_res == nil
+        assert Services["fail2ban"].parse!(str[i]) == nil
+      else
+        true_res.each_pair do |key,value|
+          assert value == Services["fail2ban"].parse!(str[i])[key], "Got #{Services["fail2ban"].parse!(str[i])[key]}, expected #{value}"
+        end
+      end
     end
   end
 end

@@ -20,7 +20,7 @@ class Logline
                             # 2010-11-03T21:33:00-0600; all(:time => start_t..end_t)
                             # Logline.create(:time => DateTime.new(2011,1,1,0,0,4)) 
                             # Logline.all(:time => DateTime.parse('2011-1-1T00:00:04+0100'))
-  property :descr, String
+  property :type, String
   has n, :linedatas  
 end
 
@@ -68,7 +68,7 @@ class Database
           service: logline[:service],
           time: logline[:date],
           linedatas: linedata,
-          descr: logline[:descr]
+          type: logline[:descr]
         )
       else
         stat.ignored.increment
