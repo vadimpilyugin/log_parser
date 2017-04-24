@@ -141,6 +141,15 @@ class Hash
   end
 end
 
+module Error
+  class Error<RuntimeError
+  end
+  class FatalError<Error
+  end
+  class AssertError<Error
+  end
+end
+
 # Printer.debug(hsh) - напечатать отладочное сообщение
 # Printer.assert(hsh) - проверить выражение, если не true, то завершить программу и напечатать сообщение
 # Printer.error(hsh) - напечатать сообщение и вернуть управление
@@ -194,7 +203,7 @@ class Printer
       if hsh[:params]
         hsh[:params].my_pp
       end
-      raise "Assertion failed"
+      raise Error::AssertError("Assertion failed")
     end
   end
   def Printer.error(hsh)
@@ -217,7 +226,7 @@ class Printer
     if hsh[:params]
       hsh[:params].my_pp
     end
-    raise "Fatal error"
+    raise Error::FatalError("Fatal error")
   end
   def Printer.note(hsh)
     msg = hsh[:msg] ? hsh[:msg] : ""
