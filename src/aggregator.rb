@@ -3,9 +3,10 @@ require_relative "config"
 require_relative "tools"
 
 class Aggregator
+  Database.init(Tools.abs_path Config["database"]["database_file"])
   @lines = Logline.all
   
-  Printer::debug("Aggregator was initialized!", debug_msg:"Preparations")
+  Printer::debug(msg:"Aggregator was initialized!", who:"Preparations")
 
   def Aggregator.hash_cnt(cnt)
     if cnt > 0
@@ -18,18 +19,16 @@ class Aggregator
     Printer::note(expr: @lines == nil, msg:"Request for loglines_ids when lines is nil")
     Printer::note(expr: @lines.size == 0, msg:"Request for loglines_ids when there are no lines")
     return "" if @lines == nil || @lines.size == 0
-    str = "("
-    @lines.each do |line|
-      str << "#{line.id},"
-    end
-    str[-1] = ")"
-    str
+    lines_ids = @lines.map { |line| line.id }.to_s
+    lines_ids[0] = "("
+    lines_ids[-1] = ")"
+    lines_ids
   end
   def self.collection(request)
     repository(:default).adapter.select(request)
   end
   def self.sql_group_by(keys)
-<<STR
+    <<STR
     select d1.value,d2.value,count(*) FROM linedata d1,linedata d2 WHERE
       d1.name = 'user_ip' and
        d2.name = 'path'  and 
@@ -38,47 +37,78 @@ class Aggregator
 STR
     request = ""
     if keys.size == 1
-      name = keys[0]
-      in_option = ""
-      if loglines_ids != ""
-        in_option = " and logline_id IN #{loglines_ids}"
-      end
-      request << "SELECT value as '#{name}', count(*) as count FROM linedata WHERE name = '#{name}' #{in_option} GROUP BY value ORDER BY count(*) DESC"
-    else
-      request << "SELECT "
-      keys.each_with_index do |key,i|
-        request << "d#{i+1}.value as '#{key}',"
-      end
-      request << "count(*) as count FROM \n"
-      keys.each_with_index do |key,i|
-        request << "\tlinedata d#{i+1},\n"
-      end
-      request[-2] = ""
-      request << "WHERE \n"
-      keys.each_with_index do |key,i|
-        request << "\td#{i+1}.name = '#{key}' and \n"
-      end
-      keys[0..-2].each_with_index do |key,i|
-        request << "\td#{i+1}.logline_id = d#{i+2}.logline_id and \n"
-      end
-      # request[-5..-2] = ""
-      # puts "-----"
-      # puts loglines_ids == ""
-      # puts "-----"
-      if loglines_ids != ""
-        request << "d1.logline_id IN #{loglines_ids}\n"
+      key = keys[0].to_s
+      if Logline.is_regular?(key)
+        in_option = loglines_ids == "" ? "" : "WHERE id IN #{loglines_ids}"
+        request = "SELECT #{key}, count(*) as count FROM loglines #{in_option} GROUP BY #{key} ORDER BY count(*) DESC"
       else
-        request[-5..-2] = ""
+        in_option = loglines_ids == "" ? "" : " and logline_id IN #{loglines_ids}"
+        request = "SELECT value as '#{key}', count(*) as count FROM linedata WHERE name = '#{key}' #{in_option} GROUP BY value ORDER BY count(*) DESC"
       end
-      request << "GROUP BY "
-      keys.each_with_index do |key,i|
-        request << "d#{i+1}.value,"
-      end
-      request[-1] = "\n"
-      request << "ORDER BY (SELECT count(*) FROM linedata WHERE name = '#{keys[0]}' and value = 'd1.value') DESC\n"
+    else
+      keys_for_select = Proc.new { |keys|
+        result = ""
+        keys.each_with_index do |key, i|
+          result << (Logline.is_regular?(key) ? "d#{i}.#{key} as '#{key}'," : "d#{i}.value as '#{key}',")
+        end
+        result << "count(*) as count"
+        result
+      }
+      tables_for_select = Proc.new { |keys|
+        result = ""
+        keys.each_with_index do |key, i|
+          result << (Logline.is_regular?(key) ? "\tloglines d#{i},\n" : "\tlinedata d#{i},\n")
+        end
+        result[-2..-1] = "\n"
+        result
+      }
+      data_keys_where = Proc.new { |keys|
+        result = ""
+        keys.each_with_index do |key, i|
+          result << (Logline.is_regular?(key) ? "" : "\td#{i}.name = '#{key}' and \n")
+        end
+        result[-5..-2] = ""
+        result
+      }
+      keys_ids_where = Proc.new { |keys|
+        result = " and "
+        keys[0..-2].each_with_index do |key,i|
+          result << "\td#{i}.#{Logline.is_regular?(key) ? "id" : "logline_id"} = d#{i+1}.#{Logline.is_regular?(key) ? "id" : "logline_id"} and \n"
+        end
+        result[-5..-2] = ""
+        result
+      }
+      in_option = Proc.new { |key| 
+        result = (Logline.is_regular?(key) ? " and d1.id " : " and d1.logline_id ")
+        result << "IN #{loglines_ids}\n"
+        result
+      }
+      keys_for_groupby = Proc.new { |keys|
+        result = ""
+        keys.each_with_index do |key, i|
+          result << (Logline.is_regular?(key) ? "d#{i}.#{key}," : "d#{i}.value,")
+        end
+        result[-1] = ""
+        result
+      }
+      order_by = Proc.new { |key|
+        result = "SELECT count(*) FROM "
+        result << (Logline.is_regular?(key) ? "loglines" : "linedata")
+        result <<  (Logline.is_regular?(key) ? " WHERE #{key} = 'd1.value'\n" : " WHERE name = '#{key}' and value = 'd1.value'\n")
+        result[-1] = ""
+        result
+      }
+      request = "
+      SELECT #{keys_for_select.call(keys)} FROM #{tables_for_select.call(keys)}
+      WHERE #{data_keys_where.call(keys)} #{keys_ids_where.call(keys)} #{in_option.call(keys[0])}
+      GROUP BY #{keys_for_groupby.call(keys)} 
+      ORDER BY (#{order_by.call(keys[0])})
+      "
+      Printer::debug(msg:"Request size: #{request.size}")
+      c = collection(request)
+      Printer::debug(msg:"Request complete")
+      return c
     end
-    # Printer::debug("Real request to database", "Request":request)
-    request
   end
 public
   class << self; attr_accessor(:lines) end
@@ -88,8 +118,8 @@ public
   end
 
   def self.aggregate_by_keys(keys,exclude_val = nil,group_by = nil)
-    Printer::assert(keys.class == Array, "Not an array", msg:"Aggregator.aggregate_by_keys()")
-    Printer::assert(keys.size != 0, "No keys specified for aggregation", msg:"Aggregator.aggregate_by_keys()")
+    Printer::assert(expr:keys.class == Array, msg:"Not an array", who:"Aggregator.aggregate_by_keys()")
+    Printer::assert(expr:keys.size != 0, "No keys specified for aggregation", msg:"Aggregator.aggregate_by_keys()")
     keys.each do |key|
       Printer::assert(key.class == String, "Key is not a string", "Key class":key.class, "Key":key)
     end

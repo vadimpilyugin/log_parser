@@ -189,8 +189,7 @@ class Printer
     msg = msg.to_s.perc_esc.send(@msg_color)
     who = who.to_s.perc_esc.send(@assert_msg_color)
 
-    expr = hsh[:expr]
-    if !expr
+    if !hsh[:expr]
       printf "#{who}: #{msg}\n"
       if hsh[:params]
         hsh[:params].my_pp
@@ -227,7 +226,7 @@ class Printer
     who = who.to_s.perc_esc.send(@note_msg_color)
 
     in_place = hsh[:in_place] ? hsh[:in_place] : false
-    expr = hsh[:expr] ? hsh[:expr] : true
+    expr = hsh[:expr] == nil ? true : hsh[:expr]
     if expr
       if in_place
         printf "#{who}: #{msg}\r"

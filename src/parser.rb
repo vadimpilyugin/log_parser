@@ -18,25 +18,25 @@ require_relative 'stats'
 # :date - время записи в лог. Если отсуствует, берется текущее время
 # :data - хэш, содержащий распарсенное сообщение, уже на уровне сервиса.
 #         Хэш, ключом является название поля, значением-значение поля.
-# :descr - описание данной записи. Берется из шаблона сервиса
+# :type - описание данной записи. Берется из шаблона сервиса
 # :uid - уникальный номер регулярного выражения, под который подошла строка
 #        Равен 0, если строка подошла под формат лога, но не под сервис
 
 # Если строка не подходит ни под один формат лога, то хэш будет содержать
-# два поля: descr и data:
+# два поля: type и data:
 # :data => {"logline" => <unknown_line>}
-# :descr => "Wrong format"
+# :type => "Wrong format"
 # :uid => -1
 # Если строка подходит под формат лога, но не подходит ни под
-# один сервис, то поля data и descr будут содержать следующие значения:
+# один сервис, то поля data и type будут содержать следующие значения:
 # :data => {"logline" => <unknown line>},
-# :descr => "Service not found"
+# :type => "Service not found"
 # :uid => -2
 # Если строка подошла под формат и сервис известен, но в нем не описан
-# шаблон, под который подошла бы строка, то поля data и descr будут содержать 
+# шаблон, под который подошла бы строка, то поля data и type будут содержать 
 # следующие значения:
 # :data => {"logline" => <unknown line>},
-# :descr => "Template not found"
+# :type => "Template not found"
 # :uid => -3
 
 class Parser
@@ -54,7 +54,7 @@ class Parser
           log_format = LogFormat.find(logline)
           # Если первая строка плохая, будет взята следующая и т.д. до 10 строки
           if log_format == nil
-            table << {:descr => "Wrong format", :data => {"logline" => logline[0...-1]}, :uid => -1}  #  убрать \n
+            table << {:type => "Wrong format", "logline" => logline[0...-1], :uid => -1}  #  убрать \n
             if i == 10
               break
             else
@@ -66,7 +66,7 @@ class Parser
         # преобразовать дату и время в класс Ruby, записать результат в таблицу
         parsed_line = log_format.parse!(logline)
         if parsed_line == nil
-          table << {:descr => "Wrong format", :data => {"logline" => logline[0...-1]}, :uid => -1}
+          table << {:type => "Wrong format", "logline" => logline[0...-1], :uid => -1}
           next
         end
         service_name = log_format.get_service_name(logline)
@@ -75,24 +75,24 @@ class Parser
         message = parsed_line["msg"] ? parsed_line["msg"] : logline
         service = Services[service_name]
         data = {}
-        descr = ""
+        type = ""
         uid = 0
         if service == nil
           # Нет такого сервиса среди описанных => 
           data = {"logline" => message}
-          descr = "Service not found"
+          type = "Service not found"
           uid = -2
         else
           parsed_msg = Services[service_name].parse!(message)
           if parsed_msg == nil
             # Нет такого шаблона в сервисе
             data = {"logline" => message}
-            descr = "Template not found"
+            type = "Template not found"
             uid = -3
           else
             # Все хорошо, сообщение распарсено
             data = parsed_msg["data"]
-            descr = parsed_msg["descr"]
+            type = parsed_msg["type"]
             uid = parsed_msg["uid"]
           end
         end
@@ -108,10 +108,9 @@ class Parser
           :server => server_name,
           :service => service_name,
           :date => date,
-          :data => data,
-          :descr => descr,
+          :type => type,
           :uid => uid
-        }
+        }.update(data)
       end
     end
     Parser.stats(table)
@@ -130,18 +129,18 @@ class Parser
     puts
     table.each do |line|
       st.total_lines.increment
-      if line[:descr] == "Wrong format"
+      if line[:type] == "Wrong format"
         # Не распарсена, т.к. не подошла под формат
         st.unknown_lines.increment(line[:data]["logline"])
-      elsif line[:descr] == "Service not found"
+      elsif line[:type] == "Service not found"
         # Подошла под формат, но сервис не был найден
         st.unrecognized_services.increment(line[:service])
         st.services_distr.increment(line[:service])
-      elsif line[:descr] == "Template not found"
+      elsif line[:type] == "Template not found"
         # Подошла под сервис, но не нашлось шаблона
         st.no_template_provided.increment(line[:data]["logline"])
         st.services_distr.increment(line[:service])
-      elsif line[:descr] == "Ignore"
+      elsif line[:type] == "Ignore"
         # Полностью распознана, но проигнорирована
         st.services_distr.increment(line[:service])
         st.successfully_parsed.increment
@@ -154,17 +153,17 @@ class Parser
     end
     st.print
   end
-  def Parser.transform(input_file, output_file, descr=true, server="n/a")
+  def Parser.transform(input_file, output_file, type=true, server="n/a")
     result = Parser.parse!(input_file,server)
     numbers = Parser.stream_of_numbers(result)
     f = File.open(output_file, "w")
     result.each_with_index do |hsh,i|
-      if !descr
+      if !type
         f.puts(numbers[i])
       elsif numbers[i] == -1 or numbers[i] == -2 or numbers[i] == -3
-          f.printf "#{numbers[i]}\t-\t(#{hsh[:service] ? hsh[:service] : 'unknown'})::#{hsh[:descr]['logline']}\n"
+          f.printf "#{numbers[i]}\t-\t(#{hsh[:service] ? hsh[:service] : 'unknown'})::#{hsh[:type]['logline']}\n"
       else
-        f.printf "#{numbers[i]}\t-\t#{hsh[:service]}::#{hsh[:descr]} ( "
+        f.printf "#{numbers[i]}\t-\t#{hsh[:service]}::#{hsh[:type]} ( "
         hsh[:data].to_a[0..1].to_h.each_pair do |key,value|
           f.printf "#{key} : #{value}, "
         end

@@ -9,19 +9,20 @@ class TestReport < Minitest::Test
   	begin
   	  Printer::assert(expr:2+2 == 5, msg:"2+2 = 5")
   	rescue RuntimeError
-  	  assert true, "Not true?"
+  	  assert true, "Error in Printer::assert"
   	end
   	begin
-  	  Printer::assert(expr:2+2 == 5, msg:"2+2 = 5", who:"test_assert")
+  	  Printer::assert(expr:2+2 == 5, msg:"2+2 = 5", who:"Printer::assert")
   	rescue RuntimeError
-  	  assert true, "Not true?"
+  	  assert true, "Error in Printer::assert"
   	end
   	begin
-  	  Printer::fatal(msg:"2+2 = 5 is false!", who:"test_assert")
+  	  Printer::fatal(msg:"2+2 = 5 is false!", who:"Printer::fatal")
   	rescue RuntimeError
-  	  assert true, "Not true?"
+  	  assert true, "Error in Printer::fatal"
   	end
   	Printer::note(msg:"Файл не существует, создаю...", who:"test_assert")
+    Printer::note(msg:"Это не должно быть на экране", expr:false, who:"Printer::note")
   	100.times do |i|
   	  Printer::debug(msg:"#{i+1} файлов создано...", in_place:true)
   	  sleep(0.02)
