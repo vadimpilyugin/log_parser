@@ -21,7 +21,43 @@ class Logline
                             # Logline.create(:time => DateTime.new(2011,1,1,0,0,4)) 
                             # Logline.all(:time => DateTime.parse('2011-1-1T00:00:04+0100'))
   property :type, String
-  has n, :linedatas  
+  has n, :linedatas
+
+  @regular_keys = Set.new ["id","server", "service", "time", "type", "linedatas"]
+  def self.is_regular? (key)
+    return @regular_keys.include?(key.to_s)
+  end
+  def data_keys
+    self.linedatas.map { |data| data.name }
+  end
+  def datas_at(keys)
+    result = []
+    for key in keys
+      result << data_at(key)
+    end
+    result
+  end
+  def to_h
+    result = Hash.new
+    result.update(:id => self.id,
+                  :server => self.server,
+                  :service => self.service,
+                  :time => self.time,
+                  :type => self.type)
+    for data in self.linedatas
+      result.update(data.name.to_sym => data.value)
+    end
+    return result
+  end
+  def data_at (key)
+    if Logline.is_regular? key
+      return self[key]
+    elsif data_keys.include? key
+      return self.linedatas.first(:name => key).value
+    else
+      return nil
+    end
+  end
 end
 
 class Linedata
@@ -40,12 +76,14 @@ end
 
 class Database
   def Database.init(filename)
-    DataMapper.finalize
-    Printer::note(expr:!File.exists?(filename), msg:"Database file not found: #{filename}")
+    Printer::note(expr: !File.exists?(filename), msg:"Database file not found: #{filename}")
     DataMapper.setup(:default, "sqlite3://#{filename}")
+    Printer::debug(msg:"Setup was complete: #{filename}", who:"Database")
+    DataMapper.finalize
+    # DataMapper.auto_upgrade!
     Printer::debug(msg:"Connection to database #{filename} was established", who:"Database")
-    DataMapper.auto_upgrade!
-    Printer::note(expr:Logline.all.size == 0, msg:"Database is empty!")
+    Printer::note(expr:Logline.count == 0, msg:"Database is empty!")
+    Printer::debug(msg:"Database is ready")
   end
   def Database.save!(table)
     resources = []
@@ -58,7 +96,7 @@ class Database
     table.each_with_index do |logline, i|
       stat.requests.increment
       Printer::debug(msg:"Creating resources #{(i+1).to_s.red+'/'.white+table.size.to_s.red}", who:"Database", in_place:true)
-      if logline[:descr] != "Wrong format" && logline[:descr] != "Ignore"
+      if logline[:type] != "Wrong format" && logline[:type] != "Ignore"
         linedata = []
         logline[:data].each_pair do |key,value|
           linedata << {:name => key, :value => value}
@@ -68,7 +106,7 @@ class Database
           service: logline[:service],
           time: logline[:date],
           linedatas: linedata,
-          type: logline[:descr]
+          type: logline[:type]
         )
       else
         stat.ignored.increment

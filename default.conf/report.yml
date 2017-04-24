@@ -6,38 +6,38 @@
 # time: отсеять по времени
 # type: отсеять по типу события
 # except: отсеять те строки, в которых есть данное поле с данным значением
-# unique: сколько уникальных значений по данному полю
 
 - Counter: "Сколько пользователей посетили сайт 10 октября"
-  unique: "user_ip"
-  server: "newserv"
-  service: "apache"
-  time:
+  unique: user_ip
+  :server: newserv
+  :service: apache
+  :time:
   - "10 Oct 2016"
   - "11 Oct 2016"
 
 - Counter: "Сколько всего было запросов к сайту 10 октября"
-  service: "apache"
-  time:
+  :service: apache
+  :time:
   - "10 Oct 2016"
   - "11 Oct 2016"
 
 - Counter: "Сколько было запросов к главной странице"
-  service: "apache"
+  :service: apache
   path: "/"
 
 - Counter: "Неудавшихся попыток входа по ssh"
-  service: "sshd"
-  type: "Auth fail"
+  :service: sshd
+  :type: "Auth fail"
 
 - Counter: "Успешных входов по ssh кроме autocheck"
-  service: "sshd"
-  type: "Accepted publickey"
-  except:
-    username: "autocheck"
+  :service: sshd
+  :type: "Accepted publickey"
+  :except:
+    username: autocheck
 
-- Counter: "Сколько всего разных IP подключалось к нашим серверам"
-  unique: "user_ip"
+- Distribution: "Сколько всего разных IP подключалось к нашим серверам"
+  keys: 
+  - user_ip
 
 # Distribution
 #
@@ -45,45 +45,49 @@
 # service
 # time
 # type
-# aggregate_by - по каким полям проводить агрегацию
+# keys - по каким полям проводить агрегацию
 # top - сколько результатов выводить
-# sort_by - по количеству значений какого поля сортировать результат
+# sort_type -   total: по общему числу
+#               distinct: по количеству различных значений
 
 - Distribution: "Распределение по кодам ошибок"
-  service: "apache"
-  time:
+  :service: apache
+  :time:
   - "10 Oct 2016"
   - "11 Oct 2016"
-  aggregate_by:
-  - "code"
+  keys:
+  - code
 
 - Distribution: "Самые популярные страницы"
-  service: "apache"
-  time:
+  :service: "apache"
+  :time:
   - "10 Oct 2016"
   - "11 Oct 2016"
-  aggregate_by:
-  - "path"
+  keys:
+  - path
   top: 5
+  sort_type: total
 
 - Distribution: "Какие ip в каких сервисах засветились"
-  aggregate_by:
-  - "user_ip"
-  - "service"
+  keys:
+  - user_ip
+  - :service
   top: 20
-  sort_by: "service"
+  sort_type: distinct
 
 - Distribution: "Перебор серверов с ip"
-  aggregate_by:
-  - "user_ip"
-  - "server"
+  keys:
+  - user_ip
+  - :server
   top: 20
-  sort_by: "server"
+  sort_type: distinct
 
 - Distribution: "Какие ip какие события вызывали"
-  aggregate_by: 
-  - "user_ip"
-  - "descr"
+  service: apache
+  keys: 
+  - user_ip
+  - :descr
   top: 10
+  sort_type: distinct
   except:
-    username: "autocheck"
+    username: autocheck
