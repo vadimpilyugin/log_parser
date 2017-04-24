@@ -43,7 +43,7 @@ public
     if data == nil
       return nil
     else
-      return {"data" => data, "descr" => descr, "uid" => reg.hash}
+      return {"data" => data, "type" => descr, "uid" => reg.hash}
     end
   end
 end

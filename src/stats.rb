@@ -1,5 +1,8 @@
 require_relative 'tools'
 
+# Use this module to measure some interesting statistics in your program
+# The main difference with statistics is that statistics is used for the
+# parsed log data
 module Stats
   Max_lines = 5
 
@@ -9,31 +12,56 @@ module Stats
   # descr - строка с описанием, необязательный параметр
   # print - напечатает статистику
 
+  # Represents a simple incrementing variable
+  # @attr_reader [Integer] value value of the counter
+  # @attr_reader [String] name name of the counter
+  # @attr_reader [String] descr description of the counter
   class Counter
+    # @param [String] name name of the counter
+    # @param [String] descr description of the counter
     def initialize(name,descr)
       @name = name
       @descr = descr
       @value = 0
     end
+    attr_reader :value, :descr, :name
+    # Increment the value of the counter
+    # @return [Integer] current value of the counter
     def increment
       @value += 1
     end
+    # Print the name and the value of the counter
     def print
-      Printer::debug(who:@descr, msg:@value.to_s.red)
+      Printer::debug(who:@descr, msg:@value.to_s.red+"".white)
     end
+    # String representation
+    # @return [String]
     def to_s
       "#{@value}"
     end
   end
+  # Represents a distribution, not a simple counter
+  # @attr_reader [Integer] value value of the distribution
+  # @attr_reader [String] name name of the distribution
+  # @attr_reader [String] descr description of the distribution
   class HashCounter
+    # @param [String] name name of the distribution
+    # @param [String] descr description of the distribution
     def initialize(name,descr)
       @name = name
       @descr = descr
       @value = Hash.new { |hash, key| hash[key] = 0 }
     end
+    attr_reader :name, :descr, :value
+
+    # Increase the number of values equal to the given value
+    # @param [Object] value value to increase
+    # @return [Hash] current value of the distribution  
     def increment(value)
       @value[value] += 1
     end
+    # Pretty print for the distribution
+    # @return [void]
     def print
       lines_left = @value.keys.size - Max_lines
       total = @value.values.inject(0){|sum,x| sum + x }
@@ -52,7 +80,18 @@ module Stats
   # :Counter - счетчик
   # :HashCounter - хэш, ключи это элементы, значения это сколько раз каждый элемент попался
 
+  # Creates a list of statistics
   class Stats
+    # Input options are in this format:
+    # {
+    #   [
+    #     ["<stat_type>", "<stat_name>", "<stat_descr>"], 
+    #     ["<stat_type>", "<stat_name>", "<stat_descr>"], 
+    #     ...,
+    #     ["<stat_type>", "<stat_name>", "<stat_descr>"], 
+    #   ]
+    # }
+    # @param [Array] params opts for creating stats
     def initialize(params)
       @stats = {}
       params.each do |ar|
@@ -62,12 +101,17 @@ module Stats
         @stats.update(name.to_s => Object.const_get('Stats').const_get(stat).new(name,descr))
       end
     end
+    # Get a stat by its name
+    # @param [String] name name that was assigned in the constructor
     def [](name)
       return @stats[name.to_s]
     end
+    # @private
     def method_missing(m, *args, &block)
       return @stats[m.to_s]
     end
+    # Pretty print all of the statistics
+    # @return [void]
     def print
       Printer::debug(who:"==================")
       @stats.values.each do |stat|

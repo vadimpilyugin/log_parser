@@ -7,14 +7,35 @@ require_relative "../config"
 require_relative "../tools"
 
 class TestSaving < Minitest::Test
-  def test_saving
-  	table = Parser.parse!(Tools.abs_path('src/tests/files/syslog_test'), 'newserv')
-  	Database.init('src/tests/files/syslog_test.sqlite3')
-  	Database.save!(table)
+  def setup
+    @filename = Tools.abs_path('src/tests/files/auth_test')
+    @table = Parser.parse!(@filename, 'newserv')
   end
   def test_saving_big_log
+    skip
   	table = Parser.parse!(Tools.abs_path('src/tests/files/daemon.log'), 'newserv')
-  	Database.init(Tools.abs_path('src/tests/files/daemon.sqlite3'))
-  	Database.save!(table)
+  	filename = Tools.abs_path('src/tests/files/daemon.sqlite3')
+  	Database.save!(filename, table)
+  end
+  def test_load
+    filename = Tools.abs_path('src/tests/files/auth_test.sqlite3')
+    Database.save!(filename, @table)
+    table = Database.load(filename)
+    for i in 0...table.size
+      if table[i] != @table[i]
+        puts "==============="
+        printf "Было: #{@table[i]}\n"
+        printf "Стало: #{table[i]}\n"
+        puts table[i][:date].to_s
+      end
+    end
+    assert table == @table
+  end
+  def test_save_load_empty
+    table = []
+    filename = Tools.abs_path('src/tests/files/test.sqlite3')
+    assert Database.save!(filename, table), "Saving was unsuccessful"
+    table = Database.load(filename)
+    assert table == []
   end
 end
