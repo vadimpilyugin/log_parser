@@ -17,9 +17,10 @@ class Config
   @config = nil
   @filename = nil
  
+  # Load configuration from file
   # @param [Hash] hsh options for config
   # @option hsh [String] :filename relative path to config file. Starts at the home directory of the project
-  def initialize(hsh)
+  def Config.load(hsh)
     filename = hsh[:filename]
     return @config if @config != nil && filename == @filename
     @filename = filename
@@ -27,7 +28,6 @@ class Config
     @config = ParseConfig.new Tools.abs_path(filename)
     Printer::assert(expr:@config, msg:"Config file is not loaded or nil")
     Printer::debug(msg:"Config file was found at #{@filename}",who:"Preparations")
-
   end
 
   # Get all options that belong to the specified section
@@ -39,4 +39,4 @@ class Config
   end
 end
 
-Config.new filename: "default.conf/config.cfg"
+Config.load filename: "default.conf/config.cfg"

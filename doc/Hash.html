@@ -94,7 +94,9 @@
   
   <dl>
     <dt>Defined in:</dt>
-    <dd>src/tools.rb</dd>
+    <dd>src/tools.rb<span class="defines">,<br />
+  src/tests/test_config.rb</span>
+</dd>
   </dl>
   
 </div>
@@ -118,6 +120,28 @@
   <span class="summary_signature">
     
       <a href="#my_pp-instance_method" title="#my_pp (instance method)">#<strong>my_pp</strong>  &#x21d2; Object </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#ph-instance_method" title="#ph (instance method)">#<strong>ph</strong>  &#x21d2; Object </a>
     
 
     
@@ -160,16 +184,16 @@
       <pre class="lines">
 
 
-75
-76
-77
-78
-79
-80
-81</pre>
+45
+46
+47
+48
+49
+50
+51</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/tools.rb', line 75</span>
+      <pre class="code"><span class="info file"># File 'src/tools.rb', line 45</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_my_pp'>my_pp</span>
   <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_each_pair'>each_pair</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_s1'>s1</span><span class='comma'>,</span><span class='id identifier rubyid_s2'>s2</span><span class='op'>|</span>
@@ -183,12 +207,52 @@
 </table>
 </div>
     
+      <div class="method_details ">
+  <h3 class="signature " id="ph-instance_method">
+  
+    #<strong>ph</strong>  &#x21d2; <tt>Object</tt> 
+  
+
+  
+
+  
+</h3><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+7
+8
+9
+10
+11
+12
+13
+14</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/tests/test_config.rb', line 7</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_ph'>ph</span>
+   <span class='id identifier rubyid_s'>s</span> <span class='op'>=</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_end'>&quot;</span></span>
+  <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_each_pair'>each_pair</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_key'>key</span><span class='comma'>,</span> <span class='id identifier rubyid_value'>value</span><span class='op'>|</span>
+	  <span class='id identifier rubyid_s'>s</span> <span class='op'>&lt;&lt;</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>  </span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_key'>key</span><span class='embexpr_end'>}</span><span class='tstring_content'> = </span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_value'>value</span><span class='period'>.</span><span class='id identifier rubyid_class'>class</span> <span class='op'>==</span> <span class='const'><span class='object_link'><a href="" title="Hash (class)">Hash</a></span></span> <span class='op'>?</span> <span class='id identifier rubyid_value'>value</span><span class='period'>.</span><span class='id identifier rubyid_ph'>ph</span> <span class='op'>:</span> <span class='id identifier rubyid_value'>value</span><span class='embexpr_end'>}</span><span class='tstring_content'>\n</span><span class='tstring_end'>&quot;</span></span>
+  <span class='kw'>end</span>
+   <span class='id identifier rubyid_printf'>printf</span> <span class='id identifier rubyid_s'>s</span>
+   <span class='id identifier rubyid_s'>s</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
   </div>
 
 </div>
 
       <div id="footer">
-  Generated on Mon Apr 24 23:47:04 2017 by
+  Generated on Tue Apr 25 10:57:47 2017 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.9.9 (ruby-2.3.1).
 </div>

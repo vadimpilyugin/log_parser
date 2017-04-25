@@ -8,36 +8,6 @@ class MatchData
   end
 end
 
-# Tools.file_exists?(filename) - проверяет, существует ли файл с заданным именем
-# filename - путь от корня проекта
-# Возвращает true, если файл найден, или false, если не найден
-
-# Class that contains some helpful methods
-class Tools
-  @tools = nil
-  @homedir = nil
-
-  def initialize
-    return @tools if @tools
-    @tools = "New tools"
-    @homedir = File.expand_path("../../", __FILE__)
-    Printer::debug(msg:"Root directory of the project was set to #{@homedir}", who:"Preparations")
-  end
-public
-  # Get absolute path
-  # @param [String] path relative path that begins in the project's home directory
-  # @return [String] absolute path
-  def Tools.abs_path(path)
-    @homedir[-1] == '/' ? @homedir+path : @homedir+'/'+path
-  end
-
-  # Get the project's home directory
-  # @return [String] home directory of the project
-  def Tools.homedir
-    @homedir
-  end
-end
-
 class String 
   # @private
   def colorize(i)
@@ -236,6 +206,25 @@ class Printer
   end
 end
 
+# Class that contains some helpful methods
+class Tools
+  @homedir = File.expand_path("../../", __FILE__)
+  Printer::debug(msg:"Root directory of the project was set to #{@homedir}", who:"Tools")
+public
+  # Get absolute path
+  # @param [String] path relative path that begins in the project's home directory
+  # @return [String] absolute path
+  def Tools.abs_path(path)
+    if path[0] == '/'
+      return path
+    else
+      return @homedir[-1] == '/' ? @homedir+path : @homedir+'/'+path
+    end
+  end
 
-Tools.new
-
+  # Get the project's home directory
+  # @return [String] home directory of the project
+  def Tools.homedir
+    @homedir
+  end
+end

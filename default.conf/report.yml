@@ -5,7 +5,7 @@
 # service: отсеять по имени сервиса
 # time: отсеять по времени
 # type: отсеять по типу события
-# except: отсеять те строки, в которых есть данное поле с данным значением
+# :except: отсеять те строки, в которых есть данное поле с данным значением
 
 - Counter: "Сколько пользователей посетили сайт 10 октября"
   unique: user_ip
@@ -32,11 +32,11 @@
 - Counter: "Успешных входов по ssh кроме autocheck"
   :service: sshd
   :type: "Accepted publickey"
-  :except:
+  ::except:
     username: autocheck
 
 - Distribution: "Сколько всего разных IP подключалось к нашим серверам"
-  keys: 
+  :keys: 
   - user_ip
 
 # Distribution
@@ -45,7 +45,7 @@
 # service
 # time
 # type
-# keys - по каким полям проводить агрегацию
+# :keys - по каким полям проводить агрегацию
 # top - сколько результатов выводить
 # sort_type -   total: по общему числу
 #               distinct: по количеству различных значений
@@ -55,7 +55,7 @@
   :time:
   - "10 Oct 2016"
   - "11 Oct 2016"
-  keys:
+  :keys:
   - code
 
 - Distribution: "Самые популярные страницы"
@@ -63,20 +63,20 @@
   :time:
   - "10 Oct 2016"
   - "11 Oct 2016"
-  keys:
+  :keys:
   - path
   top: 5
   sort_type: total
 
 - Distribution: "Какие ip в каких сервисах засветились"
-  keys:
+  :keys:
   - user_ip
   - :service
   top: 20
   sort_type: distinct
 
 - Distribution: "Перебор серверов с ip"
-  keys:
+  :keys:
   - user_ip
   - :server
   top: 20
@@ -84,10 +84,10 @@
 
 - Distribution: "Какие ip какие события вызывали"
   service: apache
-  keys: 
+  :keys: 
   - user_ip
   - :descr
   top: 10
   sort_type: distinct
-  except:
+  :except:
     username: autocheck

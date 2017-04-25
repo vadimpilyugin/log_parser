@@ -284,18 +284,18 @@
       <pre class="lines">
 
 
-93
-94
 95
 96
 97
 98
 99
 100
-101</pre>
+101
+102
+103</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/stats.rb', line 93</span>
+      <pre class="code"><span class="info file"># File 'src/stats.rb', line 95</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_initialize'>initialize</span><span class='lparen'>(</span><span class='id identifier rubyid_params'>params</span><span class='rparen'>)</span>
   <span class='ivar'>@stats</span> <span class='op'>=</span> <span class='lbrace'>{</span><span class='rbrace'>}</span>
@@ -334,12 +334,12 @@
       <pre class="lines">
 
 
-108
-109
-110</pre>
+110
+111
+112</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/stats.rb', line 108</span>
+      <pre class="code"><span class="info file"># File 'src/stats.rb', line 110</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_method_missing'>method_missing</span><span class='lparen'>(</span><span class='id identifier rubyid_m'>m</span><span class='comma'>,</span> <span class='op'>*</span><span class='id identifier rubyid_args'>args</span><span class='comma'>,</span> <span class='op'>&amp;</span><span class='id identifier rubyid_block'>block</span><span class='rparen'>)</span>
   <span class='kw'>return</span> <span class='ivar'>@stats</span><span class='lbracket'>[</span><span class='id identifier rubyid_m'>m</span><span class='period'>.</span><span class='id identifier rubyid_to_s'>to_s</span><span class='rbracket'>]</span>
@@ -402,12 +402,12 @@
       <pre class="lines">
 
 
-104
-105
-106</pre>
+106
+107
+108</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/stats.rb', line 104</span>
+      <pre class="code"><span class="info file"># File 'src/stats.rb', line 106</span>
 
 <span class='kw'>def</span> <span class='op'>[]</span><span class='lparen'>(</span><span class='id identifier rubyid_name'>name</span><span class='rparen'>)</span>
   <span class='kw'>return</span> <span class='ivar'>@stats</span><span class='lbracket'>[</span><span class='id identifier rubyid_name'>name</span><span class='period'>.</span><span class='id identifier rubyid_to_s'>to_s</span><span class='rbracket'>]</span>
@@ -443,16 +443,16 @@
       <pre class="lines">
 
 
-113
-114
 115
 116
 117
 118
-119</pre>
+119
+120
+121</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/stats.rb', line 113</span>
+      <pre class="code"><span class="info file"># File 'src/stats.rb', line 115</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_print'>print</span>
   <span class='const'><span class='object_link'><a href="../Printer.html" title="Printer (class)">Printer</a></span></span><span class='op'>::</span><span class='id identifier rubyid_debug'><span class='object_link'><a href="../Printer.html#debug-class_method" title="Printer.debug (method)">debug</a></span></span><span class='lparen'>(</span><span class='label'>who:</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>==================</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span>
@@ -471,7 +471,7 @@
 </div>
 
       <div id="footer">
-  Generated on Mon Apr 24 23:47:03 2017 by
+  Generated on Tue Apr 25 10:57:47 2017 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.9.9 (ruby-2.3.1).
 </div>
