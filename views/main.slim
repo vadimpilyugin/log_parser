@@ -7,21 +7,32 @@ html
     script src='/js/jquery.min.js'
     script src='/js/bootstrap.min.js'
   body
-    h3 Report on #{Config["parser"]["log_file"]}
+    h3 Report created on #{Time.now()}
 
     #content
+      div class="container"
       - @ar.each_with_index do |stat,i|
         - if stat.class == Counter
-          p =="#{stat.descr}: #{stat.result}"
+          p =="#{@simple_counter_descr}:" 
+            a =="#{@simple_counter}"
         - elsif stat.class == Distribution
-
           div class="panel panel-default"
             div class="panel panel-heading"
-              h4 class="panel panel-title"
-                a data-toggle="collapse" href="##{i}Collapse"
-                  =="#{stat.descr}: #{stat.result.size}"
-            div id="#{i}Collapse" class="panel-collapse collapse"
-              div class="panel-body"
-                ul
-                - stat.result.keys.sort.each do |key|
-                    li == key
+              a data-toggle="collapse" href="MainCollapsible"
+                =="#{@simple_descr}: #{@simple_distrib[:total]}"
+            div class="panel-collapse"
+              div class="panel-group"
+                div class="panel panel-default"
+                  div class="panel panel-heading"
+                    text
+                div class="panel panel-default"
+                  div class="panel panel-heading"
+                    text
+                div class="panel panel-default"
+                  div class="panel panel-heading"
+                    text
+          - if stat.keys.size == 1
+            div class="panel panel-default"
+              div class="panel panel-heading"
+                h4 class="panel panel-title"
+                  a data-toggle="collapse" href="##{i}Collapse"

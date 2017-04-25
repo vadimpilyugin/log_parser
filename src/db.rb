@@ -67,7 +67,7 @@ class Linedata
 
   property :id, Serial
   property :name, String, :required => true
-  property :value, String, :required => true, :length => 512
+  property :value, String, :required => true, :length => 100
   belongs_to :logline
 end
 
@@ -109,19 +109,19 @@ class Database
       stat.requests.increment
       Printer::debug(msg:"Creating resources #{(i+1).to_s.red+'/'.white+table.size.to_s.red}", who:"Database", in_place:true)
       # if logline[:type] != "Wrong format" && logline[:type] != "Ignore"
-        linedata = []
-        logline.keys.keep_if{ |key| key.class == String }.each do |key|
-          value = logline[key]
-          linedata << {:name => key, :value => value}
-        end
-        resources << Logline.new(
-          server: logline[:server],
-          service: logline[:service],
-          time: logline[:date],
-          linedatas: linedata,
-          type: logline[:type],
-          uid: logline[:uid]
-        )
+      linedata = []
+      logline.keys.keep_if{ |key| key.class == String }.each do |key|
+        value = logline[key]
+        linedata << {:name => key, :value => value}
+      end
+      resources << Logline.new(
+        server: logline[:server],
+        service: logline[:service],
+        time: logline[:date],
+        linedatas: linedata,
+        type: logline[:type],
+        uid: logline[:uid]
+      )
       # else
         # stat.ignored.increment
       # end
@@ -134,7 +134,7 @@ class Database
         if resource.save
           stat[:success].increment
         else
-          stat[:errors].increment
+          stat[:errors].increment table[i]
         end
       end
     end

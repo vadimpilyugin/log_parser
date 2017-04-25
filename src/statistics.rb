@@ -97,14 +97,14 @@ class Condition
     @except = hsh[:except]
   end
   # Checks if a logline suffices all conditions
-  # @param [String] logline a line to check
+  # @param [String] logline a line to check. See Parser::parse!
   # @return [bool] True if logline suffices all conditions
   def check(logline)
     return false if @server and @server != logline[:server]
     return false if @service and @service != logline[:service]
     return false if @type and @type != logline[:type]
-    return false if @time_from and logline[:time] < @time_from
-    return false if @time_to and logline[:time] > @time_to
+    return false if @time_from and logline[:date] < @time_from
+    return false if @time_to and logline[:date] > @time_to
     if @except
       @except.each do |key,value|
         return false if logline[key] == value
@@ -123,12 +123,27 @@ class Counter
   def increment(logline)
     @value += 1 if @conditions.check(logline)
   end
-  attr_reader :value, :conditions
+  attr_reader :value, :conditions, :descr
   def finalize
     @value
   end
 end
 
+#   "nginx" => {
+#     "nginx" => 3,
+#     "sshd" => 1,
+#     :total => 4,
+#     :distinct => 2
+#   },
+#   "newserv" => {
+#     "sshd" => 1,
+#     "apache" => 3,
+#     "syslog" => 1,
+#     :total => 5,
+#     :distinct => 3
+#   },
+#   :total => 9,
+#   :distinct => 2
 class Distribution
   def initialize(hsh)
     @descr = hsh["Distribution"]
@@ -148,6 +163,7 @@ class Distribution
       0
     end
   end
+  attr_reader :value, :conditions, :descr, :keys
   def increment(logline)
     if @conditions.check(logline)
       @keys.each do |key| 
@@ -183,8 +199,5 @@ class Distribution
         @value.update(:more => size-@top)
       end
     end
-  end
-  def value
-    @value
   end
 end

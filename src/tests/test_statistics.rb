@@ -122,5 +122,6 @@ class TestParser < Minitest::Test
   	  :distinct => 2
   	}
   end
+  
 end
 

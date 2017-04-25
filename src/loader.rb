@@ -1,7 +1,6 @@
 require_relative 'config'
 require_relative 'tools'
 require_relative 'parser'
-require_relative 'db'
 
 # Class that creates the hash containing the names of the servers and the names of the log files
 class Loader
