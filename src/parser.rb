@@ -112,7 +112,7 @@ class Parser
   def Parser.parse_full!(filename, server_name = 'n/a')
     if !File.exists?(filename)
       Printer::error(msg:"Файл лога по пути #{filename} не найден")
-      raise Error::FileNotFoundError(filename)
+      raise Error::FileNotFoundError.new(filename)
     end
     table = []
     # Сюда будем записывать плохие строки

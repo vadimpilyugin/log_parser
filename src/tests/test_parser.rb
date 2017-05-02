@@ -9,9 +9,9 @@ require_relative "../tools"
 class TestParser < Minitest::Test
 
   def test_log_to_numbers
-    fn = Tools.abs_path "src/tests/files/daemon.log"
-    output_file = Tools.abs_path "src/tests/files/daemon.numbers"
-    output_file_desc = Tools.abs_path "src/tests/files/daemon.descr"
+    fn = Tools.abs_path "src/tests/files/syslog_test"
+    output_file = Tools.abs_path "src/tests/files/syslog_test.numbers"
+    output_file_desc = Tools.abs_path "src/tests/files/syslog_test.descr"
     Parser.transform(fn, output_file, false)
     Parser.transform(fn, output_file_desc, true)
   end
