@@ -1,2 +1,0 @@
-Session activity:
-- 'pam_unix\(systemd-user:session\): session (?<action>\S+) for user (?<username>\S+)'
