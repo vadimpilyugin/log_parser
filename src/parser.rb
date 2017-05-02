@@ -196,7 +196,7 @@ class Parser
 
   def Parser.parse!(filename, server_name = 'n/a')
     table = Parser.parse_full!(filename, server_name)
-    table.keep_if{|line| line[:uid] >= 0}
+    table.keep_if{|line| line[:uid] >= 0 and line[:type] != "Ignore"}
     table
   end
 
