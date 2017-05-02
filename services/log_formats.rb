@@ -1,10 +1,10 @@
 require_relative '../src/tools'
 
-# get_service_name(logline) -  возвращает имя сервиса, которому
-# принадлежит данная строка. Если строка не удовлетворяет шаблону,
-# то возвращается nil. Предполагается, что либо в регулярном выражении 
-# присутствует поле service, либо метод переопределен так, чтобы возвращать
-# имя определенного сервиса, не основываясь на поле в шаблоне лога
+# service(logline) -  возвращает имя сервиса, которому
+#   принадлежит данная строка. Если строка не удовлетворяет шаблону,
+#   то возвращается nil. Предполагается, что либо в регулярном выражении 
+#   присутствует поле service, либо метод переопределен так, чтобы возвращать
+#   имя определенного сервиса
 # LogFormat.find(logline) - возвращает либо nil, если такой формат лога
 #                           не найден, либо нужный подкласс
 
@@ -25,17 +25,17 @@ class LogFormat
     if $~ == nil
       return nil
     else
-      return $~.to_h
+      data = $~.to_h
+      if data.has_key? "service"
+        return data
+      else
+        return data.update({"service"=>service})
+      end
     end
   end
 
-  def LogFormat.get_service_name(logline)
-  	logline =~ @format
-    if $~ == nil
-      return nil
-    else
-    	return $~["service"].downcase
-    end
+  def LogFormat.service
+  	return 'service'
   end
 
   def LogFormat.find(logline)
@@ -81,8 +81,8 @@ class ApacheFormat<LogFormat
    	# Error code
    	(?<code> \d+)      
   }x
-  def self.get_service_name(logline)
-  	return "apache"
+  def self.service
+  	'apache'
   end
 end
 
@@ -97,7 +97,7 @@ class Fail2BanFormat<LogFormat
     (?<second>\d+),     # 13,
     (?<msecond>\d+)		# 390
     \s+
-    # Server, type
+    # Service, type
     (?<service>[^\.]+)
     \.
     (?<type>\S+)
@@ -113,5 +113,4 @@ class Fail2BanFormat<LogFormat
     \s+
     (?<msg>.*)             # rollover performed on /var/log/fail2ban.log
   }x
-
 end

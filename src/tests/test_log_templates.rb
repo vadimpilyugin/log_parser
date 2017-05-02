@@ -57,11 +57,10 @@ class TestSaving < Minitest::Test
   	  "minute" => "22",
   	  "second" => "15",
   	  "msecond" => "208",
-  	  "server" => "fail2ban",
+  	  "service" => "fail2ban",
   	  "type" => "actions",
   	  "pid" => "1686",
   	  "level" => "NOTICE",
-  	  "service" => "ssh",
   	  "msg" => "223.99.60.47 already banned"
   	}
   	true_result.each_pair do |key,value|

@@ -16,7 +16,7 @@ class TestSaving < Minitest::Test
   	  	"user_ip" => "93.180.9.182",
   	  	"code" => "200"
   	  },
-  	  "descr" => "Connection information"
+  	  "type" => "Connection information"
   	}
   	true_result.each_pair do |key,value|
   	  if key == "data"
@@ -39,7 +39,7 @@ class TestSaving < Minitest::Test
 	    "server_ip" => "127.0.0.1",
 	    "server_port" => "1"
   	  },
-  	  "descr" => "New connection"
+  	  "type" => "New connection"
   	}
   	true_result.each_pair do |key,value|
   	  if key == "data"
@@ -53,7 +53,7 @@ class TestSaving < Minitest::Test
   def test_sshd_not_found
   	s = "Connection to 192.168.0.1 on port 666 cannot be established"
   	result = Services["sshd"].parse! s
-  	true_result = nil
+  	true_result = {"data" => nil, "type" => nil, "uid" => nil}
   	assert result == true_result
   end
   def test_fail2ban
@@ -66,17 +66,17 @@ class TestSaving < Minitest::Test
     result = str.map do |msg|
       Services["fail2ban"].check(msg)
     end
-    assert true_result == result
+    assert true_result == result, "Wrong: #{result}"
     true_result = [
       {
         "data" => {"path" => "/var/log/auth.log"},
-        "descr" => "Log rotation"
+        "type" => "Log rotation"
       },
       {
-        "data" => {},
-        "descr" => "Ban/unban"
+        "data" => {"user_ip"=>"212.129.63.25"},
+        "type" => "Ban/unban"
       },
-      nil
+      {"data" => nil, "type" => nil, "uid" => nil}
     ]
     true_result.each_with_index do |true_res,i|
       if true_res == nil

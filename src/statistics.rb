@@ -79,7 +79,6 @@ class Statistics
   def process(table)
     Printer::debug(who:"Report processing", msg:"Processing started")
     table.each_with_index do |logline,i|
-      Printer::assert(expr:by_descr("Pagination").conditions.check(logline), msg:"Check does not hold")
       Printer::debug(who:"Обработано строк", msg:"#{i+1}".red+"/".white+"#{table.size}".red+"".white, in_place:true)
       @stats.each do |stat|
         stat.increment(logline)

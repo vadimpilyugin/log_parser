@@ -22,29 +22,35 @@ public
   end
 
   def check(logline)
-  	return self.parse!(logline) != nil
+  	return self.parse!(logline)["uid"] != nil
   end
 
+  # @param [String] logline строка
+  # @return [Hash] хэш, содержащий три поля: data, type и uid
+  # Если шаблон не найден, то все три поля равны nil
+  # Если шаблон найден, то поля будут содержать соответственно:
+  # {
+  #   data => хэш с ключами равными именам полей и значениями равными, собственно, значениям полей
+  #   type => строка-описание, которая находится рядом с шаблоном в конфиге
+  #   uid => целое число > 0, уникальный номер шаблона
+  # }
+  
   def parse!(logline)
   	data = nil
     descr = nil
-    reg = nil
+    uid = nil
     @service_templates.each do |key,value|
       break if data != nil
       value.each do |regex|
         if logline =~ regex
           descr = key
           data = $~.to_h
-          reg = regex
+          uid = regex.hash.abs
           break
         end
       end
     end
-    if data == nil
-      return nil
-    else
-      return {"data" => data, "type" => descr, "uid" => reg.hash}
-    end
+    return {"data" => data, "type" => descr, "uid" => uid}
   end
 end
 

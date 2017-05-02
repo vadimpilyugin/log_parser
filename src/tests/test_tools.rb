@@ -8,17 +8,17 @@ class TestReport < Minitest::Test
   def test_assert
   	begin
   	  Printer::assert(expr:2+2 == 5, msg:"2+2 = 5")
-  	rescue RuntimeError
+  	rescue Error::AssertError
   	  assert true, "Error in Printer::assert"
   	end
   	begin
   	  Printer::assert(expr:2+2 == 5, msg:"2+2 = 5", who:"Printer::assert")
-  	rescue RuntimeError
+  	rescue Error::AssertError
   	  assert true, "Error in Printer::assert"
   	end
   	begin
   	  Printer::fatal(msg:"2+2 = 5 is false!", who:"Printer::fatal")
-  	rescue RuntimeError
+  	rescue Error::FatalError
   	  assert true, "Error in Printer::fatal"
   	end
   	Printer::note(msg:"Файл не существует, создаю...", who:"test_assert")
