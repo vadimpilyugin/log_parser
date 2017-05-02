@@ -19,13 +19,14 @@ module Helpers
   #     :total => 1500
   #   )
   # }
+  #
   def pagination(pages, current_page, tabs="")
     s = ""
     s << tabs+'<ul class="nav nav-tabs">' << "\n"
     s << tabs+'  '+(current_page == main_server_name ? '<li class="active">' : '<li>')
     Printer::debug(msg:"Foo bar", params:pages)
     Printer::assert(expr:pages.has_key?(:total), who:"Pagination", msg:"no :total field")
-    s << tabs+'    '+href_server("", main_server_name+badge(pages[:total]))
+    s << tabs+'    '+href_server("", main_server_name+"&nbsp;"+badge(pages[:total]))
     s << tabs+'  </li>' << "\n"
     pages.each_pair do |server_name,value|
       if server_name.class == String
@@ -34,7 +35,7 @@ module Helpers
         else
           s << tabs+'  <li class="active">' << "\n"
         end
-        s << tabs+'    '+href_server(server_name, server_name + badge(value))
+        s << tabs+'    '+href_server(server_name, server_name + "&nbsp;" + badge(value))
         s << tabs+'  </li>' << "\n"
       end
     end
@@ -43,7 +44,7 @@ module Helpers
   end
 
   def badge(value)
-    '<span class="badge pull-right">' + "#{value}" + '</span>'
+    '<span class="badge my-align-right">' + "#{value}" + '</span>'
   end
   def href_server(server, value)
     '<a href="' + "/#{server}" << '">' + "#{value}" + '</a>'
@@ -53,7 +54,20 @@ module Helpers
   end
 
   def for_each_server(each_server_distrib, server_name,tabs='')
-    recursive_hash(each_server_distrib.value[server_name],tabs)
+    @inc = 0
+    recursive_hash({server_name => each_server_distrib.value[server_name]},tabs)
+  end
+
+  # @param [Hash<String,Fixnum>] hsh elements of the list. If key is not a string then it is not shown
+  # @return [String] html code for a list within a panel
+  def output_list_group(hsh,tabs="")
+    s = "\n"
+    s << tabs+'<ul class="list-group">' << "\n"
+    hsh.each_pair do |key, value|
+      s << tabs+'  '+'<li class="list-group-item">' << key << badge(value) << '</li>' << "\n" if key.class == String
+    end
+    s << tabs+'</ul>' << "\n"
+    s
   end
 
   #
@@ -61,18 +75,22 @@ module Helpers
   #
   # @param [Hash] params
   # @option params [Array] stats array containing all statistics
+  # @option params [String] tabs tabulation
   def main_page_stats(params)
     s = ""
+    # Show counters at the top of the page
+    counters = {}
     params[:stats].each do |stat|
-      # Show counters at the top
       if stat.class == Counter and stat.conditions.server == nil
-        s << output_counter(stat:stat)
+        counters.update({stat.descr => stat.value})
+        # s << output_counter(stat:stat)
       end
     end
+    s << output_list_group(counters,tabs=params[:tabs])
     @inc = 0
     params[:stats].each do |stat|
       if stat.class == Distribution and stat.conditions.server == nil
-        s << output_distrib_normal(stat:stat,tabs:"",sort_type:stat.sort_type)
+        s << output_distrib_normal(stat:stat,tabs:params[:tabs],sort_type:stat.sort_type)
       end
     end
     s
@@ -92,7 +110,7 @@ module Helpers
         s << output_counter(stat:stat)
       end
     end
-    @inc = 0
+    # @inc = 0 Already in for_each_server
     params[:stats].each do |stat|
       if stat.class == Distribution and stat.conditions.server == params[:server]
         s << output_distrib_normal(stat:stat,tabs:params[:tabs],sort_type:stat.sort_type)
@@ -132,7 +150,7 @@ module Helpers
   #
   # @param [Hash] (see Distribution#to_h)
   # @param [String] tabs white spaces before each line
-  def recursive_hash(hsh,tabs="",sort_type = "total")
+  def recursive_hash(hsh,tabs="",sort_type = "total",depth=0)
     s = tabs+'<div class="panel-group">' << "\n"
     if hsh.class == Hash and hsh.values.index {|value| value.class == Hash} != nil
     	hsh.each_pair do |key,value|
@@ -140,30 +158,29 @@ module Helpers
           s << tabs+'  <div class="panel panel-default">' << "\n"
           s << tabs+'    <div class="panel-body">' << "\n"
           s << tabs+'      <h4 class="panel-title">' << "\n"
-          s << tabs+'        <a data-toggle="collapse" href="' << "#collapse#{@inc}" << '">' << kv(key,value[sort_type.to_sym]) << '</a>' << "\n"
+          if true
+            # number in gray circle to the right
+            s << tabs+'        <a data-toggle="collapse" href="' << "#collapse#{@inc}" << '">' << key+badge(value[sort_type.to_sym]) << '</a>' << "\n"
+          else
+            s << tabs+'        <a data-toggle="collapse" href="' << "#collapse#{@inc}" << '">' << kv(key,value[sort_type.to_sym]) << '</a>' << "\n"
+          end
           s << tabs+'      </h4>' << "\n"
           s << tabs+'    </div>' << "\n"
           s << tabs+'    <div id="' << "collapse#{@inc}" << '" class="panel-collapse collapse">' << "\n"
           @inc += 1
           s << tabs+'      <div class="panel-body">' << "\n"
-    	  	s <<               recursive_hash(value,tabs+"        ",sort_type)
+    	  	s <<               recursive_hash(value,tabs+"        ",sort_type,depth+1)
           s << tabs+'      </div>' << "\n"
           s << tabs+'    </div>' << "\n"
     	  	s << tabs+'  </div>' << "\n"
-        # elsif value.class == Fixnum and key != :total and key != :distinct
-        #   s << tabs+'  <div class="panel panel-default">' << "\n"
-        #   s << tabs+'    <div class="panel-body">' << "\n"
-        #   s << tabs+'      '+primitive_list_element(key,value) << "\n"
-        #   s << tabs+'    </div>' << "\n"
-        #   s << tabs+'  </div>' << "\n"
         end
       end
     elsif hsh.class == Hash and hsh.values.index {|value| value.class == Hash} == nil
-      s << tabs+'  <div class="panel panel-default">' << "\n"
-      s << tabs+'    <div class="panel-body">' << "\n"
-      s << tabs+'      '+primitive_list(hsh,tabs+'      ') << "\n"
-      s << tabs+'    </div>' << "\n"
-      s << tabs+'  </div>' << "\n"
+      # s << tabs+'  <div class="panel panel-default">' << "\n"
+      # s << tabs+'    <div class="panel-body">' << "\n"
+      s << tabs+'      '+output_list_group(hsh,tabs+'      ') << "\n"
+      # s << tabs+'    </div>' << "\n"
+      # s << tabs+'  </div>' << "\n"
     else
       Printer::error(msg:"Trying to output #{hsh.class}, not a Hash!")
     end

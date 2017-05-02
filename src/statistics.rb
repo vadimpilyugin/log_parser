@@ -155,6 +155,7 @@ class Condition
   end
 end
 
+
 class Counter
   attr_reader :value, :conditions, :descr
 
@@ -174,21 +175,6 @@ class Counter
   end
 end
 
-#   "nginx" => {
-#     "nginx" => 3,
-#     "sshd" => 1,
-#     :total => 4,
-#     :distinct => 2
-#   },
-#   "newserv" => {
-#     "sshd" => 1,
-#     "apache" => 3,
-#     "syslog" => 1,
-#     :total => 5,
-#     :distinct => 3
-#   },
-#   :total => 9,
-#   :distinct => 2
 class Distribution
   attr_reader :conditions, :descr, :keys, :value, :sort_type
 
