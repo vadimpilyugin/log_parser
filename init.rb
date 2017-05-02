@@ -44,7 +44,7 @@ if create_report
   Printer::debug(who:"Init", msg:"Configuration file for report was loaded successfully")
   st = Statistics.new(config)
   st.add({"Distribution" => "Pagination", :keys => [:server]})
-  st.add({"Distribution" => "For each server", :keys => [:server, :service]})
+  st.add({"Distribution" => "For each server", :keys => [:server, :service, :type]})
   st.process(table)
   pagination = st.by_descr("Pagination")
   for_each_server = st.by_descr("For each server")

@@ -57,7 +57,8 @@ module Helpers
 
   def for_each_server(each_server_distrib, server_name,tabs='')
     @inc = 0
-    recursive_hash({server_name => each_server_distrib.value[server_name]},tabs)
+    recursive_hash({"Активные сервисы" => each_server_distrib.value[server_name]},tabs)
+
   end
 
   # @param [Hash<String,Fixnum>] hsh elements of the list. If key is not a string then it is not shown
