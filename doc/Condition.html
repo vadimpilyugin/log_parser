@@ -114,6 +114,98 @@
 
 
 
+  <h2>Instance Attribute Summary <small><a href="#" class="summary_toggle">collapse</a></small></h2>
+  <ul class="summary">
+    
+      <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#server-instance_method" title="#server (instance method)">#<strong>server</strong>  &#x21d2; Object </a>
+    
+
+    
+  </span>
+  
+  
+  
+    
+      <span class="note title readonly">readonly</span>
+    
+    
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'>
+<p>Returns the value of attribute server.</p>
+</div></span>
+  
+</li>
+
+    
+      <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#service-instance_method" title="#service (instance method)">#<strong>service</strong>  &#x21d2; Object </a>
+    
+
+    
+  </span>
+  
+  
+  
+    
+      <span class="note title readonly">readonly</span>
+    
+    
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'>
+<p>Returns the value of attribute service.</p>
+</div></span>
+  
+</li>
+
+    
+      <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#type-instance_method" title="#type (instance method)">#<strong>type</strong>  &#x21d2; Object </a>
+    
+
+    
+  </span>
+  
+  
+  
+    
+      <span class="note title readonly">readonly</span>
+    
+    
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'>
+<p>Returns the value of attribute type.</p>
+</div></span>
+  
+</li>
+
+    
+  </ul>
+
 
 
 
@@ -170,7 +262,7 @@
   
     <span class="summary_desc"><div class='inline'>
 <p>{   :server =&gt; “newserv”,   :service =&gt; “sshd”,   :time =&gt; [      
-“10 Oct 2016”,       “11 Oct 2016”     ],   “except” =&gt; {      
+“10 Oct 2016”,       “11 Oct 2016”     ],   :except =&gt; {      
 “username” =&gt; “autocheck”     } }.</p>
 </div></span>
   
@@ -203,7 +295,7 @@
     &quot;10 Oct 2016&quot;,
     &quot;11 Oct 2016&quot;
   ],
-&quot;except&quot; =&gt; {
+:except =&gt; {
     &quot;username&quot; =&gt; &quot;autocheck&quot;
   }</code></pre>
 
@@ -281,7 +373,7 @@ second value</p>
         </li>
       
         <li>
-          <span class="name">"except"</span>
+          <span class="name">:except</span>
           <span class="type">(<tt>Array</tt>)</span>
           <span class="default">
             
@@ -303,22 +395,27 @@ second value</p>
       <pre class="lines">
 
 
-85
-86
-87
-88
-89
-90
-91
-92
-93
-94
-95
-96
-97</pre>
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/statistics.rb', line 85</span>
+      <pre class="code"><span class="info file"># File 'src/statistics.rb', line 119</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_initialize'>initialize</span><span class='lparen'>(</span><span class='id identifier rubyid_hsh'>hsh</span><span class='rparen'>)</span>
   <span class='ivar'>@server</span> <span class='op'>=</span> <span class='id identifier rubyid_hsh'>hsh</span><span class='lbracket'>[</span><span class='symbol'>:server</span><span class='rbracket'>]</span>
@@ -331,7 +428,12 @@ second value</p>
     <span class='ivar'>@time_from</span> <span class='op'>=</span> <span class='kw'>nil</span>
     <span class='ivar'>@time_to</span> <span class='op'>=</span> <span class='kw'>nil</span>
   <span class='kw'>end</span>
-  <span class='ivar'>@except</span> <span class='op'>=</span> <span class='id identifier rubyid_hsh'>hsh</span><span class='lbracket'>[</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>except</span><span class='tstring_end'>&quot;</span></span><span class='rbracket'>]</span>
+  <span class='ivar'>@except</span> <span class='op'>=</span> <span class='id identifier rubyid_hsh'>hsh</span><span class='lbracket'>[</span><span class='symbol'>:except</span><span class='rbracket'>]</span>
+  <span class='comment'># User defined conditions on custom keys
+</span>  <span class='ivar'>@user_params</span> <span class='op'>=</span> <span class='lbrace'>{</span><span class='rbrace'>}</span>
+  <span class='id identifier rubyid_hsh'>hsh</span><span class='period'>.</span><span class='id identifier rubyid_keys'>keys</span><span class='period'>.</span><span class='id identifier rubyid_keep_if'>keep_if</span> <span class='lbrace'>{</span><span class='op'>|</span><span class='id identifier rubyid_key'>key</span><span class='op'>|</span> <span class='id identifier rubyid_key'>key</span><span class='period'>.</span><span class='id identifier rubyid_class'>class</span> <span class='op'>==</span> <span class='const'><span class='object_link'><a href="String.html" title="String (class)">String</a></span></span><span class='rbrace'>}</span><span class='period'>.</span><span class='id identifier rubyid_each'>each</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_key'>key</span><span class='op'>|</span>
+    <span class='ivar'>@user_params</span><span class='period'>.</span><span class='id identifier rubyid_update'>update</span><span class='lparen'>(</span><span class='lbrace'>{</span><span class='id identifier rubyid_key'>key</span> <span class='op'>=&gt;</span> <span class='id identifier rubyid_hsh'>hsh</span><span class='lbracket'>[</span><span class='id identifier rubyid_key'>key</span><span class='rbracket'>]</span><span class='rbrace'>}</span><span class='rparen'>)</span> <span class='kw'>if</span> <span class='id identifier rubyid_key'>key</span> <span class='op'>!=</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>Distribution</span><span class='tstring_end'>&quot;</span></span> <span class='kw'>and</span> <span class='id identifier rubyid_key'>key</span> <span class='op'>!=</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>Counter</span><span class='tstring_end'>&quot;</span></span>
+  <span class='kw'>end</span>
 <span class='kw'>end</span></pre>
     </td>
   </tr>
@@ -339,6 +441,140 @@ second value</p>
 </div>
   
 </div>
+
+  <div id="instance_attr_details" class="attr_details">
+    <h2>Instance Attribute Details</h2>
+    
+      
+      <span id=""></span>
+      <div class="method_details first">
+  <h3 class="signature first" id="server-instance_method">
+  
+    #<strong>server</strong>  &#x21d2; <tt>Object</tt>  <span class="extras">(readonly)</span>
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    
+<p>Returns the value of attribute server</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+101
+102
+103</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/statistics.rb', line 101</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_server'>server</span>
+  <span class='ivar'>@server</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      
+      <span id=""></span>
+      <div class="method_details ">
+  <h3 class="signature " id="service-instance_method">
+  
+    #<strong>service</strong>  &#x21d2; <tt>Object</tt>  <span class="extras">(readonly)</span>
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    
+<p>Returns the value of attribute service</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+101
+102
+103</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/statistics.rb', line 101</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_service'>service</span>
+  <span class='ivar'>@service</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      
+      <span id=""></span>
+      <div class="method_details ">
+  <h3 class="signature " id="type-instance_method">
+  
+    #<strong>type</strong>  &#x21d2; <tt>Object</tt>  <span class="extras">(readonly)</span>
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    
+<p>Returns the value of attribute type</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+101
+102
+103</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'src/statistics.rb', line 101</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_type'>type</span>
+  <span class='ivar'>@type</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
 
 
   <div id="instance_method_details" class="method_details_list">
@@ -377,7 +613,7 @@ second value</p>
       
         &mdash;
         <div class='inline'>
-<p>a line to check</p>
+<p>a line to check. See Parser::parse!</p>
 </div>
       
     </li>
@@ -409,37 +645,39 @@ second value</p>
       <pre class="lines">
 
 
-101
-102
-103
-104
-105
-106
-107
-108
-109
-110
-111
-112
-113
-114
-115</pre>
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'src/statistics.rb', line 101</span>
+      <pre class="code"><span class="info file"># File 'src/statistics.rb', line 140</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_check'>check</span><span class='lparen'>(</span><span class='id identifier rubyid_logline'>logline</span><span class='rparen'>)</span>
   <span class='kw'>return</span> <span class='kw'>false</span> <span class='kw'>if</span> <span class='ivar'>@server</span> <span class='kw'>and</span> <span class='ivar'>@server</span> <span class='op'>!=</span> <span class='id identifier rubyid_logline'>logline</span><span class='lbracket'>[</span><span class='symbol'>:server</span><span class='rbracket'>]</span>
   <span class='kw'>return</span> <span class='kw'>false</span> <span class='kw'>if</span> <span class='ivar'>@service</span> <span class='kw'>and</span> <span class='ivar'>@service</span> <span class='op'>!=</span> <span class='id identifier rubyid_logline'>logline</span><span class='lbracket'>[</span><span class='symbol'>:service</span><span class='rbracket'>]</span>
   <span class='kw'>return</span> <span class='kw'>false</span> <span class='kw'>if</span> <span class='ivar'>@type</span> <span class='kw'>and</span> <span class='ivar'>@type</span> <span class='op'>!=</span> <span class='id identifier rubyid_logline'>logline</span><span class='lbracket'>[</span><span class='symbol'>:type</span><span class='rbracket'>]</span>
-  <span class='kw'>return</span> <span class='kw'>false</span> <span class='kw'>if</span> <span class='ivar'>@time_from</span> <span class='kw'>and</span> <span class='id identifier rubyid_logline'>logline</span><span class='lbracket'>[</span><span class='symbol'>:time</span><span class='rbracket'>]</span> <span class='op'>&lt;</span> <span class='ivar'>@time_from</span>
-  <span class='kw'>return</span> <span class='kw'>false</span> <span class='kw'>if</span> <span class='ivar'>@time_to</span> <span class='kw'>and</span> <span class='id identifier rubyid_logline'>logline</span><span class='lbracket'>[</span><span class='symbol'>:time</span><span class='rbracket'>]</span> <span class='op'>&gt;</span> <span class='ivar'>@time_to</span>
+  <span class='kw'>return</span> <span class='kw'>false</span> <span class='kw'>if</span> <span class='ivar'>@time_from</span> <span class='kw'>and</span> <span class='id identifier rubyid_logline'>logline</span><span class='lbracket'>[</span><span class='symbol'>:date</span><span class='rbracket'>]</span> <span class='op'>&lt;</span> <span class='ivar'>@time_from</span>
+  <span class='kw'>return</span> <span class='kw'>false</span> <span class='kw'>if</span> <span class='ivar'>@time_to</span> <span class='kw'>and</span> <span class='id identifier rubyid_logline'>logline</span><span class='lbracket'>[</span><span class='symbol'>:date</span><span class='rbracket'>]</span> <span class='op'>&gt;</span> <span class='ivar'>@time_to</span>
   <span class='kw'>if</span> <span class='ivar'>@except</span>
-    <span class='ivar'>@except</span><span class='period'>.</span><span class='id identifier rubyid_each'>each</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_cond'>cond</span><span class='op'>|</span>
-      
-      <span class='const'><span class='object_link'><a href="Printer.html" title="Printer (class)">Printer</a></span></span><span class='op'>::</span><span class='id identifier rubyid_debug'><span class='object_link'><a href="Printer.html#debug-class_method" title="Printer.debug (method)">debug</a></span></span><span class='lparen'>(</span><span class='label'>msg:</span><span class='id identifier rubyid_logline'>logline</span><span class='comma'>,</span> <span class='label'>params:</span><span class='lbrace'>{</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>Key</span><span class='tstring_end'>&quot;</span></span> <span class='op'>=&gt;</span> <span class='id identifier rubyid_key'>key</span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>Value</span><span class='tstring_end'>&quot;</span></span> <span class='op'>=&gt;</span> <span class='id identifier rubyid_value'>value</span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>Logline[key]</span><span class='tstring_end'>&quot;</span></span> <span class='op'>=&gt;</span> <span class='id identifier rubyid_logline'>logline</span><span class='lbracket'>[</span><span class='id identifier rubyid_key'>key</span><span class='rbracket'>]</span><span class='rbrace'>}</span><span class='rparen'>)</span>
+    <span class='ivar'>@except</span><span class='period'>.</span><span class='id identifier rubyid_each'>each</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_key'>key</span><span class='comma'>,</span><span class='id identifier rubyid_value'>value</span><span class='op'>|</span>
       <span class='kw'>return</span> <span class='kw'>false</span> <span class='kw'>if</span> <span class='id identifier rubyid_logline'>logline</span><span class='lbracket'>[</span><span class='id identifier rubyid_key'>key</span><span class='rbracket'>]</span> <span class='op'>==</span> <span class='id identifier rubyid_value'>value</span>
     <span class='kw'>end</span>
+  <span class='kw'>end</span>
+  <span class='ivar'>@user_params</span><span class='period'>.</span><span class='id identifier rubyid_each_pair'>each_pair</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_key'>key</span><span class='comma'>,</span><span class='id identifier rubyid_value'>value</span><span class='op'>|</span>
+    <span class='kw'>return</span> <span class='kw'>false</span> <span class='kw'>if</span> <span class='id identifier rubyid_logline'>logline</span><span class='lbracket'>[</span><span class='id identifier rubyid_key'>key</span><span class='rbracket'>]</span> <span class='op'>!=</span> <span class='id identifier rubyid_value'>value</span>
   <span class='kw'>end</span>
   <span class='kw'>return</span> <span class='kw'>true</span>
 <span class='kw'>end</span></pre>
@@ -453,7 +691,7 @@ second value</p>
 </div>
 
       <div id="footer">
-  Generated on Tue Apr 25 10:57:47 2017 by
+  Generated on Tue May  2 14:01:45 2017 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.9.9 (ruby-2.3.1).
 </div>

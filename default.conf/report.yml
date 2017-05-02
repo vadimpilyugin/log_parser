@@ -7,19 +7,8 @@
 # type: отсеять по типу события
 # :except: отсеять те строки, в которых есть данное поле с данным значением
 
-- Counter: "Сколько пользователей посетили сайт 10 октября"
-  unique: user_ip
-  :server: newserv
+- Counter: "Сколько всего было запросов к апачу"
   :service: apache
-  :time:
-  - "10 Oct 2016"
-  - "11 Oct 2016"
-
-- Counter: "Сколько всего было запросов к сайту 10 октября"
-  :service: apache
-  :time:
-  - "10 Oct 2016"
-  - "11 Oct 2016"
 
 - Counter: "Сколько было запросов к главной странице"
   :service: apache
@@ -29,15 +18,16 @@
   :service: sshd
   :type: "Auth fail"
 
-- Counter: "Успешных входов по ssh кроме autocheck"
+- Counter: "Входов по ключу по ssh кроме autocheck"
   :service: sshd
   :type: "Accepted publickey"
-  ::except:
+  :except:
     username: autocheck
 
-- Distribution: "Сколько всего разных IP подключалось к нашим серверам"
+- Distribution: "Какие IP подключались к нашим серверам"
   :keys: 
   - user_ip
+  :top: 20
 
 # Distribution
 #
@@ -52,42 +42,36 @@
 
 - Distribution: "Распределение по кодам ошибок"
   :service: apache
-  :time:
-  - "10 Oct 2016"
-  - "11 Oct 2016"
   :keys:
   - code
 
 - Distribution: "Самые популярные страницы"
   :service: "apache"
-  :time:
-  - "10 Oct 2016"
-  - "11 Oct 2016"
   :keys:
   - path
-  top: 5
-  sort_type: total
+  :top: 5
+  :sort_type: total
 
 - Distribution: "Какие ip в каких сервисах засветились"
   :keys:
   - user_ip
   - :service
-  top: 20
-  sort_type: distinct
+  :top: 20
+  :sort_type: distinct
 
-- Distribution: "Перебор серверов с ip"
+- Distribution: "Какие ip были на каких серверах"
   :keys:
   - user_ip
   - :server
-  top: 20
-  sort_type: distinct
+  :top: 5
+  :sort_type: distinct
 
 - Distribution: "Какие ip какие события вызывали"
-  service: apache
+  service: sshd
   :keys: 
   - user_ip
-  - :descr
-  top: 10
-  sort_type: distinct
+  - :type
+  :top: 10
+  :sort_type: distinct
   :except:
     username: autocheck

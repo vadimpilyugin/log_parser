@@ -24,6 +24,7 @@ require_relative 'config'
 
 # This class is used to group different stats in one place
 class Statistics
+  attr_reader :stats
   # @param [Hash] stat_opts opts for statistics
   def initialize(stat_opts)
     @stats = []
@@ -44,10 +45,41 @@ class Statistics
   def [] (i)
     @stats[i]
   end
-  attr_reader :stats
+
+  # Return stat by description
+  # 
+  # @param [String] descr description of the statistics
+  # @return [Counter,Distribution,nil] the statistics or nil if not found
+  def by_descr(descr)
+    i = @stats.index {|stat| stat.descr == descr}
+    i ? @stats[i] : nil
+  end
+
+  def remove(descr)
+    i = @stats.index {|stat| stat.descr == descr}
+    if i != nil
+      @stats.delete_at(i)
+    end
+  end
+
+  # Add new statistics to the array
+  # 
+  # @param [Hash] params Parameters of the statistics
+  # @return [void]
+  def add(params)
+    if params.has_key? "Counter"
+      @stats << Counter.new(params)
+    elsif params.has_key? "Distribution"
+      @stats << Distribution.new(params)
+    else
+      Printer::error(msg:"Undefined statistics")
+    end
+  end
+
   def process(table)
     Printer::debug(who:"Report processing", msg:"Processing started")
     table.each_with_index do |logline,i|
+      Printer::assert(expr:by_descr("Pagination").conditions.check(logline), msg:"Check does not hold")
       Printer::debug(who:"Обработано строк", msg:"#{i+1}".red+"/".white+"#{table.size}".red+"".white, in_place:true)
       @stats.each do |stat|
         stat.increment(logline)
@@ -66,6 +98,7 @@ end
 
 # Class that checks that all conditions are true
 class Condition
+  attr_reader :server,:service,:type
   # @param [Hash] hsh various conditions
   # @option hsh [String] :server check that name of the server is equal to this value
   # @option hsh [String] :service check the name of the service
@@ -95,6 +128,11 @@ class Condition
       @time_to = nil
     end
     @except = hsh[:except]
+    # User defined conditions on custom keys
+    @user_params = {}
+    hsh.keys.keep_if {|key| key.class == String}.each do |key|
+      @user_params.update({key => hsh[key]}) if key != "Distribution" and key != "Counter"
+    end
   end
   # Checks if a logline suffices all conditions
   # @param [String] logline a line to check. See Parser::parse!
@@ -110,11 +148,16 @@ class Condition
         return false if logline[key] == value
       end
     end
+    @user_params.each_pair do |key,value|
+      return false if logline[key] != value
+    end
     return true
   end
 end
 
 class Counter
+  attr_reader :value, :conditions, :descr
+
   def initialize(hsh)
     @descr = hsh["Counter"]
     @conditions = Condition.new(hsh)
@@ -123,9 +166,11 @@ class Counter
   def increment(logline)
     @value += 1 if @conditions.check(logline)
   end
-  attr_reader :value, :conditions, :descr
   def finalize
     @value
+  end
+  def to_s
+    @descr + ": " + @value.to_s
   end
 end
 
@@ -145,6 +190,8 @@ end
 #   :total => 9,
 #   :distinct => 2
 class Distribution
+  attr_reader :conditions, :descr, :keys, :value, :sort_type
+
   def initialize(hsh)
     @descr = hsh["Distribution"]
     @conditions = Condition.new(hsh)
@@ -152,9 +199,12 @@ class Distribution
       Printer::fatal(msg:"No aggregation fields specified for distribution!", params:hsh)
     end
     @keys = hsh[:keys]
-    @top = hsh["top"]
-    @sort_type = hsh["sort_type"] ? hsh["sort_type"] : "total"
+    @top = hsh[:top]
+    @sort_type = hsh[:sort_type] ? hsh[:sort_type] : "total"
     @value = Distribution::hash_cnt(@keys.size)
+  end
+  def to_h
+    return {@descr => @value}
   end
   def Distribution.hash_cnt(cnt)
     if cnt > 0
@@ -163,7 +213,6 @@ class Distribution
       0
     end
   end
-  attr_reader :value, :conditions, :descr, :keys
   def increment(logline)
     if @conditions.check(logline)
       @keys.each do |key| 
@@ -184,20 +233,23 @@ class Distribution
     total = @value.delete(:total)
     distinct = @value.delete(:distinct)
     if @keys.size == 1
-      @value = @value.to_a.sort!{|a,b| b[1] <=> a[1]}.to_h.update(total:total, distinct: distinct)
+      @value = @value.to_a.sort{|a,b| b[1] <=> a[1]}
     else
       if @sort_type == "total"
-        @value = @value.to_a.sort!{|a,b| b[1][:total] <=> a[1][:total]}.to_h.update(total:total, distinct: distinct)
+        @value = @value.to_a.sort{|a,b| b[1][:total] <=> a[1][:total]}
       else
-        @value = @value.to_a.sort!{|a,b| b[1][:distinct] <=> a[1][:distinct]}.to_h.update(total:total, distinct: distinct)
+        @value = @value.to_a.sort{|a,b| b[1][:distinct] <=> a[1][:distinct]}
       end
     end
     if @top
-      size = @value.keys.size
+      size = @value.size
       if size > @top
-        @value = @value.to_a[0..@top].to_h
-        @value.update(:more => size-@top)
+        @value = @value[0..@top]
+        @value << [:more, size-@top]
       end
     end
+    @value << [:total, total]
+    @value << [:distinct, distinct]
+    @value = @value.to_h
   end
 end

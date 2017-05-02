@@ -63,40 +63,44 @@ class TestParser < Minitest::Test
   	  	  "user_ip" => "127.0.0.1"
   	  	}
   	  },
-  	  {
-  	  	"Distribution" => "Server - Service",
-  	  	:keys => [
-  	  		:server,
-  	  		:service
-  	  	  ]
-  	  },
-  	  {
-  	  	"Distribution" => "IP - PATH",
-  	  	:keys => [
-  	  		"user_ip",
-  	  		"path"
-  	  	  ]
-  	  },
-  	  {
-  	  	"Distribution" => "Server requests total",
-  	  	:keys => [
-  	  		:server
-  	  	  ]
-  	  }
-  	]
-  	stats = Statistics.new(params)
-  	stats.process table
-  	assert stats[0].value == 2, "Wrong counter value!"
-  	pp stats[1].value
-  	assert stats[1].value == {
-  	  "nginx" => {
-  	  	"nginx" => 3,
-  	  	"sshd" => 1,
-  	  	:total => 4,
-  	  	:distinct => 2
-  	  },
-  	  "newserv" => {
-  	  	"sshd" => 1,
+      {
+        "Distribution" => "Server - Service",
+        :keys => [
+          :server,
+          :service
+          ]
+      },
+      {
+        "Distribution" => "IP - PATH",
+        :keys => [
+          "user_ip",
+          "path"
+          ]
+      },
+      {
+        "Distribution" => "Server requests total",
+        :keys => [
+          :server
+          ]
+      },
+      {
+        "Counter" => "Total requests to home page",
+        "path" => "/"
+      },
+    ]
+    stats = Statistics.new(params)
+    stats.process table
+    assert stats[0].value == 2, "Wrong counter value!"
+    pp stats[1].value
+    assert stats[1].value == {
+      "nginx" => {
+        "nginx" => 3,
+        "sshd" => 1,
+        :total => 4,
+        :distinct => 2
+      },
+      "newserv" => {
+        "sshd" => 1,
   	  	"apache" => 3,
   	  	"syslog" => 1,
   	  	:total => 5,
@@ -116,11 +120,12 @@ class TestParser < Minitest::Test
   	  :distinct => 1
   	}
   	assert stats[3].value == {
-  	  "nginx" => 4,
-  	  "newserv" => 5,
-  	  :total => 9,
-  	  :distinct => 2
-  	}
+      "nginx" => 4,
+      "newserv" => 5,
+      :total => 9,
+      :distinct => 2
+    }
+    assert stats[4].value == 1
   end
   
 end
