@@ -79,7 +79,6 @@ class Statistics
   def process(table)
     Printer::debug(who:"Report processing", msg:"Processing started")
     table.each_with_index do |logline,i|
-      Printer::assert(expr:by_descr("Pagination").conditions.check(logline), msg:"Check does not hold")
       Printer::debug(who:"Обработано строк", msg:"#{i+1}".red+"/".white+"#{table.size}".red+"".white, in_place:true)
       @stats.each do |stat|
         stat.increment(logline)
@@ -155,6 +154,7 @@ class Condition
   end
 end
 
+
 class Counter
   attr_reader :value, :conditions, :descr
 
@@ -174,21 +174,6 @@ class Counter
   end
 end
 
-#   "nginx" => {
-#     "nginx" => 3,
-#     "sshd" => 1,
-#     :total => 4,
-#     :distinct => 2
-#   },
-#   "newserv" => {
-#     "sshd" => 1,
-#     "apache" => 3,
-#     "syslog" => 1,
-#     :total => 5,
-#     :distinct => 3
-#   },
-#   :total => 9,
-#   :distinct => 2
 class Distribution
   attr_reader :conditions, :descr, :keys, :value, :sort_type
 

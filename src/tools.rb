@@ -139,7 +139,7 @@ class Printer
       if hsh[:params]
         hsh[:params].my_pp
       end
-      raise Error::AssertError("Assertion failed")
+      raise Error::AssertError.new("Assertion failed")
     end
   end
   # Print a error message
@@ -175,7 +175,7 @@ class Printer
     if hsh[:params]
       hsh[:params].my_pp
     end
-    raise Error::FatalError("Fatal error")
+    raise Error::FatalError.new("Fatal error")
   end
   # You might want to use this method to indicate that something strange is happening
   # @param [Hash] hsh options to print message with

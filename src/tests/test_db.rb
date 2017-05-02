@@ -11,22 +11,15 @@ class TestSaving < Minitest::Test
     @filename = Tools.abs_path('src/tests/files/auth_test')
     @table = Parser.parse!(@filename, 'newserv')
   end
-  def test_saving_big_log
-    skip
-  	table = Parser.parse!(Tools.abs_path('src/tests/files/daemon.log'), 'newserv')
-  	filename = Tools.abs_path('src/tests/files/daemon.sqlite3')
-  	Database.save!(filename, table)
-  end
-  def test_load
+  def test_save_load
     filename = Tools.abs_path('src/tests/files/auth_test.sqlite3')
     Database.save!(filename, @table)
     table = Database.load(filename)
     for i in 0...table.size
       if table[i] != @table[i]
         puts "==============="
-        printf "Было: #{@table[i]}\n"
+        printf "Было : #{@table[i]}\n"
         printf "Стало: #{table[i]}\n"
-        puts table[i][:date].to_s
       end
     end
     assert table == @table
