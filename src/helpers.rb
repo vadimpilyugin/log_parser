@@ -334,6 +334,7 @@ module Helpers
     total = params[:data].delete(:total)
     header = ["Logline", "Service", "Error type"]
     if total == 0
+      params[:data].update total:total
       return ""
     end
     # all hidden tables
