@@ -12,9 +12,12 @@ html
     div class="container"
       div class="section"
         div class="row"
-          div class="col-md-12"
+          div class="col-md-8"
             ==pagination(@pagination.value, "All", '            ')
       div class="section"
         div class="row"
           div class="col-md-8"
             ==main_page_stats(stats:@stats.stats,tabs:'            ')
+        div class="row"
+          div class="col-md-8"
+            ==bad_lines tabs:'            ', data:@bad_lines

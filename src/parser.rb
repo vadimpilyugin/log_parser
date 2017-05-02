@@ -8,8 +8,11 @@ require_relative 'stats'
 # Класс занимается обработкой входящих логов и переводом их в структурированный вид
 #
 class Parser
-  attr_reader :bad_lines
-  @lines_before_drop = 10
+  def Parser.bad_lines
+    @bad_lines
+  end
+
+  @bad_lines = {:total => 0}
   @log_format_not_found = -1
   @unknown_service = -2
   @template_for_msg_not_found = -3
@@ -113,7 +116,7 @@ class Parser
     end
     table = []
     # Сюда будем записывать плохие строки
-    @bad_lines.update({filename => {:total => 0}})
+    @bad_lines.update({filename => []})
     log_format = nil
     File.open(filename, 'r') do |f|
       Printer::debug(msg:"Файл лога успешно открыт: #{filename}",who:"Parser")
@@ -122,14 +125,12 @@ class Parser
         if log_format == nil
           # Формат лога определяется его первой строкой
           log_format = LogFormat.find(logline)
-          # Если первая строка плохая, будет взята следующая и т.д. до @lines_before_drop строки
+          # Если первая строка плохая, будет взята следующая и т.д.
           if log_format == nil
             table << {:type => uid_to_type(@log_format_not_found), "logline" => logline[0...-1], :uid => @log_format_not_found}  #  убрать \n
-            if i == @lines_before_drop
-              break
-            else
-              next
-            end
+            @bad_lines[:total] += 1
+            @bad_lines[filename] << [logline, 'n/a', uid_to_s(@log_format_not_found)]
+            next
           end
         end
         # Основной цикл: получить имя сервиса из формата лога, распарсить сообщение,
@@ -137,10 +138,12 @@ class Parser
         parsed_line = log_format.parse!(logline)
         if parsed_line == nil
           table << {:type => uid_to_type(@log_format_not_found), "logline" => logline[0...-1], :uid => @log_format_not_found}
+          @bad_lines[:total] += 1
+          @bad_lines[filename] << [logline, 'n/a', uid_to_s(@log_format_not_found)]
           next
         end
 
-        service_name = parsed_line["service"]
+        service_name = parsed_line["service"].downcase
         # Далее нужно парсить только часть строки лога или всю строку целиком?
         # Если есть поле msg, то оно берется в качестве части строки
         message = parsed_line["msg"] ? parsed_line["msg"] : logline
@@ -182,14 +185,24 @@ class Parser
           :type => type,
           :uid => uid
         }.update(data)
+
         # Здесь мы сохраняем некорректные строки для того, чтобы вывести их через веб-интерфейс
         if uid < 0
           @bad_lines[:total] += 1
-          @bad_lines[filename][:total] += 1
-          @bad_lines[filename].update({logline => uid})
+          case uid
+          when @log_format_not_found
+            @bad_lines[filename] << [logline, 'n/a', uid_to_s(@log_format_not_found)]
+          when @unknown_service
+            @bad_lines[filename] << [logline, service_name, uid_to_s(@unknown_service)]
+          when @template_for_msg_not_found
+            @bad_lines[filename] << [logline, service_name, uid_to_s(@template_for_msg_not_found)]
+          when @does_not_match_log_format
+            ;
+          end
         end
       end
     end
+    @bad_lines.delete(filename) if @bad_lines[filename].size == 0
     Parser.stats(table)
     return table
   end
@@ -212,6 +225,7 @@ class Parser
       ["HashCounter", "unknown_lines", "Строки, не подходящие под формат лога"],
       ["HashCounter", "unrecognized_services", "Неопознанные сервисы"],
       ["HashCounter", "no_template_provided", "Строки, для которых не найдено шаблона"],
+      ["HashCounter", "unknown_format", "Неизвестный формат лога"],
       ["HashCounter", "services_distr", "Распределение по сервисам"],
     ])
     puts
@@ -228,6 +242,9 @@ class Parser
         # Подошла под сервис, но не нашлось шаблона
         st.no_template_provided.increment(line["logline"])
         st.services_distr.increment(line[:service])
+      elsif line[:uid] == @log_format_not_found
+        # Не распарсена, так как формат неизвестен
+        st.unknown_format.increment(line["logline"])
       elsif line[:type] == "Ignore"
         # Полностью распознана, но проигнорирована
         st.services_distr.increment(line[:service])

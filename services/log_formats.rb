@@ -10,6 +10,7 @@ require_relative '../src/tools'
 
 class LogFormat
   @format = nil
+  @all_formats = nil
   @service_name
 
   def LogFormat.check(logline)
@@ -39,9 +40,9 @@ class LogFormat
   end
 
   def LogFormat.find(logline)
-    formats = ObjectSpace.each_object(Class).select {|klass| klass < self}
-    i = formats.index {|log_format| log_format.check(logline)}
-    return i == nil ? nil : formats[i]
+    @all_formats = ObjectSpace.each_object(Class).select {|klass| klass < self} if @all_formats == nil 
+    i = @all_formats.index {|log_format| log_format.check(logline)}
+    return i == nil ? nil : @all_formats[i]
   end
 end
 

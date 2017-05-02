@@ -65,8 +65,8 @@ if create_report
   get '/' do
     @stats = st
     @pagination = pagination
+    @bad_lines = Parser.bad_lines
     # Массив статистик
-    Printer::debug(msg:"Total #{st.stats.size} statistics")
     slim :main
   end
   get "/:server" do
