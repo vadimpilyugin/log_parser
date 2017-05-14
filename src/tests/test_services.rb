@@ -4,6 +4,30 @@ require 'pp'
 require_relative "../../services/service.rb"
 
 class TestSaving < Minitest::Test
+  def test_sshd_pam
+    s = 'pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=58.218.198.142 user=root'
+    s2 = 'PAM 2 more authentication failures; logname= uid=0 euid=0 tty=ssh ruser= rhost=58.218.198.142 user=root'
+    assert Services["sshd"].check(s)
+    assert Services["sshd"].check(s2)
+    result = Services["sshd"].parse! s
+    true_result = {
+      "data" => {
+
+      },
+      "type" => "Ignore"
+    }
+    result.each_pair do |key,value|
+      if key == "data"
+        true_result["data"].each_pair do |k1,v1|
+          assert result["data"][k1] == true_result["data"][k1], "#{k1} in data is wrong! #{result["data"][k1]}"
+        end
+      elsif key == "uid"
+        ;
+      else
+        assert result[key] == true_result[key], "#{key} is wrong! #{result[key]}"
+      end
+    end
+  end
   def test_apache_logline
   	s = "93.180.9.182 - - [03/Feb/1997:18:30:00 +0300] \"GET /robots.txt?uuid=180&path=yandex.ru HTTP/1.0\" 200 177 \"-\" \"Wget/1.12 (linux-gnu)\" - - newserv.srcc.msu.ru"
   	service = Services["apache"]
