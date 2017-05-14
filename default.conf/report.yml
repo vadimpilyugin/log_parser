@@ -7,24 +7,8 @@
 # type: отсеять по типу события
 # поле: значение - выбрать только те строки, в которых данное поле идет с данным значением
 # except: отсеять те строки, в которых есть данные поля с данными значениеми
-
-
-- Counter: "Сколько всего было запросов к апачу"
-  :service: apache
-
-- Counter: "Сколько было запросов к главной странице"
-  :service: apache
-  path: "/"
-
-- Counter: "Неудавшихся попыток входа по ssh"
-  :service: sshd
+- Counter: "Неудачных попыток входа"
   :type: "Auth fail"
-
-- Counter: "Входов по ключу по ssh кроме autocheck"
-  :service: sshd
-  :type: "Accepted publickey"
-  :except:
-    username: autocheck
 
 # Distribution: показывает распределение по полям. Либо хэш значение поля=>сколько раз встретилось,
 # либо многоуровневый.
@@ -46,32 +30,6 @@
   :keys:
   - :type
 
-- Distribution: "Распределение по кодам ошибок"
-  :service: apache
-  :keys:
-  - code
-
-- Distribution: "Самые популярные страницы"
-  :service: "apache"
-  :keys:
-  - path
-  :top: 5
-  :sort_type: total
-
-- Distribution: "Какие ip в каких сервисах засветились"
-  :keys:
-  - user_ip
-  - :service
-  :top: 20
-  :sort_type: distinct
-
-- Distribution: "Какие ip были на каких серверах"
-  :keys:
-  - user_ip
-  - :server
-  :top: 5
-  :sort_type: distinct
-
 - Distribution: "Какие ip какие события вызывали"
   :service: sshd
   :keys: 
@@ -79,5 +37,15 @@
   - :type
   :top: 10
   :sort_type: distinct
-  :except:
-    username: autocheck
+
+- Distribution: "Какие интересные имена пользователей пытаются подключиться"
+  :keys:
+  - username
+  :top: 50
+
+- Distribution: "Какие ip какие имена используют"
+  :keys:
+  - user_ip
+  - username
+  :top: 50
+  :sort_type: distinct
