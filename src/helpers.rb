@@ -329,9 +329,11 @@ module Helpers
   # @param [Hash] params
   # @option params [String] tabs white spaces before each line
   # @option params [Hash<String,Array<Array>> | Hash<Symbol,Fixnum>] data filename and corresponding lines and :total count
+  # @option params [Fixnum] top max number of lines to output for each file
   def bad_lines(params)
     tabs = params[:tabs] ? params[:tabs] : ""
     total = params[:data].delete(:total)
+    top = params[:top] ? params[:top] : 100
     header = ["Logline", "Service", "Error type"]
     if total == 0
       params[:data].update total:total
@@ -341,7 +343,7 @@ module Helpers
     tables = ""
     params[:data].each_pair do |filename, data|
       if data.size > 0
-        tables << hidden_table(tabs:tabs, filename:filename, total:data.size, data:data, header:header) << "\n"
+        tables << hidden_table(tabs:tabs, filename:filename, total:data.size, data:data[0..top], header:header) << "\n"
       end
     end
 

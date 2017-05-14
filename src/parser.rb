@@ -195,9 +195,9 @@ class Parser
           when @unknown_service
             @bad_lines[filename] << [logline, service_name, uid_to_s(@unknown_service)]
           when @template_for_msg_not_found
-            @bad_lines[filename] << [logline, service_name, uid_to_s(@template_for_msg_not_found)]
+            @bad_lines[filename] << [message, service_name, uid_to_s(@template_for_msg_not_found)]
           when @does_not_match_log_format
-            ;
+            ; # уже было записано
           end
         end
       end
