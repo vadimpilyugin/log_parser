@@ -1,2 +1,2 @@
 Connection information:
-- '(?<user_ip>\S+) - - \[.*\] \"(?<method>\S+) (?<path>[^?\s]+)[^"]+\" (?<code>\d+)'
+- '(?<user_ip>\S+) - - \[.*\] "(?<method>\S+) (?<path>[^?\s]*)(\?(?<params>\S+))? HTTP\/\d\.\d" (?<code>\d+)'

@@ -1,4 +1,4 @@
 New session:
-- 'New session (?<pid>\d+) of user (?<username>\S+)'
+- 'New session (?<pid>\d+) of user (?<username>\w+)'
 Removed session:
 - 'Removed session (?<pid>\d+)'

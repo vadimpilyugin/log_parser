@@ -2,23 +2,28 @@ New connection:
 - Connection from (?<user_ip>\S+) port (?<user_port>\S+) on (?<server_ip>\S+) port (?<server_port>\S+)
 Disconnect:
 - Received disconnect from (?<user_ip>\d+\.\d+\.\d+\.\d+)
-- 'Disconnected from (?<user_ip>\S+):?'
-- 'Connection closed by (?<user_ip>\S+):?'
-- 'Connection reset by (?<user_ip>\S+):?'
+- Disconnected from (?<user_ip>\S+)
+- Connection closed by (?<user_ip>\S+)
+- Connection reset by (?<user_ip>\S+)
 Accepted publickey:
 - 'Accepted publickey for (?<username>\S+) from (?<user_ip>\S+) port (?<user_port>\S+) \S+: (?<protocol>\S+) (?<hashing_alg>\S+):(?<publickey>\S+)'
 Session activity:
 - 'pam_unix\(sshd:session\): session (?<action>\S+) for user (?<username>\S+)'
 Auth fail:
-- Invalid user (?<username>\S+) from (?<user_ip>\S+)
+- Invalid user (?<username>\S+)? from (?<user_ip>\S+)
+- Failed none for invalid user from 139\.162\.122\.110 port 46618 ssh2
 - Failed (\S+) for (?<username>\S+) from (?<user_ip>\S+) port (?<user_port>\S+)
-- Failed password for invalid user (?<username>\S+) from (?<user_ip>\S+) port (?<user_port>\S+)
+- Failed password for invalid user (?<username>\S+)? from (?<user_ip>\S+) port (?<user_port>\S+)
 Too many connections:
 - 'maximum authentication attempts exceeded'
 - Too many authentication failures for (?<username>\S+) from (?<user_ip>\S+) port (?<user_port>\S+)
+- Too many authentication failures for invalid user (?<username>\S+) from (?<user_ip>\S+) port (?<user_port>\S+)
+Disconnected by timeout:
+- 'fatal: Write failed: Broken pipe \[preauth\]'
 Postponed publickey:
 - Postponed publickey for (?<username>\S+) from (?<user_ip>\S+) port (?<user_port>\S+)
 Ignore:
+- 'fatal: no matching cipher found'
 - '^input_userauth_request'
 - '^User child is on pid'
 - '^Starting session: command for \S+'

@@ -2,10 +2,9 @@ require_relative 'date'
 require_relative 'tools'
 require_relative 'config'
 
-# class Distribution<Statistics
-#   def initialize(params)
-    # Printer::debug("Grouping? #{@group_by_val ? "Yes, "+@group_by_val : "No"} Excluding? #{@exclude_val ? "Yes, "+@exclude_val : "No"}")
+# IDEA: group by value in Distribution
 
+# IDEA: a Flag stat
 # class Flag<Statistics
 #   def initialize(params)
 #     @threshold = params["threshold"]
@@ -18,15 +17,17 @@ require_relative 'config'
 #   end
 # end
 
-
-    # @report_file = Tools.load(Config["report"]["report_config"])
-    # Printer::debug("Loaded configuration for Report from #{Config["report"]["report_config"]}", debug_msg:"Preparations")
-
 # This class is used to group different stats in one place
 class Statistics
   attr_reader :stats
-  # @param [Hash] stat_opts opts for statistics
-  def initialize(stat_opts)
+  include Enumerable
+
+  def each(&block)
+    @stats.each(&block)
+  end
+  # @param [Hash] stat_opts opts for statistics which are given in a configuration file
+  #   we need it to be able to create system stats like pagination
+  def initialize(stat_opts = [])
     @stats = []
     Printer::debug(msg:"Creating #{stat_opts.size} statistics")
     stat_opts.each do |stat_params|
@@ -41,38 +42,39 @@ class Statistics
       end 
     end
   end
-  # @return [Counter, Distribution] returns a statistics at i'th place
-  def [] (i)
-    @stats[i]
+  def self.read_file
+    YAML.load_file(Tools.abs_path(Config['report']['report_config']))
   end
 
   # Return stat by description
   # 
   # @param [String] descr description of the statistics
   # @return [Counter,Distribution,nil] the statistics or nil if not found
-  def by_descr(descr)
-    i = @stats.index {|stat| stat.descr == descr}
-    i ? @stats[i] : nil
+  def [] (descr)
+    where = @stats.index {|stat| stat.descr == descr}
+    where ? @stats[where] : nil
   end
 
+  # Delete stat from array of stats and return its value
+  # 
+  # @param [String] descr stat description
+  # @return [nil, Counter, Distribution] stat with a given description
   def remove(descr)
-    i = @stats.index {|stat| stat.descr == descr}
-    if i != nil
-      @stats.delete_at(i)
+    where = @stats.index {|stat| stat.descr == descr}
+    if where != nil
+      @stats.delete_at where
+    else
+      nil
     end
   end
 
   # Add new statistics to the array
   # 
-  # @param [Hash] params Parameters of the statistics
+  # @param [Array[Hash]] stats array of stats in a regular format
   # @return [void]
-  def add(params)
-    if params.has_key? "Counter"
-      @stats << Counter.new(params)
-    elsif params.has_key? "Distribution"
-      @stats << Distribution.new(params)
-    else
-      Printer::error(msg:"Undefined statistics")
+  def add(stats)
+    Statistics.new(stats).each do |stat|
+      @stats << stat
     end
   end
 
