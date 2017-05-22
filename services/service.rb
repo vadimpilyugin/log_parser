@@ -56,13 +56,12 @@ end
 
 # Services.[] - Получить доступ к сервису по имени. Если такого сервиса нет, вернется nil
 # Если есть, то вернется instance класса Service, представляющий нужный сервис.
-# Services.init - загрузить шаблоны сервисов из файлов, создать соответствующие объекты
+# Services.load - загрузить шаблоны сервисов из файлов, создать соответствующие объекты
 
 class Services
   @services = {}
 
-  def Services.init
-  	return @services if !@services.empty?
+  def Services.load
   	templates_dir = Tools.abs_path(Config["parser"]["templates_dir"])
   	Dir.entries(templates_dir).keep_if {|name| name =~ /.*\.yml/}.each do |filename|
       service_templates = YAML.load_file(templates_dir+'/'+filename)
@@ -73,8 +72,8 @@ class Services
       end
       filename =~ /(?<service_name>.*)\.yml/
       service_name = $~["service_name"]
-      Printer::debug(msg:"Found new service: #{service_name}", who:"Preparations")
-  	  @services[service_name] = Service.new(service_name, service_templates)
+      Printer::debug(msg:"Loaded #{service_name} templates", who:"Services.load")
+  	  @services.update(service_name => Service.new(service_name, service_templates))
   	end
   end
 
@@ -83,4 +82,4 @@ class Services
   end
 end
 
-Services.init
+Services.load

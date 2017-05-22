@@ -193,7 +193,7 @@ class Parser
           when @log_format_not_found
             @bad_lines[filename] << [logline, 'n/a', uid_to_s(@log_format_not_found)]
           when @unknown_service
-            @bad_lines[filename] << [logline, service_name, uid_to_s(@unknown_service)]
+            @bad_lines[filename] << [message, service_name, uid_to_s(@unknown_service)]
           when @template_for_msg_not_found
             @bad_lines[filename] << [message, service_name, uid_to_s(@template_for_msg_not_found)]
           when @does_not_match_log_format
@@ -210,6 +210,17 @@ class Parser
   def Parser.parse!(filename, server_name = 'n/a')
     table = Parser.parse_full!(filename, server_name)
     table.keep_if{|line| line[:uid] >= 0 and line[:type] != "Ignore"}
+    table
+  end
+  def Parser.parse_dir
+    table = []
+    @bad_lines = {:total => 0}
+    Loader.get_logs_names.each_pair do | server, files |
+      files.each do |filename|
+        table += Parser.parse!(filename,server)
+        Printer::debug(who:"Init", msg:"#{filename} was successfully parsed, now table has #{table.size.to_s.red+"".white} lines")
+      end
+    end
     table
   end
 

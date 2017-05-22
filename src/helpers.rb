@@ -162,6 +162,9 @@ module Helpers
           s << tabs+'    <div class="panel-body">' << "\n"
           s << tabs+'      <h4 class="panel-title">' << "\n"
           # number in gray circle to the right
+          if key.class == nil.class
+            Printer::fatal(msg:"Упал по nil")
+          end
           s << tabs+'        <a data-toggle="collapse" href="' << "#collapse#{@inc}" << '">' << strnum(key,value[sort_type.to_sym]) << '</a>' << "\n"
           s << tabs+'      </h4>' << "\n"
           s << tabs+'    </div>' << "\n"
@@ -212,6 +215,10 @@ module Helpers
     "#{key}: #{value}"
   end
 
+  def nbspfy(str)
+    str.gsub(/  /) {|match| "&nbsp;&nbsp;"}
+  end
+
   # @param [Hash] params
   # @option params [Array<String,String,String>] row row content
   # @option params [Fixnum] row_num row number
@@ -231,7 +238,7 @@ module Helpers
     s << "\n"
     s << tabs+'  <th scope="row">' << "#{params[:row_num]}" << '</th>' << "\n"
     params[:row].each do |elem|
-      s << tabs+'  <td>' << elem.to_s << '</td>' << "\n"
+      s << tabs+'  <td>' << nbspfy(elem.to_s) << '</td>' << "\n"
     end
     s << tabs+'</tr>' << "\n"
     s

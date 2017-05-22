@@ -12,8 +12,10 @@ html
     div class="container"
       div class="section"
         div class="row"
-          div class="col-md-8"
+          div class="col-md-7"
             ==pagination(@pagination.value, "All", '            ')
+          div class="col-md-1"
+            button type="button" class="btn btn-danger" onclick="location.href = '/reload';" Reload
       div class="section"
         div class="row"
           div class="col-md-8"

@@ -1,37 +1,41 @@
 ---
-# Counter: Возвращает число подходящих строк после всех операций отсеивания
-# Поля могут быть либо :server, :service, :type, либо пользовательские, но тогда они
-#   указываются без двоеточия.
-# server: отсеять по имени сервера
-# service: отсеять по имени сервиса
-# type: отсеять по типу события
-# поле: значение - выбрать только те строки, в которых данное поле идет с данным значением
-# except: отсеять те строки, в которых есть данные поля с данными значениеми
+# Общая сводка по всем серверам - ip, на какие сервера заходили, ...
+- Distribution: "Топ-10 уникальных ip"
+  :keys:
+  - user_ip
+  :top: 10
+- Distribution: "На какие сервера заходили"
+  :keys:
+  - user_ip
+  - :server
+  :top: 20
+  :sort_type: distinct
+
+# Сервер ssh
+
+# Показываем общую статистику удачных/неудачных входов по ssh
 - Counter: "Неудачных попыток входа"
+  :service: sshd
+  :server: ssh
   :type: "Auth fail"
 
-# Distribution: показывает распределение по полям. Либо хэш значение поля=>сколько раз встретилось,
-# либо многоуровневый.
-# Поля могут быть либо :server, :service, :type, либо пользовательские, но тогда они
-#   указываются без двоеточия.
-# поле: значение - отсеивание по значению полей до построения распределения
-# :keys - по каким полям проводить агрегацию
-# top - сколько результатов выводить
-# sort_type -   total: по общему числу
-#               distinct: по количеству различных значений
+- Counter: "Удачных попыток входа"
+  :service: sshd
+  :server: ssh
+  :type: "Accepted publickey"
 
-- Distribution: "Какие IP подключались к нашим серверам"
+# Общая информация, вроде уникальных ip, сколько раз, какие события происходили...
+
+- Distribution: "Уникальные подключения по ssh"
+  :service: sshd
+  :server: ssh
   :keys: 
   - user_ip
-  :top: 20
-
-- Distribution: "Распределение по событиям"
-  :service: sshd
-  :keys:
-  - :type
+  :top: 10
 
 - Distribution: "Какие ip какие события вызывали"
   :service: sshd
+  :server: ssh
   :keys: 
   - user_ip
   - :type
@@ -39,13 +43,49 @@
   :sort_type: distinct
 
 - Distribution: "Какие интересные имена пользователей пытаются подключиться"
+  :service: sshd
+  :server: ssh
   :keys:
   - username
-  :top: 50
+  :top: 10
 
 - Distribution: "Какие ip какие имена используют"
+  :service: sshd
+  :server: ssh
   :keys:
   - user_ip
   - username
-  :top: 50
+  :top: 10
   :sort_type: distinct
+
+# Apache - количество запросов, сколько ошибочных
+- Counter: "Всего запросов"
+  :service: apache
+  :server: apache
+
+- Counter: "Неудачных"
+  :server: apache
+  :except:
+    code: "200"
+# Более детальная информация - распределение по кодам ошибок, какие страницы, топ самых запрашиваемых страниц, ...
+- Distribution: "Топ страниц"
+  :service: apache
+  :server: apache
+  :top: 10
+  :keys:
+  - path
+
+- Distribution: "Распределение по кодам ошибок"
+  :service: apache
+  :server: apache
+  :keys:
+  - code
+- Distribution: "Страницы, выдающие ошибки"
+  :service: apache
+  :server: apache
+  :keys:
+  - path
+  - code
+  :top: 15
+  :except:
+    code: "200"
