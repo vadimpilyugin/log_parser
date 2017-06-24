@@ -163,7 +163,7 @@ module Helpers
           s << tabs+'      <h4 class="panel-title">' << "\n"
           # number in gray circle to the right
           if key.class == nil.class
-            Printer::fatal(msg:"Упал по nil")
+            Printer::fatal(msg:"Упал по nil, value=#{value}")
           end
           s << tabs+'        <a data-toggle="collapse" href="' << "#collapse#{@inc}" << '">' << strnum(key,value[sort_type.to_sym]) << '</a>' << "\n"
           s << tabs+'      </h4>' << "\n"
