@@ -1,0 +1,5 @@
+Ignore:
+  - |
+    req:\d 'down' \[\S+\]: new request
+  - |
+    req:\d 'up' \[\S+\]: new request

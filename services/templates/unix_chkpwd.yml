@@ -1,0 +1,2 @@
+Ignore:
+  - 'password check failed for user \(\S+\)'

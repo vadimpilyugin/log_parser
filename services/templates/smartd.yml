@@ -1,0 +1,2 @@
+Ignore:
+ - 'Device: .*, SMART Usage Attribute: 194 Temperature_Celsius changed from'

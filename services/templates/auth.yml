@@ -1,0 +1,3 @@
+Failures:
+  - 'pam_unix\(dovecot:auth\): check pass; user unknown'
+  - 'pam_unix\(dovecot:auth\): authentication failure; logname=\S* uid=\d* euid=\d* tty=dovecot ruser=(?<userbane>\S*) rhost=(?<userip>\S*)'

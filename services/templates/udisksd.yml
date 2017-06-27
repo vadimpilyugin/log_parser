@@ -1,0 +1,5 @@
+Ignore:
+- Cleaning up mount point \S+ \(device \S+ is not mounted\)
+- 'Error probing device: Error opening device file \S+: No such file or directory \(udisks-error-quark, 0\)'
+- Mounted \S+ (.*)?at \S+ on behalf of uid \d+
+- Unmounted \S+ on behalf of uid \d+
