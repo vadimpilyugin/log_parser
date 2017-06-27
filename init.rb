@@ -18,6 +18,8 @@ save_results = Config['database']['save_result'] == 'true' ? true : false
 create_report = Config['overall']['create_report'] == 'true' ? true : false
 load_from_file = Config['overall']['load_from_file'] == 'false' ? false : Tools.abs_path(Config['overall']['load_from_file'])
 
+start_time=Time.now
+
 table = []
 if load_from_file
   table = Database.load load_from_file
@@ -29,6 +31,8 @@ else
     end
   end
 end
+Printer::debug(who:"Preparation time:", msg:"#{(Time.now-start_time)} сек.".red)
+#start_time=Time.now
 
 if save_results
   filename = Tools.abs_path Config['database']['database_file']
@@ -51,6 +55,7 @@ if create_report
   st.remove("Pagination")
   st.remove("For each server")
 
+  Printer::debug(who:"Full processing time:", msg:"#{(Time.now-start_time)} сек.".red+"".white)
   # Запускаем сервер
   require 'sinatra'
   configure do

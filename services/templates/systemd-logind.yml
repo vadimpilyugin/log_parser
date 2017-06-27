@@ -1,4 +1,6 @@
 New session:
-- 'New session (?<pid>\d+) of user (?<username>\S+)'
+- 'New session (?<sessid>\S+) of user (?<username>\S+)'
 Removed session:
-- 'Removed session (?<pid>\d+)'
+- 'Removed session (?<sessid>\S+)'
+Ignore:
+  - 'Existing logind session ID \d+ used by new audit session, ignoring'

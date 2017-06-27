@@ -1,4 +1,6 @@
 Session activity:
 - 'pam_unix\(cron:session\): session (?<action>\S+) for user (?<username>\S+)'
 Command line triggered:
-- '\((?<username>[a-z\-]+)\) CMD \((?<command>.*)\)'
+- '\((?<username>[A-Za-z0-9.\-]+)\) CMD \((?<command>.*)\)'
+Reload:
+ - '\(\S+\) RELOAD \(crontabs\/\S+\)'

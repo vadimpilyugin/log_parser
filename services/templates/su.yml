@@ -1,6 +1,6 @@
 Successfull attempt:
-- Successful su for nobody by root
+- Successful su for (?<username>\S+) by root
 Something:
-- '\+ \?\?\? root:nobody'
+- '\+ \?\?\? root:(?<username>\S+)'
 pam session activity:
-- 'pam_unix\(su:session\): session (\S+) for user nobody'
+- 'pam_unix\(su:session\): session (\S+) for user (?<username>\S+)'

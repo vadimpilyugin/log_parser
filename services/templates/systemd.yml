@@ -1,12 +1,42 @@
 Session activity:
-- 'pam_unix\(systemd-user:session\): session (?<action>\S+) for user (?<username>\S+)'
-- 'Started Session (\d+) of user (\S+)'
+ - 'pam_unix\(systemd-user:session\): session (?<action>\S+) for user (?<username>\S+)'
+ - 'Started Session (\d+) of user (\S+)'
+Services:
+ - Reloading (?<servicename>)
+ - 'Reloaded (?<servicename>.*)'
+ - 'Mounted Mount unit for '
+ 
 Killed:
-- 'Received (?<signal>\S+) from PID (?<killer_pid>\S+) \(kill\)'
+ - 'Received (?<signal>\S+) from PID (?<killer_pid>\S+) \(kill\)'
+ - 'user@\d+.service: Killing process \d+ \(kill\) with signal SIGKILL'
+Failures:
+ - '(?<service>\S+).service: Unit entered failed state.'
+ - '(?<service>\S+).service: Main process exited'
+ - '(?<service>\S+).service: Failed with result '
+ - Failed to start (?<service>\S+)
+ - '(\S+).service: Failed at step EXEC spawning .*: No such file or directory'
+ 
 Ignore:
-- '(Started|Starting|Stopped|Stopping) (.*)( for UID (\S+))?'
-- '(\S+) target (.*)\.'
-- 'Removed slice User Slice of (\S+)'
-- '(?<action>\S+) finished in (?<time_ms>\d+)'
-- '(Created|Removed) slice User Slice of (\S+)'
-- '(Created|Removed) slice user-(\d+)\.slice'
+ - '(?<service>\S+).service: Got notification message from PID \d+, but reception is disabled'
+ - 'Reloading'
+ - 'Mounting Mount unit for '
+ - 'Received SIGINT'
+ - 'Unmounting .*\.\.\.'
+ - 'Closed Load/Save RF Kill Switch Status /dev/rfkill Watch'
+ - 'Failed to send queued message: Transport endpoint is not connected'
+ - 'Listening on LXD - unix socket'
+ - 'Cannot find unit for notify message of PID \d+'
+ - '(Started|Starting|Stopped|Stopping) (.*)( for UID (\S+))?'
+ - '(\S+) target (.*)\.'
+ - 'Removed slice User Slice of (\S+)'
+ - '(?<action>\S+) finished in (?<time_ms>\d+)'
+ - '(Created|Removed) slice User Slice of (\S+)'
+ - '(Created|Removed) slice user-(\d+)\.slice'
+ - Trying to run as user instance, but \$XDG_RUNTIME_DIR is not set
+ - '\S+\.target: Unit not needed anymore. Stopping.'
+ - 'dovecot.service: Got notification message from PID \d+, but reception is disabled'
+ - '\S+.timer: Adding .* random time'
+ - 'Listening on GnuPG cryptographic'
+ - 'Closed GnuPG'
+ - 'Listening on GnuPG network certificate management daemon'
+ - 'Time has been changed'

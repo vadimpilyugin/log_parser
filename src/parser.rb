@@ -8,6 +8,7 @@ require_relative 'stats'
 # Класс занимается обработкой входящих логов и переводом их в структурированный вид
 #
 class Parser
+  LOG_EVERY_N=5000
   def Parser.bad_lines
     @bad_lines
   end
@@ -121,7 +122,7 @@ class Parser
     File.open(filename, 'r') do |f|
       Printer::debug(msg:"Файл лога успешно открыт: #{filename}",who:"Parser")
       f.each_with_index do |logline, i|
-        Printer::debug(who:"Обработано строк", msg:"#{i+1}".red, in_place:true)
+        Printer::debug(who:"Обработано строк", msg:"#{i+1}".red, in_place:true) if i%LOG_EVERY_N==0
         if log_format == nil
           # Формат лога определяется его первой строкой
           log_format = LogFormat.find(logline)
