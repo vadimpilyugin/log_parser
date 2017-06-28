@@ -1,0 +1,2 @@
+Ignore:
+  - 'WARNING: \S+: Detected that screensaver has left the bus'

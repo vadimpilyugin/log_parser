@@ -24,6 +24,7 @@ require_relative 'config'
 
 # This class is used to group different stats in one place
 class Statistics
+  LOG_EVERY_N=5000
   attr_reader :stats
   # @param [Hash] stat_opts opts for statistics
   def initialize(stat_opts)
@@ -79,7 +80,7 @@ class Statistics
   def process(table)
     Printer::debug(who:"Report processing", msg:"Processing started")
     table.each_with_index do |logline,i|
-      Printer::debug(who:"Обработано строк", msg:"#{i+1}".red+"/".white+"#{table.size}".red+"".white, in_place:true)
+      Printer::debug(who:"Обработано строк", msg:"#{i+1}".red+"/".white+"#{table.size}".red+"".white, in_place:true) if i%LOG_EVERY_N==0
       @stats.each do |stat|
         stat.increment(logline)
       end
@@ -87,7 +88,7 @@ class Statistics
     puts
     Printer::debug(who: "Report processing", msg:"Sorting and stuff")
     @stats.each_with_index do |stat,i|
-      Printer::debug(who:"Статистик готово", msg:"#{i+1}".red+"/".white+"#{@stats.size}".red+"".white, in_place:true)
+      Printer::debug(who:"Статистик готово", msg:"#{i+1}".red+"/".white+"#{@stats.size}".red+"".white, in_place:true) if i%LOG_EVERY_N==0
       stat.finalize
     end
     puts

@@ -1,0 +1,3 @@
+Ignore:
+  - '^checking bus \d+, device \d+'
+  - '^bus: \d+, device: \d+ was not an MTP device'

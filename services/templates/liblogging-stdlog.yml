@@ -1,0 +1,4 @@
+Ignore:
+  - '-- MARK --'
+  - '.* rsyslogd was HUPed'
+

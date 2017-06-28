@@ -62,20 +62,20 @@ class Services
   @services = {}
 
   def Services.init
-  	return @services if !@services.empty?
-  	templates_dir = Tools.abs_path(Config["parser"]["templates_dir"])
-  	Dir.entries(templates_dir).keep_if {|name| name =~ /.*\.yml/}.each do |filename|
+    return @services if !@services.empty?
+    templates_dir = Tools.abs_path(Config["parser"]["templates_dir"])
+    Dir.entries(templates_dir).keep_if {|name| name =~ /.*\.yml/}.each do |filename|
+      filename =~ /(?<service_name>.*)\.yml/
+      service_name = $~["service_name"]
+      Printer::debug(msg:"Found new service: #{service_name}", who:"Preparations")
       service_templates = YAML.load_file(templates_dir+'/'+filename)
       service_templates.each_value do |ar|
         ar.map! do |s|
           Regexp.new(s)
         end
       end
-      filename =~ /(?<service_name>.*)\.yml/
-      service_name = $~["service_name"]
-      Printer::debug(msg:"Found new service: #{service_name}", who:"Preparations")
-  	  @services[service_name] = Service.new(service_name, service_templates)
-  	end
+      @services[service_name] = Service.new(service_name, service_templates)
+    end
   end
 
   def Services.[](service_name)

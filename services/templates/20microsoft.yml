@@ -1,0 +1,2 @@
+Ignore:
+ - 'debug: \S+ is not a MS partition: exiting'

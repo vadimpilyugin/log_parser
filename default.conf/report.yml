@@ -20,8 +20,25 @@
 # sort_type -   total: по общему числу
 #               distinct: по количеству различных значений
 
+- Counter: "Сообщений отфильтровано"
+  :service: dovecot
+  :type: "Discard"
+          #  -  count
+
+- Counter: "Записано видео"
+  :service: motion
+  :type: "Motion"
+          #  - motion
+
+- Distribution: "Входов по pop3"
+  :service: dovecot
+  :type: "Logini-pop3"
+  :keys:
+  - user_ip
+  :sort_type: total
+
 - Distribution: "Какие IP подключались к нашим серверам"
-  :keys: 
+  :keys:
   - user_ip
   :top: 20
 
@@ -29,6 +46,8 @@
   :service: sshd
   :keys:
   - :type
+  - user_ip
+  :sort_type: total
 
 - Distribution: "Какие ip какие события вызывали"
   :service: sshd
