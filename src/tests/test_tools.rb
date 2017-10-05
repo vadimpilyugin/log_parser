@@ -5,7 +5,7 @@ require_relative "../tools"
 
 class TestReport < Minitest::Test
 
-  def test_assert
+  def test_printer
   	begin
   	  Printer::assert(expr:2+2 == 5, msg:"2+2 = 5")
   	rescue Error::AssertError

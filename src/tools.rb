@@ -70,6 +70,9 @@ end
 # Class used for printing debug messages. Also used for checking assertions
 # 
 class Printer
+
+  LOG_EVERY_N = 5000
+  
   # @attr [String] debug_msg_color Sets the color of debug messages
   # @attr [String] note_msg_color Sets the color of note messages
   # @attr [String] assert_msg_color Sets the color of assert messages
@@ -216,9 +219,9 @@ public
   # @return [String] absolute path
   def Tools.abs_path(path)
     if path[0] == '/'
-      return path
+      path
     else
-      return @homedir[-1] == '/' ? @homedir+path : @homedir+'/'+path
+      @homedir[-1] == '/' ? @homedir+path : @homedir+'/'+path
     end
   end
 

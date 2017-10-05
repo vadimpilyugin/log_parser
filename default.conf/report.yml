@@ -1,14 +1,38 @@
 ---
 # Counter: Возвращает число подходящих строк после всех операций отсеивания
-# Поля могут быть либо :server, :service, :type, либо пользовательские, но тогда они
-#   указываются без двоеточия.
-# server: отсеять по имени сервера
-# service: отсеять по имени сервиса
-# type: отсеять по типу события
-# поле: значение - выбрать только те строки, в которых данное поле идет с данным значением
-# except: отсеять те строки, в которых есть данные поля с данными значениеми
-- Counter: "Неудачных попыток входа"
-  :type: "Auth fail"
+# поле: значение - выбрать только те строки, в которых данное поле идет с данным значением, для системных полей
+# linedata:
+#   name: value
+#   ...
+#   name: value - для определенных пользователем полей
+
+# - Counter: "Неудачных попыток входа"
+#   type: "Auth fail"
+
+# - Counter:    "Total messages"
+#   filename:   "/vvv/sshd.5"
+#   server:     foo
+#   service:    bar
+#   type:       "Auth fail"
+#   linedata:
+#     username: baz
+#     user_ip: 192.168.1.1
+
+# - Distribution: "Messages by Users"
+#   filename:   "/vvv/sshd.5"
+#   server:     foo
+#   service:    bar
+#   type:       "Auth fail"
+#   linedata:
+#     username: baz
+#   keys:
+#   - username
+#   - message
+#   top: 100
+#   sort_type: distinct
+
+
+
 
 # Distribution: показывает распределение по полям. Либо хэш значение поля=>сколько раз встретилось,
 # либо многоуровневый.
@@ -20,51 +44,49 @@
 # sort_type -   total: по общему числу
 #               distinct: по количеству различных значений
 
+
 - Counter: "Сообщений отфильтровано"
-  :service: dovecot
-  :type: "Discard"
+  service: dovecot
+  type: "Discard"
           #  -  count
 
 - Counter: "Записано видео"
-  :service: motion
-  :type: "Motion"
+  service: motion
+  type: "Motion"
           #  - motion
 
 - Distribution: "Входов по pop3"
-  :service: dovecot
-  :type: "Logini-pop3"
-  :keys:
+  service: dovecot
+  type: "Logini-pop3"
+  keys:
   - user_ip
-  :sort_type: total
 
 - Distribution: "Какие IP подключались к нашим серверам"
-  :keys:
+  keys:
   - user_ip
-  :top: 20
 
 - Distribution: "Распределение по событиям"
-  :service: sshd
-  :keys:
-  - :type
+  service: sshd
+  keys:
+  - type
   - user_ip
-  :sort_type: total
 
 - Distribution: "Какие ip какие события вызывали"
-  :service: sshd
-  :keys: 
+  service: sshd
+  keys: 
   - user_ip
-  - :type
-  :top: 10
-  :sort_type: distinct
+  - type
+  top: 10
+  sort_type: distinct
 
 - Distribution: "Какие интересные имена пользователей пытаются подключиться"
-  :keys:
+  keys:
   - username
-  :top: 50
+  sort_order: backward
 
 - Distribution: "Какие ip какие имена используют"
-  :keys:
+  keys:
   - user_ip
   - username
-  :top: 50
-  :sort_type: distinct
+  top: 50
+  sort_type: distinct

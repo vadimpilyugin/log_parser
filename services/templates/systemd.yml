@@ -9,6 +9,11 @@ Services:
 Killed:
  - 'Received (?<signal>\S+) from PID (?<killer_pid>\S+) \(kill\)'
  - 'user@\d+.service: Killing process \d+ \(kill\) with signal SIGKILL'
+
+Restarting:
+  - '.*service: Service hold-off time over, scheduling restart.'
+  - '.*service: Start request repeated too quickly.'
+  - 'Control process exited, code=exited status='
 Failures:
  - '(?<service>\S+).service: Unit entered failed state.'
  - '(?<service>\S+).service: Main process exited'

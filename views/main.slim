@@ -1,23 +1,40 @@
 doctype html
 html
-  head
-    title Welcome
-    meta name="viewport" content="width-device-width, initial-scale=1"
-    meta name="keywords" content="template language"
-    link href='/css/bootstrap.min.css' rel="stylesheet"
-    link href='/css/style.css' rel="stylesheet"
-    script src='/js/jquery.min.js'
-    script src='/js/bootstrap.min.js'
+  == slim :head
   body
     div class="container"
-      div class="section"
-        div class="row"
-          div class="col-md-8"
-            ==pagination(@pagination.value, "All", '            ')
-      div class="section"
-        div class="row"
-          div class="col-md-8"
-            ==main_page_stats(stats:@stats.stats,tabs:'            ')
-        div class="row"
-          div class="col-md-8"
-            ==bad_lines tabs:'            ', data:@bad_lines
+      div class="row"
+        div class="col-md-1"
+        div class="col-md-10"
+          ul class="nav nav-tabs"
+            - @pagination.each do |server|
+              - if server[:active]
+                li class="nav-item"
+                  a class="nav-link active" href="#{server[:href]}" #{server[:name]}
+              - else
+                li class="nav-item"
+                  a class="nav-link" href="#{server[:href]}" #{server[:name]}
+          - if @counters.empty?
+            div class="card"
+              div class="card-header"
+                h5 Нет счетчиков :(
+          - else
+            table class="table table-hover"
+              thead
+                tr
+                  th Описание
+                  th Значение
+              tbody
+              - @counters.each do |counter|
+                tr
+                  td #{counter.descr}
+                  td #{counter.count}
+          - if @dist_arr.empty?
+            div class="card"
+              div class="card-header"
+                h5 Нет распределений :(
+          - else
+            == distr_to_html(dist_arr:@dist_arr)
+        div class="col-md-1"
+
+          / ==bad_lines tabs:'            ', data:@bad_lines

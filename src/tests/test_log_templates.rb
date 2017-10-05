@@ -5,50 +5,87 @@ require_relative "../../services/log_formats.rb"
 
 class TestSaving < Minitest::Test
   def test_apache_log_format
-  	s = "93.180.9.50 - - [13/Feb/2017:07:22:52 +0300] \"GET /pipermail/par-news/2012-December.txt.gz?uuid=123&redirect=yandex.ru HTTP/1.0\" 200 2015 \"-\" \"Mozilla/5.0 (compatible;"
+    s = "93.180.9.50 - - [13/Feb/2017:07:22:52 +0300] \"GET /pipermail/par-news/2012-December.txt.gz?uuid=123&redirect=yandex.ru HTTP/1.0\" 200 - - foobar.ru"
+    assert ApacheFormat.check(s)
+    result = ApacheFormat.parse s
+    true_result = {
+      "user_ip" => "93.180.9.50",
+      "year" => "2017",
+      "month" => "Feb",
+      "day" => "13",
+      "hour" => "07",
+      "minute" => "22",
+      "second" => "52",
+      "timezone" => "+0300",
+      "method" => "GET",
+      "path" => "/pipermail/par-news/2012-December.txt.gz",
+      "http_version" => "1.0",
+      "code" => "200",
+      "server" => "foobar.ru"
+    }
+    true_result.each_pair do |key,value|
+      assert result[key] == true_result[key], "#{key} is wrong! #{result[key]}"
+    end
+  end
+  def test_apache_log_format_extraction
+  	s = "93.180.9.50 - - [13/Feb/2017:07:22:52 +0300] \"GET /pipermail/par-news/2012-December.txt.gz?uuid=123&redirect=yandex.ru HTTP/1.0\" 200 - - foobar.ru"
   	assert ApacheFormat.check(s)
-  	result = ApacheFormat.parse! s
+  	result = ApacheFormat.extract_fields s
   	true_result = {
-  	  "user_ip" => "93.180.9.50",
-  	  "year" => "2017",
-  	  "month" => "Feb",
-  	  "day" => "13",
-  	  "hour" => "07",
-  	  "minute" => "22",
-  	  "second" => "52",
-  	  "timezone" => "+0300",
-  	  "method" => "GET",
-  	  "path" => "/pipermail/par-news/2012-December.txt.gz",
-  	  "http_version" => "1.0",
-  	  "code" => "200"
+      linedata: {
+    	  "user_ip" => "93.180.9.50",
+    	  "method" => "GET",
+    	  "path" => "/pipermail/par-news/2012-December.txt.gz",
+    	  "http_version" => "1.0",
+    	  "code" => "200",
+      },
+      date: Time.new(2017,"Feb",13,07,22,52,"+03:00"),
+      server: "foobar.ru"
   	}
   	true_result.each_pair do |key,value|
-  	  assert result[key] == true_result[key], "#{key} is wrong! #{result[key]}"
+  	  assert result[key] == true_result[key], "#{key} is wrong! #{result[key].inspect}"
   	end
   end
   def test_syslog_log_format
+    s = "Feb 15 07:00:01 newserv CRON[18735]: (otrs) CMD ((test -x $HOME/bin/GenericAgent.pl && $HOME/bin/GenericAgent.pl)||true > /dev/null)"
+    assert SyslogFormat.check s
+    result = SyslogFormat.parse s
+    true_result = {
+      "month" => "Feb",
+      "day" => "15",
+      "hour" => "07",
+      "minute" => "00",
+      "second" => "01",
+      "server" => "newserv",
+      "service" => "CRON",
+      "pid" => "18735",
+      "msg" => "(otrs) CMD ((test -x $HOME/bin/GenericAgent.pl && $HOME/bin/GenericAgent.pl)||true > /dev/null)"
+    }
+    true_result.each_pair do |key,value|
+      assert result[key] == true_result[key], "#{key} is wrong! #{result[key]}"
+    end
+  end
+  def test_syslog_log_format_extraction
   	s = "Feb 15 07:00:01 newserv CRON[18735]: (otrs) CMD ((test -x $HOME/bin/GenericAgent.pl && $HOME/bin/GenericAgent.pl)||true > /dev/null)"
   	assert SyslogFormat.check s
-  	result = SyslogFormat.parse! s
+  	result = SyslogFormat.extract_fields s
   	true_result = {
-  	  "month" => "Feb",
-  	  "day" => "15",
-  	  "hour" => "07",
-  	  "minute" => "00",
-  	  "second" => "01",
-  	  "server" => "newserv",
-  	  "service" => "CRON",
-  	  "pid" => "18735",
-  	  "msg" => "(otrs) CMD ((test -x $HOME/bin/GenericAgent.pl && $HOME/bin/GenericAgent.pl)||true > /dev/null)"
+      linedata: {
+    	  "pid" => "18735",        
+      },
+      date: Time.new(2017,"Feb",15,07,00,01,"+03:00"),
+      server: "newserv",
+      service: "CRON",
   	}
+    # binding.irb
   	true_result.each_pair do |key,value|
-  	  assert result[key] == true_result[key], "#{key} is wrong! #{result[key]}"
+  	  assert result[key] == true_result[key], "#{key} is wrong! #{result[key].inspect}"
   	end
   end
   def test_fail2ban_log_format
   	s = "2017-02-14 04:22:15,208 fail2ban.actions        [1686]: NOTICE  [ssh] 223.99.60.47 already banned"
   	assert Fail2BanFormat.check s
-  	result = Fail2BanFormat.parse! s
+  	result = Fail2BanFormat.parse s
   	true_result = {
   	  "year" => "2017",
   	  "month" => "02",
@@ -90,8 +127,8 @@ class TestSaving < Minitest::Test
       SyslogFormat,
       SyslogFormat,
       SyslogFormat,
-      nil,
-      nil,
+      NoFormat,
+      NoFormat,
       Fail2BanFormat,
       Fail2BanFormat,
       Fail2BanFormat

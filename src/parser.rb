@@ -1,306 +1,168 @@
-require_relative 'config'
-require_relative 'tools'
-require_relative '../services/service.rb'
-require_relative 'date.rb'
-require_relative '../services/log_formats.rb'
-require_relative 'stats'
+# require_relative 'config'
+# require_relative 'tools'
+# require_relative 'stats'
 
-# Класс занимается обработкой входящих логов и переводом их в структурированный вид
+require_relative 'loader'
+require_relative 'date.rb'
+require_relative '../services/service.rb'
+require_relative '../services/log_formats.rb'
+
+
+# Класс занимается обработкой входного потока логов и переводом их в структурированный вид
 #
 class Parser
-  LOG_EVERY_N=5000
-  def Parser.bad_lines
-    @bad_lines
-  end
 
-  @bad_lines = {:total => 0}
-  @log_format_not_found = -1
-  @unknown_service = -2
-  @template_for_msg_not_found = -3
-  @does_not_match_log_format = -4
+  FORMAT_NOT_FOUND = 1
+  UNKNOWN_SERVICE = 2
+  TEMPLATE_NOT_FOUND = 3
+  WRONG_FORMAT = 4
 
-  def Parser.uid_to_s(uid)
-    case uid
-    when @log_format_not_found
+  def Parser.strerror(errno)
+    case errno
+    when FORMAT_NOT_FOUND
       "Отсутствует описание формата лога"
-    when @unknown_service
+    when UNKNOWN_SERVICE
       "Неопознанный сервис"
-    when @template_for_msg_not_found
+    when TEMPLATE_NOT_FOUND
       "Не найден шаблон"
-    when @does_not_match_log_format
+    when WRONG_FORMAT
       "Строка не соответствует формату остального лога"
     end
   end
 
-  def Parser.uid_to_type(uid)
-    case uid
-    when @log_format_not_found
-      "Format not found"
-    when @unknown_service
-      "Service not found"
-    when @template_for_msg_not_found
-      "Template not found"
-    when @does_not_match_log_format
-      "Bad format"
-    end
+  def initialize
+    # отображение из имени файла в формат
+    @filename_to_format_mapping = {}
+    @parsed_lines = []
+    @erroneous_lines = []
   end
 
-  @bad_lines = {:total => 0}
+  attr_reader :parsed_lines, :filename_to_format_mapping, :erroneous_lines
 
-  # @param [String] filename полный путь до файла лога
-  # @param [String] server_name имя сервера, с которого пришел файл
-  # @raise [Error::FileNotFoundError] если файл не существует
-  # Парсит файл и возвращает результат в виде массива хэшей.
-  # Каждой строке соответствует ровно один хэш в итоговом массиве.
-  # {
-  #   :server - имя сервера, строка, берется из входных параметров
-  #   :service - имя сервиса, который сделал данную запись в логе
-  #   :date - время записи в лог. Если отсуствует, берется текущее время
-  #   :type - описание данной записи. Берется из шаблона сервиса
-  #   :uid - уникальный номер регулярного выражения, под который подошла строка
-  #   <другие ключи> - сам пользователь выбирает им имена в шаблонах
-  # }
-  # Если строка не подходит ни под один формат лога, то хэш будет содержать
-  # три поля: uid, type и logline:
-  # {
-  #   logline => <unknown_line>
-  #   :type => "Format not found"
-  #   :uid => @log_format_not_found
-  # }
-  # Если строка подходит под формат лога и сервис не описан, 
-  # то:
-  # {
-  #   "logline" => <unknown line>,
-  #   :type => "Service not found"
-  #   :uid => @unknown_service
-  # }
-  # Если строка подошла под формат и сервис известен, но в нем не описан
-  # шаблон, под который подошла бы строка, то:
-  # {
-  #   logline => <unknown message>,
-  #   :type => "Template not found"
-  #   :uid => @template_for_msg_not_found
-  # }
-  # В этом случае записывается вся информация, полученная из формата
-  # лога, а также само не распарсенное сообщение.
-  #
-  # Если строка не подходит под формат лога, но предыдущие подходили,
-  # тогда:
-  # {
-  #   logline => <unknown line>,
-  #   :type => "Bad format"
-  #   :uid => @does_not_match_log_format
-  # }
-  # @example Нормальная строка
-  #   Hash.new(
-  #      :server => "newserv", 
-  #      :service => "sshd", 
-  #      :date => <time>, 
-  #      :type => "New connection", 
-  #      :uid => 12345,
-  #      "user_ip" => "127.0.0.1",
-  #      "user_port" => "22"
-  #    )
-  # @example Не найден сервис
-  #   Hash.new(
-  #      :server => "newserv", 
-  #      :service => "sshd", 
-  #      :date => <time>, 
-  #      :type => "Service not found",
-  #      "logline" => <unknown message>,
-  #      :uid => -2
-  #   )
-  def Parser.parse_full!(filename, server_name = 'n/a')
-    if !File.exists?(filename)
-      Printer::error(msg:"Файл лога по пути #{filename} не найден")
-      raise Error::FileNotFoundError.new(filename)
+  def parse_line(line_hash)
+    # если у файла еще не определен формат
+    if !@filename_to_format_mapping.has_key? line_hash[:filename]
+      # добавляем отображение для данного файла
+      @filename_to_format_mapping[line_hash[:filename]] = LogFormat.find(line_hash[:logline])
     end
-    table = []
-    # Сюда будем записывать плохие строки
-    @bad_lines.update({filename => []})
-    log_format = nil
-    File.open(filename, 'r') do |f|
-      Printer::debug(msg:"Файл лога успешно открыт: #{filename}",who:"Parser")
-      f.each_with_index do |logline, i|
-        Printer::debug(who:"Обработано строк", msg:"#{i+1}".red, in_place:true) if i%LOG_EVERY_N==0
-        if log_format == nil
-          # Формат лога определяется его первой строкой
-          log_format = LogFormat.find(logline)
-          # Если первая строка плохая, будет взята следующая и т.д.
-          if log_format == nil
-            table << {:type => uid_to_type(@log_format_not_found), "logline" => logline[0...-1], :uid => @log_format_not_found}  #  убрать \n
-            @bad_lines[:total] += 1
-            @bad_lines[filename] << [logline, 'n/a', uid_to_s(@log_format_not_found)]
-            next
-          end
-        end
-        # Основной цикл: получить имя сервиса из формата лога, распарсить сообщение,
-        # преобразовать дату и время в класс Ruby, записать результат в таблицу
-        parsed_line = log_format.parse!(logline)
-        if parsed_line == nil
-          table << {:type => uid_to_type(@log_format_not_found), "logline" => logline[0...-1], :uid => @log_format_not_found}
-          @bad_lines[:total] += 1
-          @bad_lines[filename] << [logline, 'n/a', uid_to_s(@log_format_not_found)]
-          next
-        end
+    # формат файла определен
+    # запоминаем формат файла в переменную
+    log_format = @filename_to_format_mapping[line_hash[:filename]]
+    # если это NoFormat
+    if log_format == NoFormat
+      return line_hash.update(
+        ok:false, 
+        description:Parser.strerror(FORMAT_NOT_FOUND), 
+        errno:FORMAT_NOT_FOUND
+      )
+    end
+    # формат файла не NoFormat
+    # парсим строку, используя формат лога
+    # получаем поля server, service, date
+    parsed_line = log_format.extract_fields(line_hash[:logline])
+    # если не удалось распарсить
+    if parsed_line.nil?
+      return line_hash.update(
+        ok:false, 
+        description:Parser.strerror(WRONG_FORMAT), 
+        errno:WRONG_FORMAT,
+        log_format:log_format.to_s
+      )
+    end
+    # удалось распарсить строку по формату лога
+    # добавляем правильный сервер, если был в формате лога
+    line_hash[:server] = parsed_line[:server] if parsed_line.has_key?(:server)
+    # если нужно парсить отдельно сообщение, то сохраняем его, иначе сохраняем всю строку
+    msg = log_format.needs_more_parsing? ? parsed_line[:msg] : line_hash[:logline]
+    # находим сервис по имени
+    service = Services[parsed_line[:service]]
+    # если сервис не найден
+    if service.nil?
+      return line_hash.update(
+        ok:false, 
+        description:Parser.strerror(UNKNOWN_SERVICE), 
+        errno:UNKNOWN_SERVICE,
+        service:parsed_line[:service],
+        date:parsed_line[:date],
+        log_format:log_format.to_s
+      )
+    end
+    # сервис найден
+    # вызываем метод parse над полем с сообщением сервиса
+    parsed_msg = service.parse msg
+    # если распарсить сообщение не удалось
+    if parsed_msg.nil?
+      return line_hash.update(
+        ok:false,
+        description:Parser.strerror(TEMPLATE_NOT_FOUND), 
+        errno:TEMPLATE_NOT_FOUND,
+        service:parsed_line[:service],
+        date:parsed_line[:date],
+        log_format:log_format.to_s,
+        msg:msg
+      )
+    end
+    # сообщение успешно распарсено
+    # если в формате и в сообщении есть поля с одинаковыми именами
+    if parsed_line[:linedata].keys.map {|k| parsed_msg[:linedata].has_key?(k)}.any?
+      # выводим предупреждение
+      Printer::note(
+        who: "#{parsed_line[:service]}, группа #{parsed_msg[:type]}",
+        msg: "#{parsed_msg[:regex]} пересекается названиями полей с #{log_format}!"
+      )
+    end
+    # объединяем linedat-ы формата и сообщения
+    parsed_msg[:linedata].update(parsed_line[:linedata])
+    return line_hash.update(
+      ok:true,
+      service:parsed_line[:service],
+      date:parsed_line[:date],
+      log_format:log_format.to_s,
+    ).update(parsed_msg)
+  end
 
-        service_name = parsed_line["service"].downcase
-        # Далее нужно парсить только часть строки лога или всю строку целиком?
-        # Если есть поле msg, то оно берется в качестве части строки
-        message = parsed_line["msg"] ? parsed_line["msg"] : logline
-        service = Services[service_name]
-        data = {}
-        type = ""
-        uid = 0
-        if service == nil
-          # Нет такого сервиса среди описанных
-          data = {"logline" => message}
-          type = uid_to_type(@unknown_service)
-          uid = @unknown_service
-        else
-          parsed_msg = Services[service_name].parse!(message)
-          if parsed_msg["uid"] == nil
-            # Нет такого шаблона в сервисе
-            data = {"logline" => message}
-            type = uid_to_type(@template_for_msg_not_found)
-            uid = @template_for_msg_not_found
-          else
-            # Все хорошо, сообщение распарсено
-            data = parsed_msg["data"]
-            type = parsed_msg["type"]
-            uid = parsed_msg["uid"]
-          end
-        end
-        date = CreateDate.create(
-          year: parsed_line["year"],
-          month: parsed_line["month"],
-          day: parsed_line["day"],
-          hour: parsed_line["hour"],
-          minute: parsed_line["minute"],
-          second: parsed_line["second"]
-        )
-        table << {
-          :server => server_name,
-          :service => service_name,
-          :date => date,
-          :type => type,
-          :uid => uid
-        }.update(data)
-
-        # Здесь мы сохраняем некорректные строки для того, чтобы вывести их через веб-интерфейс
-        if uid < 0
-          @bad_lines[:total] += 1
-          case uid
-          when @log_format_not_found
-            @bad_lines[filename] << [logline, 'n/a', uid_to_s(@log_format_not_found)]
-          when @unknown_service
-            @bad_lines[filename] << [logline, service_name, uid_to_s(@unknown_service)]
-          when @template_for_msg_not_found
-            @bad_lines[filename] << [message, service_name, uid_to_s(@template_for_msg_not_found)]
-          when @does_not_match_log_format
-            ; # уже было записано
-          end
-        end
+  def parse(log_stream)
+    # для каждой строки во входном потоке
+    cnt = 1
+    Signal.trap("SIGINT") do
+      puts
+      Printer::debug who:"Parser", msg:"Закончили парсинг"
+      return self
+    end
+    log_stream.each do |line_hash|
+      Printer::debug who:"Parser", msg:"Строк #{cnt}", in_place:true if cnt % Printer::LOG_EVERY_N == 0
+      cnt += 1
+      parsed_line = parse_line(line_hash)
+      if parsed_line[:ok]
+        @parsed_lines << refine_parsed_line(parsed_line)
+      else
+        @erroneous_lines << parsed_line
       end
     end
-    @bad_lines.delete(filename) if @bad_lines[filename].size == 0
-    Parser.stats(table)
-    return table
-  end
-
-  def Parser.parse!(filename, server_name = 'n/a')
-    table = Parser.parse_full!(filename, server_name)
-    table.keep_if{|line| line[:uid] >= 0 and line[:type] != "Ignore"}
-    table
-  end
-
-  # Show statistics on parsed data
-  # 
-  # @param [Array] table see Parser::parse!
-  # @return [void]
-  def Parser.stats(table)
-    st = Stats::Stats.new( [
-      ["Counter", "total_lines", "Всего прочитано строк"],
-      ["Counter", "successfully_parsed", "Полностью распознанных"],
-      ["Counter", "ignored_services_lines", "Проигнорировано строк"],
-      ["HashCounter", "unknown_lines", "Строки, не подходящие под формат лога"],
-      ["HashCounter", "unrecognized_services", "Неопознанные сервисы"],
-      ["HashCounter", "no_template_provided", "Строки, для которых не найдено шаблона"],
-      ["HashCounter", "unknown_format", "Неизвестный формат лога"],
-      ["HashCounter", "services_distr", "Распределение по сервисам"],
-    ])
     puts
-    table.each do |line|
-      st.total_lines.increment
-      if line[:uid] == @does_not_match_log_format
-        # Не распарсена, т.к. не подошла под формат
-        st.unknown_lines.increment(line["logline"])
-      elsif line[:uid] == @unknown_service
-        # Подошла под формат, но сервис не был найден
-        st.unrecognized_services.increment(line[:service])
-        st.services_distr.increment(line[:service])
-      elsif line[:uid] == @template_for_msg_not_found
-        # Подошла под сервис, но не нашлось шаблона
-        st.no_template_provided.increment(line["logline"])
-        st.services_distr.increment(line[:service])
-      elsif line[:uid] == @log_format_not_found
-        # Не распарсена, так как формат неизвестен
-        st.unknown_format.increment(line["logline"])
-      elsif line[:type] == "Ignore"
-        # Полностью распознана, но проигнорирована
-        st.services_distr.increment(line[:service])
-        st.successfully_parsed.increment
-        st.ignored_services_lines.increment
-      else
-        # Полностью распарсенная строка
-        st.services_distr.increment(line[:service])
-        st.successfully_parsed.increment
-      end
-    end
-    st.print
-
+    return self
   end
-  # Transform log file into more readable form
-  #
-  # @param [String] input_file filename of input log file
-  # @param [String] server name of the server from which the log file came from
-  # @param [bool] type if false then write only numbers to output log
-  # @param [String] output_file filename of the output log file
-  # @raise [Error::FileNotFoundError] if log file was not found
-  def Parser.transform(input_file, output_file, type=true, server="n/a")
-    result = Parser.parse!(input_file,server)
-    numbers = Parser.stream_of_numbers(result)
-    f = File.open(output_file, "w")
-    result.each_with_index do |hsh,i|
-      if !type
-        f.puts(numbers[i])
-      elsif numbers[i] == @log_format_not_found or numbers[i] == @unknown_service or numbers[i] == @template_for_msg_not_found
-          f.printf "#{numbers[i]}\t-\t(#{hsh[:service] ? hsh[:service] : 'unknown'})::#{hsh[:type]['logline']}\n"
-      else
-        f.printf "#{numbers[i]}\t-\t#{hsh[:service]}::#{hsh[:type]} ( "
-        hsh.keys.keep_if{|key| key.class == String }.each do |key|
-          value = hsh[key]
-          f.printf "#{key} : #{value}, "
+
+  def refine_parsed_line(parsed_line)
+    parsed_line.delete(:ok)
+    parsed_line.delete(:logline)
+    parsed_line
+  end
+
+  def parsed_logline_stream(log_stream)
+    Enumerator.new do |yielder|
+      cnt = 0
+      loop do
+        parsed_line = parse_line(log_stream.next)
+        if parsed_line[:ok]
+          @parsed_lines << refine_parsed_line(parsed_line)
+        else
+          @erroneous_lines << parsed_line
         end
-        f.printf " )\n"
+        yielder.yield(parsed_line)
+        Printer::debug who:"Parser", msg:"Строк #{cnt}", in_place:true if cnt % Printer::LOG_EVERY_N == 0
+        cnt += 1
       end
     end
-    f.close
   end
-
-  # @private
-  #
-  def Parser.stream_of_numbers(table)
-    result = []
-    hash_table = {}
-    i = 1
-    table.each do |hsh|
-      if !hash_table.has_key?(hsh[:uid])
-        hash_table[hsh[:uid]] = i
-        i += 1
-      end
-      result << hash_table[hsh[:uid]]
-    end
-    return result
-  end
-end 
+end

@@ -8,15 +8,15 @@ Disconnect:
 - 'Close session: user (?<username>\S+) from '
 - 'Disconnecting: Change of username or service not allowed'
 
-Accepted publickey:
+Accepted:
 - 'Accepted publickey for (?<username>\S+) from (?<user_ip>\S+) port (?<user_port>\S+) \S+: (?<protocol>\S+) (?<hashing_alg>\S+):(?<publickey>\S+)'
-- 'Accepted keyboard-interactive/pam for (?<username>\S+) from (?<user_ip>\S+) port'
+- 'Accepted (password|keyboard-interactive/pam) for (?<username>\S+) from (?<user_ip>\S+) port'
 Session activity:
  - 'pam_unix\(sshd:session\): session (?<action>\S+) for user (?<username>\S+)'
 Auth fail:
  - 'Invalid user (?<username>\S*) from (?<user_ip>\S+)'
  - 'Failed (\S+) for (?<username>\S+) from (?<user_ip>\S+) port (?<user_port>\S+)'
- - 'Failed password for invalid user (?<username>\S+) from (?<user_ip>\S+) port (?<user_port>\S+)'
+ - 'Failed (none|password) for invalid user (?<username>\S+) from (?<user_ip>\S+) port (?<user_port>\S+)'
  - 'Failed none for invalid user (?<username>\S+) from (?<ip>\S+)'
  - 'Address (?<user_ip>\S+) maps to (?<user_address>\S+), but this does not map back to the address - POSSIBLE BREAK-IN ATTEMPT!'
  - 'ROOT LOGIN REFUSED FROM (?<user_ip>\S+)'
@@ -28,6 +28,7 @@ Too many connections:
  - 'Too many authentication failures for (?<username>\S+) from (?<user_ip>\S+) port (?<user_port>\S+)'
  - 'Disconnecting: Too many authentication failures for invalid user (?<username>\S+) from (?<user_ip>\S+) port \d+ ssh2'
  - 'Disconnecting: Too many authentication failures \[preauth\]'
+ - 'Disconnecting authenticating user .*: Too many authentication failures'
 Postponed publickey:
  - 'Postponed publickey for (?<username>\S+) from (?<user_ip>\S+) port (?<user_port>\S+)'
 Transfer:
@@ -61,3 +62,4 @@ Ignore:
  - 'Nasty PTR record \"\S+\" is set up for \S+, ignoring'
  - 'ssh_dispatch_run_fatal: Connection from (?<user_ip>\S+) port \d+: message authentication code incorrect'
  - 'userauth_pubkey: key type \S+ not in PubkeyAcceptedKeyTypes'
+ - 'drop connection #\d+ from .* past MaxStartups'
