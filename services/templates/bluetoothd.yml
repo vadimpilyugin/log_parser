@@ -1,4 +1,7 @@
-Ignore:
+regex: 'bluetooth'
+service: 'bluetooth'
+templates:
+  Ignore:
   - 'Unable to get io data for Headset Voice gateway: getpeername: Transport endpoint is not connected'
   - 'Endpoint (un)?registered: sender=.* path=\/MediaEndpoint\/A2DP(Source|Sink)'
   - 'Failed to obtain handles for "Service Changed" characteristic'

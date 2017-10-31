@@ -1,4 +1,7 @@
-Ignore:
+regex: 'nm-dispatcher'
+service: 'nm-dispatcher'
+templates:
+  Ignore:
   - |
     req:\d 'down' \[\S+\]: new request
   - |

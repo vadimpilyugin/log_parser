@@ -22,7 +22,6 @@ class TestReport < Minitest::Test
   	  assert true, "Error in Printer::fatal"
   	end
   	Printer::note(msg:"Файл не существует, создаю...", who:"test_assert")
-    Printer::note(msg:"Это не должно быть на экране", expr:false, who:"Printer::note")
   	100.times do |i|
   	  Printer::debug(msg:"#{i+1} файлов создано...", in_place:true)
   	  sleep(0.02)

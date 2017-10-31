@@ -1,4 +1,7 @@
-Ignore:
-- Process .* failed with exit code \d+
-- 'inotify_add_watch\(.*\) failed: No such file or directory'
-- 'seq .* is taking a long time'
+regex: 'systemd-udevd'
+service: 'systemd-udevd'
+templates:
+  Ignore:
+  - Process .* failed with exit code \d+
+  - 'inotify_add_watch\(.*\) failed: No such file or directory'
+  - 'seq .* is taking a long time'

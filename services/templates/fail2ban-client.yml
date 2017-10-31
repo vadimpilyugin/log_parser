@@ -1,4 +1,7 @@
-Ignore:
+regex: 'fail2ban-client'
+service: 'fail2ban-client'
+templates:
+  Ignore:
   - 'Shutdown successful'
   - 'INFO Starting Fail2ban '
   - 'INFO Starting in daemon mode '

@@ -1,2 +1,5 @@
-Ignore:
+regex: 'systemd-tmpfiles'
+service: 'systemd-tmpfiles'
+templates:
+  Ignore:
   - 'Duplicate line for path "\S+", ignoring'

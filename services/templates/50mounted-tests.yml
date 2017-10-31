@@ -1,2 +1,5 @@
-Ignore:
-- 'debug: \S+ is a swap partition; skipping'
+regex: '50mounted-tests'
+service: '50mounted-tests'
+templates:
+  Ignore:
+  - 'debug: \S+ is a swap partition; skipping'

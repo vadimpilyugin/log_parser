@@ -1,4 +1,7 @@
-Ignore:
-- Configuration was valid
-- \[notice\]
+regex: 'tor'
+service: 'tor'
+templates:
+  Ignore:
+  - Configuration was valid
+  - \[notice\]
 

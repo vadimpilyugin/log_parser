@@ -1,7 +1,10 @@
-Ignore:
-- ^Unmounting \S+
-- ^Mounted \S+
-- ^Cmdline options
-- ^Mount options
-- Global ownership and permissions enforced
-- Version \S+ integrated FUSE
+regex: 'ntfs-3g'
+service: 'ntfs-3g'
+templates:
+  Ignore:
+  - ^Unmounting \S+
+  - ^Mounted \S+
+  - ^Cmdline options
+  - ^Mount options
+  - Global ownership and permissions enforced
+  - Version \S+ integrated FUSE

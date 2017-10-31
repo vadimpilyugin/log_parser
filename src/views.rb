@@ -1,5 +1,7 @@
 module View
 
+  UNDEFINED_SERVICE = 'n/a'
+
   def self.pagination(server_list:,active:)
     result = []
     server_list.each_with_index do |server,i|
@@ -13,135 +15,162 @@ module View
   end
 
   def table(header:, rows:)
-    s = '
-<table class="table table-hover">
-  <thead><tr>'
-    header.each do |elem| s << "
-    <th>#{elem}</th>\n"
-    end
-    s << '
-  </tr></thead>
-  <tbody>'
-    rows.each do |row|
-      s << '
-    <tr>'
-      row.each do |elem|
-        s << "
-      <td>#{elem}</td>\n"
-      end
-      s << '
-    </tr>'
-    end
-    s << '
-  </tbody>
-</table>
-'
-    s
+    @header = header
+    @rows = rows
+    Slim::Template.new("views/table.slim").render(self)
   end
 
   def distr_to_html(dist_arr:)
     @cnt = 0 if @cnt.nil?
+    s = ""
     # запоминаем номер группы панелей
     panel_group = @cnt
     @cnt += 1
-    # записываем в s обертку группы панелей
-    s = '
-<div id="pgroup'+"#{panel_group}"+'">'
     # для каждого распределения
     dist_arr.each do |distr|
-      # @sort_type = distr.sort_type.to_sym
-      s << recursive_hash(
-        panel_group: panel_group,
-        descr: distr.descr,
-        distr: distr.distrib,
+      s << recursive_card(
+        header: distr.descr,
+        panel_group: "pgroup0",
+        values_hsh: distr.distrib,
         top: distr.top
       )
     end
-    s << '
-</div>'
+    s
   end
 
   def badge(value:)
     '<span class="badge badge-secondary" style="float:right">'+"#{value}"+'</span>'
   end
 
-  def recursive_hash(panel_group:, descr:, distr:, top:)
-    if distr.empty?
-      return '
-<div class="card">
-  <div class="card-header">
-    <h5>'+descr+' - Пусто!
-    </h5>
-  </div>
-</div>
-'
+  def link(href:, descr:)
+    '<a href='+href+'>'+descr+'</a>'
+  end
+
+  def simple_card(card_style:"", header_style:"", header_color:"", header:"",
+    card_body:"", panel_group:"", count:nil, new_panel_group:nil, empty:false)
+
+    @card_style = card_style
+    @header_style = header_style
+    @header_color = header_color
+    @header = header
+    @card_body = card_body
+    @panel_group = panel_group
+    @new_panel_group = new_panel_group
+    @count = count
+    @empty = empty
+    if @cnt.nil?
+      @cnt = 0
+    else
+      @cnt+=1
     end
-    # запоминаем номер карточки
-    card_no = @cnt
-    # записываем в s карточку
-    # if distr[@sort_type].nil?
-    #   binding.irb
-    # end
-    s = '
-<div class="card">
-  <div class="card-header">
-    <h5 class="mb-0">
-      <a data-toggle="collapse" href="#collapse'+"#{card_no}"+'">
-        '+descr+
-        +badge(value:(distr[:distinct]<top ? distr[:distinct] : top))+'
-      </a>
-    </h5>
-  </div>
-  <div id="collapse'+"#{card_no}"+'" class="collapse"
-  data-parent="#pgroup'+"#{panel_group}"+'">
-    <div class="card-body">'
-    @cnt += 1
-    # в тело карточки записываем группу панелей либо таблицу
-    # если в распределении присутсвуют элементы типа хэш
-    if distr.values.index {|elem| elem.class == Hash }
-      # присваиваем номер группе панелей
-      new_panel_group = @cnt
-      # записываем в s обертку вокруг группы панелей
-      s << '
-      <div id="pgroup'+"#{new_panel_group}"+'">'
-      # для каждой пары ключ-распределение
-      distr.clone.keep_if{|k,v| k.class == String }.to_a[0...top].to_h.each_pair do |key,subdist|
-        # пропускаем :total и :distinct
-        next if key.class == Symbol
-        # увеличиваем счетчик уникальных имен
-        @cnt += 1
-        # в s записываем подраспределение
-        s << recursive_hash(
-          panel_group:new_panel_group,
-          descr: key,
-          distr:subdist,
+    Slim::Template.new("views/card.slim").render(self)
+  end
+  def simple_list(list_items:)
+    @list_items = list_items
+    Slim::Template.new("views/list.slim").render(self)
+  end
+
+  def recursive_card(header:, values_hsh:, panel_group:, top:)
+    if values_hsh.empty?
+      simple_card(
+        card_style:"border-light",
+        header: header,
+        empty:true
+      )
+    elsif values_hsh.values.index {|vls| vls.class == Hash}
+      card_body = ""
+      new_panel_group = "pgroup"+@cnt.to_s
+      @cnt += 1
+      row_counter = 0
+      values_hsh.each_pair do |new_header, new_values_hsh|
+        next if new_header.class == Symbol
+        next if row_counter >= top
+        card_body << recursive_card(
+          header: new_header,
+          values_hsh: new_values_hsh,
+          panel_group: new_panel_group,
           top:top
         )
+        row_counter += 1
       end
-      # если были еще данные
-      if distr[:distinct]>top
-        s << '
-          <div class="card">
-            <div class="card-header">
-              <h5> Показать еще '+"#{distr[:distinct]-top}"+'...</h5>
-            </div>
-          </div>
-        '
-      end
-      # этим завершается группа панелей
-      s << '
-      </div>'
+      simple_card(
+        card_style:"border-light",
+        header: header,
+        card_body: card_body,
+        panel_group: panel_group,
+        new_panel_group: new_panel_group,
+        count: values_hsh[:distinct]
+      )
     else
-      rows = distr.clone
-      rows.delete(:total)
-      rows.delete(:distinct)
-      s << table(header:['Значение', 'Количество'], rows:rows.to_a[0...top])
+      values_hsh_copy = values_hsh.clone
+      values_hsh_copy.delete(:total)
+      values_hsh_copy.delete(:distinct)
+      values_hsh_copy.transform_values! do |val|
+        simple_card(
+          card_style:"border-light",
+          header: 'Строки',
+          card_body: simple_list(list_items:val.get_lines),
+          count: val.size
+        )
+      end
+      values_hsh_copy = values_hsh_copy.to_a[0...top]
+      simple_card(
+        card_style:"border-light",
+        header: header,
+        card_body: table(
+          header:['Значение', 'Количество'],
+          rows:values_hsh_copy
+        ),
+        panel_group: panel_group,
+        count: values_hsh_copy.size
+      )
     end
-    # закрываем карточку
-    s << '
-    </div>
-  </div>
-</div>'
-    return s
+  end
+  MAX_ERR_ROWS = 50
+  def lines_to_rows(loglines)
+    loglines_copy = loglines.clone
+    loglines_copy.delete(:total)
+    loglines_copy.delete(:distinct)
+    loglines_copy.to_a.first(MAX_ERR_ROWS).map do |logline, lines|
+      case lines.first[:errno]
+      when Parser::FORMAT_NOT_FOUND
+        [logline, UNDEFINED_SERVICE, Parser.strerror(lines.first[:errno])]
+      when Parser::UNKNOWN_SERVICE
+        [
+          logline,
+          lines.first[:service].inspect,
+          link(href:'/add/service/'+lines.first[:service],descr:"Добавить сервис")
+        ]
+      when Parser::TEMPLATE_NOT_FOUND
+        [lines.first[:msg], lines.first[:service].inspect, Parser.strerror(lines.first[:errno])]
+      when Parser::WRONG_FORMAT
+        [logline, UNDEFINED_SERVICE, Parser.strerror(lines.first[:errno])]
+      end
+    end
+  end
+  def err_card(header:, hsh:)
+    card_body = ""
+    hsh.each_pair do |filename, lines|
+      next if filename == :total || filename == :distinct
+      card_body << simple_card(
+        card_style:"border-light",
+        header: filename,
+        card_body: table(
+          header:['Строка', 'Сервис', 'Описание'],
+          rows:lines_to_rows(lines)
+        ),
+        panel_group: "prgoupErr",
+        count: lines.size-2
+      )
+    end
+    simple_card(
+      card_style:"mb-3",
+      header_style:"text-white bg-danger",
+      header_color:"color: white;",
+      header: header,
+      card_body: card_body,
+      panel_group: "pgroup0",
+      new_panel_group: "prgoupErr"
+    )
   end
 end

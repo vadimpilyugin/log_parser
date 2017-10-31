@@ -1,5 +1,8 @@
-Logins:
-        - 'User (?<username>\S+) logged (out|into) from \S+ \[(?<upsname>\S+)\]'
-        - 'User (?<username>\S+) logged (out|into) \S+ \[(?<upsname>\S+)\]'
-Ignore:
-        - 'write\(\) failed for \S+: Broken pipe'
+regex: 'upsd'
+service: 'upsd'
+templates:
+  Logins:
+  - 'User (?<username>\S+) logged (out|into) from \S+ \[(?<upsname>\S+)\]'
+  - 'User (?<username>\S+) logged (out|into) \S+ \[(?<upsname>\S+)\]'
+  Ignore:
+  - 'write\(\) failed for \S+: Broken pipe'

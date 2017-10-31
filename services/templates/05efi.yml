@@ -1,2 +1,5 @@
-Ignore:
+regex: '05efi'
+service: '05efi'
+templates:
+  Ignore:
   - '05efi: debug: Not on UEFI platform'

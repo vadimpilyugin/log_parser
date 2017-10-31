@@ -25,7 +25,10 @@ class Fields
 				"server" => true,
 				"service" => true,
 				"type" => true,
-				"date" => true
+				"date" => true,
+				"errno" => true,
+				"logline" => true,
+				"msg" => true,
 			}
 		end
 	end

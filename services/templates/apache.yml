@@ -1,6 +1,9 @@
-Connection information:
-- '(?<user_ip>\S+) - - \[.*\] \"(?<method>\S+) (?<path>[^?\s]+)[^"]+\" (?<code>\d+)'
-Ignore:
-- \* Reloading Apache httpd web server apache2
-- ^\*$
+regex: 'apache'
+service: 'apache'
+templates:
+  Connection information:
+  - '(?<user_ip>\S+) - - \[.*\] \"(?<method>\S+) (?<path>[^?\s]+)[^"]+\" (?<code>\d+)'
+  Ignore:
+  - \* Reloading Apache httpd web server apache2
+  - ^\*$
 

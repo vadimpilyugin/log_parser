@@ -29,6 +29,28 @@ class Hash
   end
 end
 
+class MyArray
+  include Enumerable
+  def size
+    return @a.size
+  end
+  def each(&block)
+    @a.each(&block)
+  end
+  def initialize
+    @a = Array.new
+  end
+  def <<(elem)
+    @a << elem
+  end
+  def get_lines
+    ret = []
+    @a.each do |hsh|
+      ret << hsh[:logline]
+    end
+    ret
+  end
+end
 
 # This class is used to group different stats in one place
 class Statistics
@@ -43,7 +65,6 @@ class Statistics
   end
 
   def self.init(stats_arr = DEFAULT_INIT)
-    @stats.clear
     Printer::debug msg:"Создаем #{stats_arr.size} статистик"
     stats_arr.map { |stat_opts| create_stat stat_opts }
   end
@@ -60,26 +81,6 @@ class Statistics
     @stats.delete(ind)
   end
 
-  # Return stat by description
-  #
-  # @param [String] descr description of the statistics
-  # @return [Counter,Distribution,nil] the statistics or nil if not found
-  # def by_descr(descr)
-  #   i = @stats.index {|stat| stat.descr == descr}
-  #   i ? @stats[i] : nil
-  # end
-
-  # def remove(descr)
-  #   i = @stats.index {|stat| stat.descr == descr}
-  #   if i != nil
-  #     @stats.delete_at(i)
-  #   end
-  # end
-
-  # Add new statistics to the array
-  #
-  # @param [Hash] params Parameters of the statistics
-  # @return [void]
   def self.create_stat(params)
     if params.has_key? "Counter"
       @stats.update(@stats_counter => Counter.new(params))
@@ -95,21 +96,30 @@ class Statistics
     return @stats_counter-1
   end
 
-  def self.process(table)
-    Printer::debug(who:"Report processing", msg:"Processing started")
+  def self.process(stats_no, table)
+    Printer::debug(msg:"Начинаем обработку")
     table.each_with_index do |line_hash,i|
-      Printer::debug(who:"Обработано строк", msg:"#{i+1}".red+"/".white+"#{table.size}".red+"".white, in_place:true) if i%Printer::LOG_EVERY_N==0
-      @stats.each_value do |stat|
-        stat.increment(line_hash)
+      Printer::debug(
+        who:"Обработано строк",
+        msg:"#{i+1}".red+"/".white+"#{table.size}".red+"".white,
+        in_place:true,
+        log_every_n: true,
+        line_no: i,
+      )
+      stats_no.each do |stat_no|
+        @stats[stat_no].increment(line_hash)
       end
     end
     puts
-    @stats.values.each_with_index do |stat,i|
-      Printer::debug(who:"Статистик готово", msg:"#{i+1}".red+"/".white+"#{@stats.size}".red+"".white, in_place:true)
-      stat.finalize
+    stats_no.each_with_index do |stat_no,i|
+      @stats[stat_no].finalize
+      Printer::debug(who:"Статистик готово",
+        msg:"#{i+1}".red+"/".white+"#{stats_no.size}".red+"".white,
+        in_place:true
+      )
     end
     puts
-    Printer::debug(who: "Report processing", msg:"Статистики построены!")
+    Printer::debug(msg:"Статистики построены!")
   end
 end
 
@@ -138,11 +148,23 @@ class Condition
     return false if @date     and @date     != line_hash[:date]
     # если поля и их значения в условии не являются подмножеством полей в строке
     # binding.irb
+    return false if @linedata && line_hash[:linedata].nil?
     return false if @linedata && !(@linedata <= line_hash[:linedata])
     # ключевые поля обязательно должны содержаться в строке, если они указаны
     # binding.irb
-    if @keys && !@keys.map {|key| key.class == String ? line_hash[:linedata].has_key?(key) : line_hash.has_key?(key)}.all?
-      return false
+    if @keys #&& !@keys.map {|key| key.class == String ? line_hash[:linedata].has_key?(key) : line_hash.has_key?(key)}.all?
+      @keys.each do |key|
+        if key.class == String
+          if line_hash[:linedata].nil? || !line_hash[:linedata].has_key?(key)
+            return false
+          end
+        elsif key.class == Symbol
+          if !line_hash.has_key?(key)
+            return false
+          end
+        end
+      end
+      #return false
     end
     return true
   end
@@ -156,13 +178,13 @@ class Counter
     @descr = stat_params["Counter"]
     stat_params.delete("Counter")
     @conditions = Condition.new(stat_params.keys_to_sym)
-    @count = 0
+    @count = Array.new
   end
   def increment(line_hash)
-    @count += 1 if @conditions.fit?(line_hash)
+    @count << line_hash if @conditions.fit?(line_hash)
   end
   def finalize
-    @count
+    @count.size
   end
   # def to_s
   #   @descr + ": " + @count.to_s
@@ -186,9 +208,6 @@ class Distribution
 
   def initialize(stat_params)
     @descr      = stat_params.delete "Distribution"
-    if !stat_params.has_key?(KEYS_FIELD)
-      binding.irb
-    end
     @keys       = Fields.keys_to_sym stat_params.delete(KEYS_FIELD)
     @top        = stat_params.delete TOP_FIELD
     @sort_type  = stat_params.delete SORT_FIELD
@@ -200,12 +219,14 @@ class Distribution
     @sort_type  = TOTAL_SORT_TYPE if @sort_type.nil?
     @sort_order  = FORWARD_SORT_ORDER if @sort_order.nil?
     @top        = DEFAULT_TOP_VALUE if @top.nil?
-
     Printer::assert(
-      expr: !@keys.nil?,
+      expr: !@keys.nil? && !@keys.empty?,
       who: @descr,
       msg:"в распределении не указаны ключи (поле :keys)",
     )
+  end
+  def empty?
+    @distrib.empty?
   end
   # def to_h
   #   return {@descr => @distrib}
@@ -214,20 +235,29 @@ class Distribution
     if cnt > 0
       Hash.new {|hash, key| (key == :distinct or key == :total) ? 0 : hash[key] = hash_cnt(cnt-1)}
     else
-      0
+      MyArray.new
+      # 0
     end
   end
 
-  def update_distrib(keys)
+  def update_distrib(keys:,line_hash:)
     distr_part = @distrib
     keys[0..-2].each do |key|
+      if distr_part[:distinct].nil?
+        Printer::debug(
+          who: @descr,
+          msg: @distrib.object_id
+        )
+        binding.irb
+      end
       distr_part[:distinct] += 1 unless distr_part.has_key?(key)
       distr_part[:total] += 1
       distr_part = distr_part[key]
     end
     distr_part[:distinct] += 1 unless distr_part.has_key?(keys.last)
     distr_part[:total] += 1
-    distr_part[keys.last] += 1
+    # distr_part[keys.last] += 1
+    distr_part[keys.last] << line_hash
   end
 
   def increment(line_hash)
@@ -235,7 +265,7 @@ class Distribution
     if @conditions.fit?(line_hash)
       # binding.irb
       keys = @keys.map {|key| key.class == Symbol ? line_hash[key] : line_hash[:linedata][key]}
-      update_distrib(keys)
+      update_distrib(keys:keys,line_hash:line_hash)
       # hsh = @distrib
       # @keys[0..-2].each do |field_name|
       #   hsh[:distinct] += 1 unless hsh.has_key?(line_hash[key])
@@ -284,9 +314,11 @@ class Distribution
         end
       else
         if @sort_order == FORWARD_SORT_ORDER
-          -o[1]
+          -o[1].size
+          # -o[1]
         else
-          o[1]
+          o[1].size
+          # o[1]
         end
       end
     end

@@ -1,6 +1,9 @@
-State change:
+regex: 'networkmanager'
+service: 'networkmanager'
+templates:
+  State change:
   - 'device \(\S+\): link (dis)?connected'
-Ignore:
+  Ignore:
   - 'device \(\S+\): disconnecting for new activation request.'
   - 'device \(\S+\): state change:'
   - 'device \(\S+\): Activation: successful, device activated.'

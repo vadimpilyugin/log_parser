@@ -15,15 +15,25 @@ class CreateDate
   	default_time = Time.now
     timezone = hsh["timezone"] ? hsh["timezone"] : "+0300"
     timezone = timezone[0..2] + ":" + timezone[3..-1]
-  	return Time.new(
-  	  hsh['year']   ? hsh['year']    : default_time.year,
-  	  hsh['month']  ? hsh['month']   : default_time.month,
-  	  hsh['day']    ? hsh['day']     : default_time.day,
-  	  hsh['hour']   ? hsh['hour']    : default_time.hour,
-  	  hsh['minute'] ? hsh['minute']  : default_time.min,
-  	  hsh['second'] ? hsh['second']  : default_time.sec,
-      timezone
-  	)
+    begin
+    	return Time.new(
+    	  hsh['year']   ? hsh['year']    : default_time.year,
+    	  hsh['month']  ? hsh['month']   : default_time.month,
+    	  hsh['day']    ? hsh['day']     : default_time.day,
+    	  hsh['hour']   ? hsh['hour']    : default_time.hour,
+    	  hsh['minute'] ? hsh['minute']  : default_time.min,
+    	  hsh['second'] ? hsh['second']  : default_time.sec,
+        timezone
+    	)
+    rescue ArgumentError => exc
+      if exc.message == "mon out of range"
+        Printer::error(
+          who: "DateError",
+          msg: "Значение месяца неверное: #{hsh['month'].inspect}"
+        )
+        default_time
+      end
+    end
   end
   # Creates time object from a string
   # @param [String] string string containing time

@@ -1,4 +1,7 @@
-Ignore:
- - 'dhclient: DHCPREQUEST on \S+ to'
- - 'dhclient: DHCPACK from \S+'
- - 'bound to \S+ -- renewal in \d+ seconds'
+regex: 'dhclient'
+service: 'dhclient'
+templates:
+  Ignore:
+  - 'dhclient: DHCPREQUEST on \S+ to'
+  - 'dhclient: DHCPACK from \S+'
+  - 'bound to \S+ -- renewal in \d+ seconds'

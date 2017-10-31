@@ -1,9 +1,12 @@
-Ignore:
-- Poll UPS \S+ failed - Server disconnected
-- Communications with UPS \S+ (lost|established)
-- 'UPS \S+ connect failed: No such host'
+regex: 'upsmon'
+service: 'upsmon'
+templates:
+  Ignore:
+  - Poll UPS \S+ failed - Server disconnected
+  - Communications with UPS \S+ (lost|established)
+  - 'UPS \S+ connect failed: No such host'
 
-Power loss:
-- UPS (?<updaname>\S+) on battery 
-Power back:
-- UPS (?<updaname>\S+) on line power
+  Power loss:
+  - UPS (?<updaname>\S+) on battery 
+  Power back:
+  - UPS (?<updaname>\S+) on line power

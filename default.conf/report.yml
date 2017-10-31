@@ -66,13 +66,11 @@
   - user_ip
 
 - Distribution: "Распределение по событиям"
-  service: sshd
   keys:
   - type
   - user_ip
 
 - Distribution: "Какие ip какие события вызывали"
-  service: sshd
   keys: 
   - user_ip
   - type

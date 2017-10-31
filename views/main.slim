@@ -28,13 +28,17 @@ html
               - @counters.each do |counter|
                 tr
                   td #{counter.descr}
-                  td #{counter.count}
-          - if @dist_arr.empty?
-            div class="card"
-              div class="card-header"
-                h5 Нет распределений :(
-          - else
-            == distr_to_html(dist_arr:@dist_arr)
+                  td #{counter.count.size}
+          div id="pgroup0"
+            - if @dist_arr.empty?
+              div class="card"
+                div class="card-header"
+                  h5 Нет распределений :(
+            - else
+              == distr_to_html(dist_arr:@dist_arr)
+            - if !@erroneous_stat.empty?
+              == err_card(\
+                header: "Ошибочные строки", \
+                hsh: @erroneous_stat.distrib)
         div class="col-md-1"
 
-          / ==bad_lines tabs:'            ', data:@bad_lines

@@ -1,6 +1,9 @@
-Session:
- - 'pam_unix\(samba:session\): session closed for user (?<username>\S+)'
+regex: 'smbd'
+service: 'smbd'
+templates:
+  Session:
+  - 'pam_unix\(samba:session\): session closed for user (?<username>\S+)'
 
-Ignore:
- - '\* Reloading \S+ smbd' 
- - '\.\.\.done\.'
+  Ignore:
+  - '\* Reloading \S+ smbd' 
+  - '\.\.\.done\.'

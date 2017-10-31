@@ -1,4 +1,7 @@
-Ignore:
+regex: 'pkexec'
+service: 'pkexec'
+templates:
+  Ignore:
   - '^pam_unix'
   - '^pam_ck_connector'
   - 'root: Executing command'

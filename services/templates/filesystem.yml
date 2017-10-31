@@ -1,0 +1,6 @@
+regex: '\d\d[a-z]+'
+service: filesystem
+templates:
+  Ignore:
+  - 'debug: \S+ is not a \S+ partition: exiting'
+

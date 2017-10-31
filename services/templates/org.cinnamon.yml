@@ -1,4 +1,8 @@
-Ignore:
+regex: 'org\.cinnamon\.\S+'
+service: 'cinnamon'
+templates:
+  Ignore:
+  - 'dconf-WARNING \*\*'
   - 'Gdk-ERROR \*\*'
   - 'This probably reflects a bug in the program'
   - '\(Details: serial \d+ error_code \d+ request_code \d+'

@@ -1,18 +1,21 @@
-Discard:
+regex: 'dovecot'
+service: 'dovecot'
+templates:
+  Discard:
   - 'lda\(.*\): sieve: msgid=.*(?<count>.*): marked message to be discarded if not explicitly delivered \(discard action\)'
 
-Store:
+  Store:
   - 'lda\(.*\): sieve: msgid=.*: stored mail into mailbox'
   - 'lda\(.*\): sieve: msgid=.*: forwarded to'
   - 'lda\(.*\): msgid=.*: saved mail to'
 
-Login:
+  Login:
   - '(?<login_method>imap|pop3|managesieve)-login: Login: user=.*, method=(?<method>\S*), rip=(?<user_ip>[0-9.]*)'
 
-Logout:
+  Logout:
   - 'Connection closed top=\S+, retr=\S+, del=\S+, size=\d+'
 
-Ignore:
+  Ignore:
   - '(imap|pop3|managesieve)-login: Debug: SSL: elliptic curve secp384r1 will be used for ECDH and ECDHE key exchanges'
   - '(imap|pop3|managesieve)-login: Disconnected \(no auth attempts in \d+ secs\): user=.*, rip=(?<ip>[0-9.]*)'
   - '(imap|pop3|managesieve)-login: Disconnected \(auth failed, \d+ attempts in \d+ secs\): user=.*, (method=\S+, )?rip=(?<ip>[0-9.]*)'
@@ -28,5 +31,5 @@ Ignore:
   - 'managesieve-login: Debug: SSL: elliptic curve secp384r1 will be used for ECDH and ECDHE key exchanges'
   - 'managesieve-login: Debug: SSL: where=\S+, ret=\S+:'
 
-LoginFail:
+  LoginFail:
   - 'auth-worker\(\d+\): pam\((?<user>\S+),(?<ip>[0-9.]+)\): pam_authenticate\(\) failed: Authentication failure \(password mismatch\?\)'

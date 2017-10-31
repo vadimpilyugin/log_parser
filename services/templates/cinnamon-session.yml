@@ -1,2 +1,5 @@
-Ignore:
+regex: 'cinnamon-session'
+service: 'cinnamon-session'
+templates:
+  Ignore:
   - 'WARNING: \S+: Detected that screensaver has left the bus'

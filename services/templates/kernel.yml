@@ -1,27 +1,30 @@
-Segmentation fault:
+regex: 'kernel'
+service: 'kernel'
+templates:
+  Segmentation fault:
   - 'segfault'
-Bluetooth troubles:
+  Bluetooth troubles:
   - 'Bluetooth: hci\d+ SCO packet for unknown connection handle'
   - 'Bluetooth: \S+ hardware error \S+'
-Disk troubles:
+  Disk troubles:
   - 'sd [0-9:]+ \[(?<disk>\S+)\] tag#0 (?<message>.*)'
-USB detected:
+  USB detected:
   - 'usb-storage [0-9.:-]+: USB Mass Storage device detected'
-Ethernet up/down:
+  Ethernet up/down:
   - '.*eth\d+: link down'
   - '.*eth\d+: link up'
-New devices:
+  New devices:
   - 'input: \S+ as /devices/virtual/input/\S+'
-IPv4:
+  IPv4:
   - 'IPv4: martian source .* from (?<ip>[0-9.]+), on dev (?<device>)'
   - 'IPv4: host \S+ ignores redirects for \S+ to \S+'
-Disks:
+  Disks:
   - 'end_request: I/O error, dev \S+, sector \d+'
   - 'sd [:0-9]+ \[\S+\] Attached SCSI removable disk'
-Mem:
+  Mem:
   - 'Corrupted low memory at \S+ \(\d+ phys\) = \S+'
   
-Ignore:
+  Ignore:
   - '\S+: \S+ NIC Link is Up \d+ Mbps Full Duplex, Flow Control: RX/TX'
   - 'UDP: short packet: From .* to '
   - 'net_ratelimit: \d+ callbacks suppressed'

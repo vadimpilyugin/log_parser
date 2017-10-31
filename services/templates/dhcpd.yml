@@ -1,10 +1,13 @@
-Protocol:
+regex: 'dhcpd'
+service: 'dhcpd'
+templates:
+  Protocol:
   - 'DHCPREQUEST for (?<ip_addr>\S+) (\(\S+\) )?from (?<mac_addr>\S+) (\(\S+\) )?via \S+'
   - '(?<dhcp_method>DHCPACK|DHCPNAK) on (?<ip_addr>\S+) to (?<mac_addr>\S+) (\(\S+\) )?via \S+'
   - '(?<dhcp_method>DHCPDISCOVER|DHCPOFFER|DHCPINFORM) from (?<mac_addr>\S+) (\(\S+\) )?via \S+'
   - '(?<dhcp_method>DHCPDISCOVER|DHCPOFFER) on (?<ip_addr>\S+) to (?<mac_addr>\S+) (\(\S+\) )?via \S+'
   - '(?<dhcp_method>DHCPACK) to (?<ip_addr>\S+) (?<mac_addr>\S+) (\(\S+\) )?via \S+'
-Ignore:
+  Ignore:
   - Wrote \d+ deleted host decls to leases file
   - Wrote \d+ new dynamic host decls to leases file
   - Wrote \d+ leases to leases file

@@ -1,4 +1,7 @@
-ntp warnings:
+regex: 'ntpd'
+service: 'ntpd'
+templates:
+  NTP warnings:
   - 'error resolving pool \S+: Temporary failure in name resolution'
   - 'error resolving pool \S+: No address associated with hostname'
   - 'Soliciting pool server '

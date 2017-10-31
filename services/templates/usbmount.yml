@@ -1,4 +1,7 @@
-Ignore:
+regex: 'usbmount'
+service: 'usbmount'
+templates:
+  Ignore:
   - 'loaded usbmount configurations'
   - 'usbmount execution finished'
   - 'trying to acquire lock'

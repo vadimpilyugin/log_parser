@@ -1,0 +1,5 @@
+regex: 'org\.gtk\.\S+'
+service: 'org.gtk'
+templates:
+  Interface not found:
+    - '\*\* \(process:\d+\): (WARNING) \*\*: (send_infos_cb|send_done_cb): Интерфейс «org\.gtk\.vfs\.Enumerator» для пути \/org\/gtk\/vfs\/client\/enumerator\/13 объекта не найден \(g-dbus-error-quark, 19\)'

@@ -1,2 +1,5 @@
-Ignore:
+regex: 'auditd'
+service: 'auditd'
+templates:
+  Ignore:
   - 'Audit daemon rotating log files'

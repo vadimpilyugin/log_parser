@@ -1,4 +1,7 @@
-Ignore:
+regex: 'pulseaudio'
+service: 'pulseaudio'
+templates:
+  Ignore:
   - '\[pulseaudio\] module-\S+: Default profile not connected, selecting \S+ profile'
   - '\[pulseaudio\] .* failed for transport /org/bluez/hci.* \(Operation Not Authorized\)'
   - '\[pulseaudio\] .* Refused to switch profile to a2dp_sink: Not connected'

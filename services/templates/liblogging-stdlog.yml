@@ -1,4 +1,7 @@
-Ignore:
+regex: 'liblogging-stdlog'
+service: 'liblogging-stdlog'
+templates:
+  Ignore:
   - '-- MARK --'
   - '.* rsyslogd was HUPed'
 

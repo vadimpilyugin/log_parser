@@ -51,8 +51,8 @@ class Parser
     # если это NoFormat
     if log_format == NoFormat
       return line_hash.update(
-        ok:false, 
-        description:Parser.strerror(FORMAT_NOT_FOUND), 
+        ok:false,
+        description:Parser.strerror(FORMAT_NOT_FOUND),
         errno:FORMAT_NOT_FOUND
       )
     end
@@ -63,8 +63,8 @@ class Parser
     # если не удалось распарсить
     if parsed_line.nil?
       return line_hash.update(
-        ok:false, 
-        description:Parser.strerror(WRONG_FORMAT), 
+        ok:false,
+        description:Parser.strerror(WRONG_FORMAT),
         errno:WRONG_FORMAT,
         log_format:log_format.to_s
       )
@@ -79,8 +79,8 @@ class Parser
     # если сервис не найден
     if service.nil?
       return line_hash.update(
-        ok:false, 
-        description:Parser.strerror(UNKNOWN_SERVICE), 
+        ok:false,
+        description:Parser.strerror(UNKNOWN_SERVICE),
         errno:UNKNOWN_SERVICE,
         service:parsed_line[:service],
         date:parsed_line[:date],
@@ -94,9 +94,9 @@ class Parser
     if parsed_msg.nil?
       return line_hash.update(
         ok:false,
-        description:Parser.strerror(TEMPLATE_NOT_FOUND), 
+        description:Parser.strerror(TEMPLATE_NOT_FOUND),
         errno:TEMPLATE_NOT_FOUND,
-        service:parsed_line[:service],
+        service:service.service_name,
         date:parsed_line[:date],
         log_format:log_format.to_s,
         msg:msg
@@ -107,7 +107,7 @@ class Parser
     if parsed_line[:linedata].keys.map {|k| parsed_msg[:linedata].has_key?(k)}.any?
       # выводим предупреждение
       Printer::note(
-        who: "#{parsed_line[:service]}, группа #{parsed_msg[:type]}",
+        who: "#{service.service_name}, группа #{parsed_msg[:type]}",
         msg: "#{parsed_msg[:regex]} пересекается названиями полей с #{log_format}!"
       )
     end
@@ -115,7 +115,7 @@ class Parser
     parsed_msg[:linedata].update(parsed_line[:linedata])
     return line_hash.update(
       ok:true,
-      service:parsed_line[:service],
+      service:service.service_name,
       date:parsed_line[:date],
       log_format:log_format.to_s,
     ).update(parsed_msg)
@@ -129,13 +129,21 @@ class Parser
       Printer::debug who:"Parser", msg:"Закончили парсинг"
       return self
     end
-    log_stream.each do |line_hash|
-      Printer::debug who:"Parser", msg:"Строк #{cnt}", in_place:true if cnt % Printer::LOG_EVERY_N == 0
+    log_stream.each_with_index do |line_hash,i|
+      Printer::debug(
+        who:"Parser",
+        msg:"Строк #{cnt}",
+        in_place:true,
+        log_every_n: true,
+        line_no: i
+      )
       cnt += 1
       parsed_line = parse_line(line_hash)
-      if parsed_line[:ok]
-        @parsed_lines << refine_parsed_line(parsed_line)
-      else
+      if parsed_line[:ok] && parsed_line[:linedata][:type] != "Ignore"
+        @parsed_lines << parsed_line #refine_parsed_line(parsed_line)
+      elsif !parsed_line[:ok]
+        # для того, чтобы показывать msg в erroneous stat
+        parsed_line[:msg] = parsed_line[:logline] unless parsed_line.has_key?(:msg)
         @erroneous_lines << parsed_line
       end
     end
@@ -154,9 +162,11 @@ class Parser
       cnt = 0
       loop do
         parsed_line = parse_line(log_stream.next)
-        if parsed_line[:ok]
-          @parsed_lines << refine_parsed_line(parsed_line)
-        else
+        if parsed_line[:ok] && parsed_line[:linedata][:type] != "Ignore"
+          @parsed_lines << parsed_line #refine_parsed_line(parsed_line)
+        elsif !parsed_line[:ok]
+          # для того, чтобы показывать msg в erroneous stat
+          parsed_line[:msg] = parsed_line[:logline] unless parsed_line.has_key?(:msg)
           @erroneous_lines << parsed_line
         end
         yielder.yield(parsed_line)

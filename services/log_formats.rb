@@ -5,7 +5,7 @@ require 'irb'
 
 # service(logline) -  возвращает имя сервиса, которому
 #   принадлежит данная строка. Если строка не удовлетворяет шаблону,
-#   то возвращается nil. Предполагается, что либо в регулярном выражении 
+#   то возвращается nil. Предполагается, что либо в регулярном выражении
 #   присутствует поле service, либо метод переопределен так, чтобы возвращать
 #   имя определенного сервиса
 # LogFormat.find(logline) - возвращает либо nil, если такой формат лога
@@ -106,19 +106,19 @@ class LogFormat
       # находим, где он на самом деле
       i = @all_formats.index {|format| format == NoFormat}
       if !i.nil?
-        # переставляем его и последний элементы 
+        # переставляем его и последний элементы
         @all_formats[-1], @all_formats[i] = @all_formats[i], @all_formats[-1]
       end
-    end 
+    end
     # дефолтный формат на последнем месте
     Printer::assert expr:@all_formats[-1] == NoFormat, msg: "Дефолтный #{NoFormat} стоит не на последнем месте!"
-    # проверяем регулярные выражения 
-    @all_formats.each do |format| 
+    # проверяем регулярные выражения
+    @all_formats.each do |format|
       Printer::debug msg:"Format: #{format}"
       # если не определено имя сервиса
       if !format.service_defined?
         Printer::error(
-          msg:"Не определено имя сервиса для формата #{format}!", 
+          msg:"Не определено имя сервиса для формата #{format}!",
           who:"LogFormat.init_formats"
         )
       end
@@ -160,9 +160,9 @@ class SyslogFormat<LogFormat
       (?<minute>\d+):   		# 08:
       (?<second>\d+)\s+   		# 05
       (?<server>\S+)\s+         # newserv
-      (?<service>[^\[:]+)    # systemd-logind - все, вплоть до квадратной скобки или :
+      (?<service>[^\[:\ ]+)    # systemd-logind - все до разделителя
       (\[(?<pid>\d+)\])?     # [10405] - может идти, а может и не идти за именем сервиса
-      :\s+(?<msg>.*)            # : Accepted publickey for autocheck
+      (:)?\s*(?<msg>.*)            # : Accepted publickey for autocheck
   }x
 end
 
@@ -178,7 +178,7 @@ class ApacheFormat<LogFormat
    	(?<hour> \d+)\:     # 06:
    	(?<minute> \d+)\:   # 35:
    	(?<second> \d+)\s   # 46
-   	(?<timezone> \+\d+)\]\s 	# +0300] 
+   	(?<timezone> \+\d+)\]\s 	# +0300]
    	# Method
    	\" (?<method> \S+)\s   					# "GET
    	# Path
@@ -186,7 +186,7 @@ class ApacheFormat<LogFormat
    	# HTTP version
    	\w+\/(?<http_version> \d\.\d)\"\s   		# HTTP/1.0"
    	# Error code
-   	(?<code> \d+)      
+   	(?<code> \d+)
     (.*)\s-\s-\s
     (?<server>\S+) # - - parallel.ru
   }x
@@ -212,7 +212,7 @@ class Fail2BanFormat<LogFormat
     (?<type>\S+)
     \s+
     # PID
-    \[(?<pid>\d+)\]:     # [1686]: 
+    \[(?<pid>\d+)\]:     # [1686]:
     \s+
     # Warning level
     (?<level>\S+)        # INFO
