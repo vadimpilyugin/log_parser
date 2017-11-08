@@ -50,6 +50,9 @@ class MyArray
     end
     ret
   end
+  def empty?
+    @a.empty?
+  end
 end
 
 # This class is used to group different stats in one place
@@ -127,7 +130,7 @@ end
 class Condition
   attr_reader :filename,:server,:service,:date,:type,:linedata,:keys
   def initialize( filename:nil, server:nil, service:nil, date:nil,
-                  type:nil, linedata:nil, keys:nil)
+                  type:nil, linedata:nil, keys:nil, errno:nil)
     @filename = filename
     @server   = server
     @service  = service

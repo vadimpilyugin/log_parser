@@ -8,9 +8,10 @@ class Service
 
   attr_reader :service_templates, :service_name
 
-  def initialize(service_templates:, service_name:)
+  def initialize(service_templates:, service_name:, service_categories:)
     @service_name = service_name
   	@service_templates = service_templates
+    @service_categories = service_categories
   end
 
   def check(logline)
@@ -72,6 +73,10 @@ class Service
       end
     end
   end
+
+  def categories
+    @service_categories
+  end
 end
 
 # Services.[] - Получить доступ к сервису по имени. Если такого сервиса нет, вернется nil
@@ -95,6 +100,7 @@ class Services
         who:"Services.load_from_dir"
       )
       service_name = ""
+      service_categories = []
       begin
         # загружаем из YAML-файла все описания шаблонов для данного сервиса
         service_templates_with_regex = YAML.load_file(templates_dir+'/'+fn)
@@ -119,6 +125,8 @@ class Services
           msg:'не хватает шаблонов!'
         )
         service_templates = service_templates_with_regex['templates']
+        # категории
+        service_categories = service_templates.keys
         # для каждого массива строк-шаблонов
         service_templates.each_value do |reg_strings|
           # создаем новый Regexp и определяем его id
@@ -144,7 +152,8 @@ class Services
       end
       @services[service_name_regex] = Service.new(
         service_templates:service_templates,
-        service_name:service_name
+        service_name:service_name,
+        service_categories:service_categories
       )
       if @service_names.has_key?(service_name)
         # Возможно, ошибка, повторяющийся сервис
