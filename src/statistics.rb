@@ -259,7 +259,7 @@ class Distribution
     @conditions = Condition.new(stat_params.keys_to_sym.update(keys:@keys))
     @distrib    = Distribution::hash_cnt(@keys.size)
 
-    @sort_type  = TOTAL_SORT_TYPE if @sort_type.nil?
+    @sort_type  = DISTINCT_SORT_TYPE if @sort_type.nil?
     @sort_order  = FORWARD_SORT_ORDER if @sort_order.nil?
     @top        = DEFAULT_TOP_VALUE if @top.nil?
     @no_finalize = false if @no_finalize.nil?
