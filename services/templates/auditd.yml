@@ -1,5 +1,4 @@
-regex: 'auditd'
-service: 'auditd'
-templates:
-  Ignore:
-  - 'Audit daemon rotating log files'
+---
+regex: auditd
+service: auditd
+templates: 

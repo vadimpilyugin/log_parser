@@ -1,9 +1,0 @@
-regex: 'console-kit-daemon'
-service: 'console-kit-daemon'
-templates:
-  Strange errors:
-  - 'assertion .* failed'
-  - 'missing action'
-  - 'Source ID (\S+) was not found when attempting to remove it'
-  Ignore:
-  - 'pam_unix'

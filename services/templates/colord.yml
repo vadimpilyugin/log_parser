@@ -1,5 +1,0 @@
-regex: 'colord'
-service: 'colord'
-templates:
-  Ignore:
-  - '\(colord:\d+\): Cd-WARNING \*\*: failed to get session \[pid \d+\]:'

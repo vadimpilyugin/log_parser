@@ -11,6 +11,8 @@ class Fields
 				top:"top",
 				sort_type:"sort_type",
 				sort_order:"sort_order",
+				no_finalize:"no_finalize",
+				except:"except",
 			}
 		when "LogFormat"
 			{
@@ -29,6 +31,8 @@ class Fields
 				"errno" => true,
 				"logline" => true,
 				"msg" => true,
+				"service_group" => true,
+				"except" => true,
 			}
 		end
 	end
@@ -48,6 +52,10 @@ class Fields
 		]
 	end
 	def self.keys_to_sym(fields_list)
-		fields_list.map {|field| Fields["DistributionKeys"].has_key?(field) ? field.to_sym : field}
+		if fields_list.respond_to?(:map)
+			fields_list.map {|field| Fields["DistributionKeys"].has_key?(field) ? field.to_sym : field}
+		else
+			return Fields["DistributionKeys"].has_key?(fields_list) ? fields_list.to_sym : fields_list
+		end
 	end
 end

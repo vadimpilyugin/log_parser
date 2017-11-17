@@ -1,5 +1,0 @@
-regex: 'udev-aci\.ck'
-service: 'udev-aci.ck'
-templates:
-  Ignore:
-  - "g_slice_set_config: assertion 'sys_page_size == 0' failed"

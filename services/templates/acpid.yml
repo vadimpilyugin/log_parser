@@ -1,5 +1,0 @@
-regex: 'acpid'
-service: 'acpid'
-templates:
-  Ignore:
-  - 'acpid: input device has been disconnected, fd'

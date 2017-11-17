@@ -1,9 +1,4 @@
-regex: 'rsyslogd(-\d+)?'
-service: 'rsyslog'
-templates:
-  Strange errors:
-  - 'rsyslogd was HUPed'
-  Ignore:
-  - '-- MARK --'
-  - 'rsyslogd.s (groupid|userid) changed to \d+'
-  - '.* start$'
+---
+regex: rsyslogd
+service: rsyslogd
+templates: 

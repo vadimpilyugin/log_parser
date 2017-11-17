@@ -1,21 +1,29 @@
 require_relative '../src/tools'
 require_relative '../src/config'
-require_relative '../src/stats'
-
-require 'yaml/store'
+require_relative '../src/loader'
 
 class Service
 
-  attr_reader :service_templates, :service_name
+  attr_reader :service_templates, :service_name, :service_regexp_string
+  attr_reader :service_categories
 
-  def initialize(service_templates:, service_name:, service_categories:)
+  alias_method :categories, :service_categories
+
+  def initialize(service_templates:, service_name:,
+    service_categories:, service_regexp_string:)
     @service_name = service_name
   	@service_templates = service_templates
     @service_categories = service_categories
+    @service_regexp_string = service_regexp_string
+    @service_regexp = Regexp.new(service_regexp_string)
   end
 
   def check(logline)
   	return !self.parse(logline).nil?
+  end
+
+  def belongs?(service_name)
+    service_name =~ @service_regexp
   end
 
   # @param [String] logline строка
@@ -42,226 +50,165 @@ class Service
       }
     end
   end
-
-  def check_field_names
-    dictionary = [
-      "username",
-      "user_ip",
-      "motion",
-      "motion_type",
-      "motion_mask",
-      "ip",
-      "user_port",
-      "user",
-      "mac_addr",
-      "service",
-      "action",
-      "ip_addr",
-      "dhcp_method",
-      "path",
-      "by_username",
-      "method",
-      "sessid",
-      "upsname",
-      "updaname",
-      "by_user",
-      "servicename",
-    ]
-    @service_templates.each do |regex_hash|
-      regex_hash[:regex].names.each do |field_name|
-        DidYouMean::SpellChecker.new(dictionary: ['foo','bar']).correct('bazinga')
-      end
-    end
-  end
-
-  def categories
-    @service_categories
-  end
 end
 
-# Services.[] - Получить доступ к сервису по имени. Если такого сервиса нет, вернется nil
-# Если есть, то вернется instance класса Service, представляющий нужный сервис.
-# Services.init - загрузить шаблоны сервисов из файлов, создать соответствующие объекты
+require 'deepsort'
 
 class Services
-  DEFAULT_DIR = Tools.abs_path Config["parser"]["templates_dir"]
-  YML_EXT = '.yml'
 
-  @services = {}
-  @total_regexes = 0
-  # @name_cache = {}
-  def Services.load_from_dir
-    return @services if !@services.empty?
-    @service_names = {}
-    templates_dir = DEFAULT_DIR
-    Dir.entries(templates_dir).keep_if {|name| name =~ /.*#{YML_EXT}/}.each do |fn|
-      Printer::debug(
-        msg:"Found new service file: #{fn}",
-        who:"Services.load_from_dir"
-      )
-      service_name = ""
-      service_categories = []
-      begin
-        # загружаем из YAML-файла все описания шаблонов для данного сервиса
-        service_templates_with_regex = YAML.load_file(templates_dir+'/'+fn)
-        # проверяем, что есть имя сервиса
-        service_name = service_templates_with_regex['service']
-        Printer::assert(
-          expr:!service_name.nil? && !service_name.empty?,
-          who:fn,
-          msg:'не хватает имени сервиса!'
-        )
-        # проверяем, что есть регулярное выражение
-        Printer::assert(
-          expr:!service_templates_with_regex['regex'].nil?,
-          who:fn,
-          msg:'не хватает регулярного выражения!'
-        )
-        service_name_regex = Regexp.new(service_templates_with_regex['regex'])
-        # проверяем, что есть шаблоны
-        Printer::assert(
-          expr:!service_templates_with_regex['templates'].nil?,
-          who:fn,
-          msg:'не хватает шаблонов!'
-        )
-        service_templates = service_templates_with_regex['templates']
-        # категории
-        service_categories = service_templates.keys
-        # для каждого массива строк-шаблонов
-        service_templates.each_value do |reg_strings|
-          # создаем новый Regexp и определяем его id
-          reg_strings.map! do |reg_s|
-            @total_regexes += 1
-            {:regex => Regexp.new(reg_s), :regex_id => @total_regexes}
-          end
-        end
-        # вставляем описание шаблона внутрь описания регулярного выражения
-        service_templates.each_pair do |type, regexes|
-          regexes.map! {|regex_hash| regex_hash.update(type:type)}
-        end
-        # теперь каждое регулярное выражение сидит в своем хэше внутри массива
-        # что-то вроде [
-        #   {regex: /foobar/, regex_id: 12, type: 'string is foobar'},
-        #   {regex: /barfoo/, regex_id: 13, type: 'string like barfoo'}
-        # ]
-        service_templates = service_templates.values.sum([])
-      rescue StandardError => exc
-        Printer::error who:"Services.load_from_dir", msg:exc.inspect
-        Printer::error who:"Services.load_from_dir", msg:"Не удалось загрузить шаблоны #{fn}"
-        service_templates = []
-      end
-      @services[service_name_regex] = Service.new(
-        service_templates:service_templates,
-        service_name:service_name,
-        service_categories:service_categories
-      )
-      if @service_names.has_key?(service_name)
-        # Возможно, ошибка, повторяющийся сервис
-        Printer::note(
-          who:fn,
-          msg:"сервис #{service_name.inspect} уже был в #{@service_names[service_name]}"
-        )
-      else
-        @service_names[service_name] = fn
-      end
+  def self.init
+    @service_groups.clear if @service_groups
+    @service_groups = {}
+    # список сервисов пустой
+    Printer::assert(
+      expr:@service_groups.empty?,
+      who: "Services.init",
+      msg: "список @service_groups непустой!"
+    )
+    ServiceLoader.load_from_dir.each do |srv|
+      add_service(srv:srv)
     end
+    sort
+    # список сервисов непустой
+    Printer::assert(
+      expr:!@service_groups.empty?,
+      who: "Services.init",
+      msg: "список @service_groups пустой!"
+    )
   end
 
-  def Services.[](service_name)
+  def self.add_service(srv:)
+    key = srv.service_name
+    Printer::assert(
+      expr: !@service_groups.has_key?(key),
+      who: "Services.add_service",
+      msg: "сервис уже существует: #{srv.inspect}"
+    )
+    @service_groups[key] = srv
+  end
+
+  def self.load_and_add(service_group:)
+    # загружаем сервис
+    srv = ServiceLoader.load_service(service_group:service_group)
+    # добавляем в хэш
+    add_service(srv:srv)
+    # сортируем
+    sort
+    return srv
+  end
+
+  def self.sort
+    # список сервисов непустой
+    Printer::assert(
+      expr:!@service_groups.empty?,
+      who: "Services.add_template",
+      msg: "список @service_groups пустой!"
+    )
+    # сортируем по имени группы
+    @service_groups.deep_sort_by {|o| o[0]}
+  end
+
+  def self.[](service)
+    # список сервисов непустой
+    Printer::assert(
+      expr:!@service_groups.empty?,
+      who: "Services.add_template",
+      msg: "список @service_groups пустой!"
+    )
     # ищем среди всех сервисов по регулярным выражениям
-    ind = @services.keys.index{|rgx| service_name =~ rgx}
-    # если такого сервиса нет
-    if ind.nil?
-      nil
-    else
-      # сервис есть
-      @services[@services.keys[ind]]
-    end
+    @service_groups.values.find {|srv| srv.belongs?(service)}
   end
 
-  def Services.all
-    @services.each_value
+  def self.by_group(service_group:)
+    # список сервисов непустой
+    Printer::assert(
+      expr:!@service_groups.empty?,
+      who: "Services.add_template",
+      msg: "список @service_groups пустой!"
+    )
+    # ищем среди всех сервисов по идентификатору группы
+    @service_groups[service_group]
   end
 
-  def Services.load_service(service_name:)
-    # если еще не загружен
-    if Services[service_name].nil?
-      begin
-        # загружаем из YAML-файла все описания шаблонов для данного сервиса
-        service_templates_with_regex = YAML.load_file(DEFAULT_DIR+'/'+service_name+YML_EXT)
-        # проверяем, что есть имя сервиса
-        service_name = service_templates_with_regex['service']
-        Printer::assert(
-          expr:!service_name.nil? && !service_name.empty?,
-          who:fn,
-          msg:'не хватает имени сервиса!'
-        )
-        # проверяем, что есть регулярное выражение
-        Printer::assert(
-          expr:!service_templates_with_regex['regex'].nil?,
-          who:fn,
-          msg:'не хватает регулярного выражения!'
-        )
-        service_name_regex = Regexp.new(service_templates_with_regex['regex'])
-        # проверяем, что есть шаблоны
-        Printer::assert(
-          expr:!service_templates_with_regex['templates'].nil?,
-          who:fn,
-          msg:'не хватает шаблонов!'
-        )
-        service_templates = service_templates_with_regex['templates']
-        # для каждого массива строк-шаблонов
-        service_templates.each_value do |reg_strings|
-          # создаем новый Regexp и определяем его id
-          reg_strings.map! do |reg_s|
-            @total_regexes += 1
-            {:regex => Regexp.new(reg_s), :regex_id => @total_regexes}
-          end
-        end
-        # вставляем описание шаблона внутрь описания регулярного выражения
-        service_templates.each_pair do |type, regexes|
-          regexes.map! {|regex_hash| regex_hash.update(type:type)}
-        end
-        # теперь каждое регулярное выражение сидит в своем хэше внутри массива
-        # что-то вроде [
-        #   {regex: /foobar/, regex_id: 12, type: 'string is foobar'},
-        #   {regex: /barfoo/, regex_id: 13, type: 'string like barfoo'}
-        # ]
-        service_templates = service_templates.values.sum([])
-      rescue StandardError => exc
-
-      end
-    end
+  def self.all
+    @service_groups.values.each
   end
 
-  def Services.create_service(service_name:)
-    # новый объект типа Yaml::Store
-    store = YAML::Store.new DEFAULT_DIR+'/'+service_name+YML_EXT
-    # записываем информацию
-    store.transaction do
-      store['regex'] = service_name
-      store['service'] = service_name
-      store['templates'] = ""
-    end
-    # загружаем информацию о сервисе
-    load_service(service_name:service_name)
+  def self.create(service_group:,service_regexp:)
+    Printer::debug(who:"Services.create(#{service_group},#{service_regexp})")
+    Printer::assert(
+      expr: !@service_groups.has_key?(service_group),
+      who: "Services.create",
+      msg: "такой сервис уже существует"
+    )
+    # создаем файл в директории
+    ServiceLoader.create(
+      service_group:service_group,
+      service_regexp:service_regexp
+    )
+    load_and_add(service_group:service_group)
+  end
+
+  def self.update(service_group:,service_regexp:,new_service_group:)
+    Printer::debug(who:"Services.update(#{service_group},#{service_regexp})")
+    # проверим, что сервис уже существует
+    Printer::assert(
+      expr: !@service_groups[service_group].nil?,
+      who: "Services.update",
+      msg: "сервис не найден"
+    )
+    # сервис существует
+    @service_groups.delete(service_group)
+    # обновляем файл
+    ServiceLoader.update(
+      service_group:service_group,
+      service_regexp:service_regexp,
+      new_service_group:new_service_group
+    )
+    # загружаем заново
+    load_and_add(service_group:new_service_group)
+  end
+
+  def self.delete(service_group:)
+    Printer::debug(who:"Services.delete(#{service_group})")
+    # проверим, что сервис уже существует
+    Printer::assert(
+      expr: !@service_groups[service_group].nil?,
+      who: "Services.delete(#{service_group})",
+      msg: "сервис не найден"
+    )
+    # сервис существует, удаляем его
+    srv = @service_groups.delete(service_group)
+    # удаляем файл
+    ServiceLoader.delete(service_group:service_group)
+    srv
+  end
+
+  def self.add_template(service_group:,service_category:,regexp:)
+
+    Printer::debug(who:"Services.add_template(#{service_group},#{service_category},#{regexp})")
+    # список сервисов непустой
+    Printer::assert(
+      expr:!@service_groups.empty?,
+      who: "Services.add_template",
+      msg: "список @service_groups пустой!"
+    )
+    # проверим, что сервис уже существует
+    Printer::assert(
+      expr: !@service_groups[service_group].nil?,
+      who: "Services.add_template",
+      msg: "сервис #{service_group} не найден"
+    )
+    # сервис существует
+    @service_groups.delete(service_group)
+    # обновляем файл
+    templates = ServiceLoader.add_template(
+      service_group: service_group,
+      service_category: service_category,
+      regexp: regexp
+    )
+    # загружаем заново
+    load_and_add(service_group:service_group)
+    return templates
   end
 end
-
-# class CheckSpelling
-#   def self.count_fields
-#     # заводим новый счетчик
-#     counter = Stats::HashCounter.new("","")
-#     # для каждого сервиса в каждом его шаблоне находим именованные поля и увеличиваем счетчик
-#     Service.all.each do |srv|
-#       srv.service_templates.each {|regex_hash| regex_hash[:regex].names.each {|name| counter.increment name}}
-#     end
-#     # возвращаем имена полей и сколько раз они нам встретились
-#     counter.value
-#   end
-
-#   def self.top_popular
-#     count_fields
-#   end
-
-Services.load_from_dir

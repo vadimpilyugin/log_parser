@@ -1,13 +1,16 @@
+require 'uri' # URI.escape
+
 module View
 
   UNDEFINED_SERVICE = 'n/a'
 
   def self.pagination(server_list:,active:)
     result = []
+    server_list.unshift("All")
     server_list.each_with_index do |server,i|
       result << {
         name:server,
-        href:(i == 0 ? '/servers/' : "/servers/#{server}"),
+        href:(i == 0 ? '/servers/' : "/servers?server=#{server}"),
         active: (i == active)
       }
     end
@@ -132,6 +135,7 @@ module View
     loglines_copy.delete(:total)
     loglines_copy.delete(:distinct)
     loglines_copy.to_a.first(MAX_ERR_ROWS).map do |logline, lines|
+      service = lines.first[:service] # где он есть, там будет не nil
       case lines.first[:errno]
       when Parser::FORMAT_NOT_FOUND
         [logline, UNDEFINED_SERVICE, Parser.strerror(lines.first[:errno])]
@@ -139,18 +143,57 @@ module View
         [
           logline,
           lines.first[:service].inspect,
-          link(href:'/add/service/'+lines.first[:service],descr:"Добавить сервис")
+          link(
+            href:"/service_regexp_new.html?service=#{URI.escape(service)}",
+            descr:"Добавить сервис"
+          )
         ]
       when Parser::TEMPLATE_NOT_FOUND
-        [lines.first[:msg], lines.first[:service].inspect, Parser.strerror(lines.first[:errno])]
+        [
+          lines.first[:msg],
+          lines.first[:service].inspect,
+          link(
+            href:"regexp.html?service_group=#{URI.escape(lines.first[:service_group])}"+\
+              "&service=#{URI.escape(service)}"+\
+              "&logline=#{URI.escape(logline)}",
+            descr:"Добавить шаблон")
+        ]
       when Parser::WRONG_FORMAT
         [logline, UNDEFINED_SERVICE, Parser.strerror(lines.first[:errno])]
       end
     end
   end
-  def err_card(header:, hsh:)
+  def srv_lines_to_rows(hsh)
+    hsh_clone = hsh.clone
+    hsh_clone.delete(:total)
+    hsh_clone.delete(:distinct)
+    hsh_clone.to_a.first(MAX_ERR_ROWS).map do |service, lines|
+      [
+        service,
+        link(
+          href:"/service_regexp_new.html?service=#{URI.escape(service)}",
+          descr:"Добавить сервис"
+        )
+      ]
+    end
+  end
+  def unknown_services(stat:)
+    simple_card(
+      card_style:"mb-3",
+      header_style:"text-white bg-danger",
+      header_color:"color: white;",
+      header: stat.descr,
+      card_body: table(
+        header:['Сервис', 'Описание'],
+        rows:srv_lines_to_rows(stat.distrib)
+      ),
+      panel_group: "pgroup0",
+      new_panel_group: "prgoupErrSrv"
+    )
+  end
+  def err_card(stat:)
     card_body = ""
-    hsh.each_pair do |filename, lines|
+    stat.distrib.each_pair do |filename, lines|
       next if filename == :total || filename == :distinct
       card_body << simple_card(
         card_style:"border-light",
@@ -167,7 +210,7 @@ module View
       card_style:"mb-3",
       header_style:"text-white bg-danger",
       header_color:"color: white;",
-      header: header,
+      header: stat.descr,
       card_body: card_body,
       panel_group: "pgroup0",
       new_panel_group: "prgoupErr"

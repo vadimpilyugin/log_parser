@@ -1,5 +1,0 @@
-regex: 'smartd'
-service: 'smartd'
-templates:
-  Ignore:
-  - 'Device: .*, SMART Usage Attribute: 194 Temperature_Celsius changed from'

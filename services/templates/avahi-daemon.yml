@@ -1,9 +1,0 @@
-regex: 'avahi-daemon'
-service: 'avahi-daemon'
-templates:
-  Ignore:
-  - 'Joining mDNS multicast group on interface \S+.IPv\d with address'
-  - 'New relevant interface \S+.IPv\d for mDNS'
-  - 'Registering new address record for \S+ on \S+'
-  - 'Received packet from invalid interface.'
-  - 'Invalid response packet from host '

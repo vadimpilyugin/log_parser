@@ -11,7 +11,7 @@ require_relative '../services/log_formats.rb'
 # Класс занимается обработкой входного потока логов и переводом их в структурированный вид
 #
 class Parser
-
+  OK = 1
   FORMAT_NOT_FOUND = 1
   UNKNOWN_SERVICE = 2
   TEMPLATE_NOT_FOUND = 3
@@ -19,6 +19,8 @@ class Parser
 
   def Parser.strerror(errno)
     case errno
+    when OK
+      "All OK"
     when FORMAT_NOT_FOUND
       "Отсутствует описание формата лога"
     when UNKNOWN_SERVICE
@@ -84,7 +86,8 @@ class Parser
         errno:UNKNOWN_SERVICE,
         service:parsed_line[:service],
         date:parsed_line[:date],
-        log_format:log_format.to_s
+        log_format:log_format.to_s,
+        msg:line_hash[:logline] # потому что мы хотим видеть всю строку в отчете
       )
     end
     # сервис найден
@@ -96,7 +99,8 @@ class Parser
         ok:false,
         description:Parser.strerror(TEMPLATE_NOT_FOUND),
         errno:TEMPLATE_NOT_FOUND,
-        service:service.service_name,
+        service_group:service.service_name,
+        service:parsed_line[:service],
         date:parsed_line[:date],
         log_format:log_format.to_s,
         msg:msg
@@ -115,9 +119,12 @@ class Parser
     parsed_msg[:linedata].update(parsed_line[:linedata])
     return line_hash.update(
       ok:true,
-      service:service.service_name,
+      service_group:service.service_name,
+      service: parsed_line[:service],
       date:parsed_line[:date],
       log_format:log_format.to_s,
+      msg: msg,
+      errno: OK # чтобы перезаписывать errno ошибочных строк
     ).update(parsed_msg)
   end
 

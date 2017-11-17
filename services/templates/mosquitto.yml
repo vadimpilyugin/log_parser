@@ -1,6 +1,0 @@
-regex: 'mosquitto'
-service: 'mosquitto'
-templates:
-  Ignore:
-  - '\* (Starting|Stopping) network daemon: mosquitto'
-  - '\.\.\.done.'

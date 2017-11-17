@@ -69,11 +69,12 @@
   keys:
   - type
   - user_ip
+  sort_type: distinct
 
 - Distribution: "Какие ip какие события вызывали"
   keys: 
-  - user_ip
   - type
+  - user_ip
   top: 10
   sort_type: distinct
 

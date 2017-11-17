@@ -1,7 +1,0 @@
-regex: 'cinnamon-screensaver-pam-helper'
-service: 'cinnamon-screensaver-pam-helper'
-templates:
-  Ignore:
-  - 'pam_ecryptfs: seteuid error'
-  - 'gkr-pam: unlocked login keyring'
-  - 'pam_unix\(cinnamon-screensaver:auth\): authentication failure;'

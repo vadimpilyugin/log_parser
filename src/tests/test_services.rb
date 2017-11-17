@@ -5,6 +5,11 @@ require 'irb'
 require_relative "../../services/service.rb"
 
 class TestSaving < Minitest::Test
+  # def test_service
+  #   s = Services['org.mate.panel.applet.MultiLoadA']
+  #   binding.irb
+  #   assert s
+  # end
   def test_sshd_pam
     s = 'pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=58.218.198.142 user=root'
     assert Services["sshd"].check(s)

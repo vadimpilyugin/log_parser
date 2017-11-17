@@ -1,6 +1,7 @@
-regex: '\d\d[a-z]+'
+---
+regex: "\\d\\d[a-z]+"
 service: filesystem
 templates:
   Ignore:
   - 'debug: \S+ is not a \S+ partition: exiting'
-
+  - 'debug: .* is a swap partition; skipping'

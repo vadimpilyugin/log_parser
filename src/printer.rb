@@ -121,7 +121,7 @@ class Printer
         who_color: Colors::RED,
         msg_color: Colors::WHITE
       )
-      raise Error::AssertError.new(Messages::ASSERT)
+      raise Error::AssertError.new("#{who}: #{msg}")
     end
   end
 

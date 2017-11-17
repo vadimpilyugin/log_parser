@@ -1,5 +1,6 @@
-regex: 'cinnamon-screensaver-dialog'
-service: 'cinnamon-screensaver-dialog'
+---
+regex: "(cinnamon|mate)-screensaver-dialog"
+service: screensaver-dialog
 templates:
   Ignore:
   - 'pam_ecryptfs: seteuid error'
