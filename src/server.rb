@@ -287,11 +287,13 @@ post '/add/template' do
           false
         end
       end
-    if Statistics[$stats['TEMPLATE_NOT_FOUND']].distrib[service_group]\
+    stat = Statistics[$stats['TEMPLATE_NOT_FOUND']]
+    if stat.distrib[service_group]\
       .count {|k,v| k.class == String} == 0
 
       Printer::debug(msg:"Удаляем из TEMPLATE_NOT_FOUND группу #{service_group}")
-      Statistics[$stats['TEMPLATE_NOT_FOUND']].distrib.delete(service_group)
+      stat.distrib.delete(service_group)
+      Printer::debug(msg:"Оставшиеся в живых: #{stat.list.inspect}")
     end
     pls = Parser.new.parsed_logline_stream(ar.each)
     # NORMAL_STATS - статистики из конфига

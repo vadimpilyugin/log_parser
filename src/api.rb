@@ -7,6 +7,16 @@ def get_loglines_no_template_found(service_group:, regexp:'.*')
   # статистика распределения строк по сервисам
   lines = Statistics[$stats['TEMPLATE_NOT_FOUND']]
   # lines = Statistics[$stats['NO_TEMPLATE_FOUND']]
+  # если у сервиса нет строк
+  if !lines.distrib.has_key?(service_group)
+    return {
+      "ok" => true,
+      "data" => {
+        "lines" => [],
+        "rec_size" => 0
+      }
+    }
+  end
   # отсеиваем все, которые не принадлежат данному сервису
   lines = lines.distrib[service_group].keys.clone
   Printer::assert(expr:lines, msg:"Не нашлось строк с сервисом #{service_group}")

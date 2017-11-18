@@ -18,11 +18,11 @@ Printer::debug(msg:"============= Log Parser v3.02 ============", who:"Init")
 puts
 puts
 
-NUMBER_OF_LINES_TO_PROCESS = 20000
+NUMBER_OF_LINES_TO_PROCESS = 300000
 def process_stats(stats_no:nil)
   # загрузка строк
   logline_stream = LoglineStream.from_directory
-  100000.times {logline_stream.next}
+  # 100000.times {logline_stream.next}
   # парсер
   p = Parser.new
   # распарсенный поток строк
