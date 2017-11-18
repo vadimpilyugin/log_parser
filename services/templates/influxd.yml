@@ -1,0 +1,4 @@
+---
+regex: influxd
+service: influxd
+templates: 

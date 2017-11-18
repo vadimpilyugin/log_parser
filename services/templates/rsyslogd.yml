@@ -1,4 +1,4 @@
-Strange errors:
-- 'rsyslogd was HUPed'
-Ignore:
-- '-- MARK --'
+---
+regex: rsyslogd
+service: rsyslogd
+templates: 

@@ -1,0 +1,187 @@
+<!-- Форма добавления регулярных выражений к сервисам -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Template Editor</title>
+  <!-- JQuery -->
+  <!-- <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script> -->
+  <!-- Bootstrap CSS -->
+  <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous"> -->
+  <!-- Bootstrap JS -->
+  <!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script> -->
+  <!-- Favicon -->
+  <!-- <link rel="icon" href="http://openplatform.online/favicon.ico?v=2" > -->
+  <!-- Vue.js, Axios and Lodash -->
+  <!-- <script src="https://unpkg.com/vue"></script> -->
+  <!-- <script src="https://cdn.jsdelivr.net/npm/axios@0.12.0/dist/axios.min.js"></script> -->
+  <!-- <script src="https://cdn.jsdelivr.net/npm/lodash@4.13.1/lodash.min.js"></script> -->
+  <!-- My CSS File -->
+  <link rel="stylesheet" href="http://localhost:4567/regexp.css"></head>
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="css/bootstrap.min.css">
+  <!-- colorselector css -->
+  <link href="css/bootstrap-colorselector.css" rel="stylesheet">
+  <!-- prettify css -->
+  <link rel="stylesheet" type="text/css" href="css/prettify.css" />
+  <!-- JQuery -->
+  <script src="js/jquery.min.js"></script>
+  <!-- Bootstrap JS -->
+  <script src="js/bootstrap.min.js"></script>
+  <!-- colorselector js -->
+  <script src="js/bootstrap-colorselector.js"></script>
+  <script src="js/prettify.js"></script>
+  <!-- Favicon -->
+  <link rel="icon" href="http://openplatform.online/favicon.ico?v=2" >
+  <!-- Vue.js, Axios and Lodash -->
+  <script src="js/vue.js"></script>
+  <script src="js/axios.min.js"></script>
+  <script src="js/lodash.min.js"></script>
+  <!-- teleport view -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+<body>
+  <!-- Bootstrap container -->
+  <div class="container" id="app">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2">
+        <h1> Редактор шаблонов </h1>
+        <p class="lead"> Это форма для редактирования файлов с шаблонами </p>
+        <!-- We're going to place the form here in the next step -->
+        <form method="post" action="#" role="form" >
+          <!-- <div class="messages"></div> -->
+          <div class="controls">
+            <div id="messages">
+              <div :class="message_classes">
+                <strong>{{message_head}}</strong> {{message_text}}
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6">
+                <!-- выдвижной список выбора сервиса -->
+                <div class="form-group">
+                  <label for="service_group"> Выбор сервиса </label>
+                  <select class="form-control" name="service_group" id="service_group" v-model="current_service_group">
+                    <option v-for="service_group in service_groups" :value="service_group">{{service_group}}</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6">
+                <!-- выдвижной список выбор категории -->
+                <div class="form-group">
+                  <label for="category"> Выбор категории </label>
+                  <select class="form-control" name="category" id="category" v-model="current_category">
+                    <option :value="ADD_NEW_CATEGORY">{{ADD_NEW_CATEGORY}}</option>
+                    <!-- <option :value="IGNORE_CATEGORY">{{IGNORE_CATEGORY}}</option> -->
+                    <option v-for="category in categories" :value="category">{{category}}</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <!-- форма ввода новой категории -->
+                <div class="form-group" v-if="current_category === ADD_NEW_CATEGORY">
+                  <label for="new_category"> Название категории </label>
+                  <input type="text" id="new_category" class="form-control" placeholder="Введите название категории" v-model="new_category">
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-12">
+                <div v-bind:class="{ 'form-group':true, 'has-error': is_regex_wrong, 'has-feedback': is_regex_wrong }">
+                  <label for="regexp"> Регулярное выражение </label>
+                  <span :class="label_classes"> {{label_text}} </span>
+                  <textarea class="form-control" rows="4" id="regexp" name="regexp" placeholder="Введите регулярное выражение" v-model="regexp" ></textarea>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-1">
+                  <label for="colorselector" id="type"> Тип:</label>
+              </div>
+              <div class="col-md-4">
+                  <select id="colorselector" v-model="colorselector">
+                    <option data-color="#5cb85c" value="Debug" selected="selected">Debug</option>
+                    <option data-color="#5bc0de" value="Info">Info</option>
+                    <option data-color="#f0ad4e" value="Warning">Warning</option>
+                    <option data-color="#d9534f" value="Error">Error</option>
+                  </select>
+              </div>
+            </div>
+            <div class="row" id="button">
+              <div class="col-md-12">
+                  <button class="btn btn-success btn-send" @click.prevent="postTemplate">{{button_text}}</button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>  
+    </div>
+    <div class="row" style="margin-top: 50px;">
+      <div class="col-lg-8 col-lg-offset-2">
+        <!-- строки, подходящие под запрос -->
+        <h3 v-if="logline_count > 0"> Строки: {{logline_count}} </h3>
+        <h3 v-if="logline_count == 0"> Строк нет :( </h3>
+        <table class="table table-hover">
+          <tbody>
+            <tr v-for="line_hash in loglines">
+              <td>{{line_hash.msg}}</td>
+              <td v-if="line_hash.linedata">
+                {{line_hash.linedata}}
+              </td>
+              <td><a href="#" @click="escapeAndChange(line_hash.msg)">Add as template</a> </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <!-- Vue app -->
+  <script src="http://localhost:4567/regexp.js"></script>
+</body>
+</html>
+
+
+
+
+
+  <!-- <div class="container" id="app">
+    <div class="form">
+      <form action="#" method="POST">
+        <div class="row">
+          <p><label for="regexp">Регулярное выражение</label></p>
+          <input type="text" name="regexp" v-model="regexp">
+        </div>
+        <div class="row">
+          <select name="service" id="service" v-model="current_service">
+            <option v-for="service in services" :value="service">{{service}}</option>
+          </select>
+        </div>
+        <div class="row">
+          <select name="category" id="category" v-model="current_category">
+            <option v-for="category in categories" :value="category">{{category}}</option>
+            <option :value="ADD_NEW_CATEGORY">{{ADD_NEW_CATEGORY}}</option>
+          </select>
+        </div>
+        <div class="row">
+          <p v-if="current_category === ADD_NEW_CATEGORY"><label for="new_category">Название новой категории</label></p>
+          <input v-if="current_category === ADD_NEW_CATEGORY" type="text" id="new_category">
+        </div>
+      </form>
+    </div>
+    <div class="loglines">
+      <table class="table table-hover">
+        <thead>
+          <th>Logline</th>
+        </thead>
+        <tbody>
+          <tr v-for="line_hash in loglines">
+            <td>{{line_hash["msg"]}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div> -->
+  <!-- My script -->
+  

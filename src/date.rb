@@ -4,23 +4,36 @@ require 'dm-core'
 class CreateDate
   # Create Ruby Time object from hash of parameters. Default to Time.now
   # @param [Hash] hsh opts for creating the date
-  # @option hsh [Integer] :year year
-  # @option hsh [Integer] :month month
-  # @option hsh [Integer] :day day
-  # @option hsh [Integer] :hour hour
-  # @option hsh [Integer] :minute minute
-  # @option hsh [Integer] :second second
+  # @option hsh [Integer] 'year' year
+  # @option hsh [Integer] 'month' month
+  # @option hsh [Integer] 'day' day
+  # @option hsh [Integer] 'hour' hour
+  # @option hsh [Integer] 'minute' minute
+  # @option hsh [Integer] 'second' second
   # @return [Time] time object built from params. Default to Time.now
   def self.create(hsh)
   	default_time = Time.now
-  	return Time.new(
-  	  hsh[:year] ? hsh[:year] : default_time.year,
-  	  hsh[:month] ? hsh[:month] : default_time.month,
-  	  hsh[:day] ? hsh[:day] : default_time.day,
-  	  hsh[:hour] ? hsh[:hour] : default_time.hour,
-  	  hsh[:minute] ? hsh[:minute] : default_time.min,
-  	  hsh[:second] ? hsh[:second] : default_time.sec,
-  	)
+    timezone = hsh["timezone"] ? hsh["timezone"] : "+0300"
+    timezone = timezone[0..2] + ":" + timezone[3..-1]
+    begin
+    	return Time.new(
+    	  hsh['year']   ? hsh['year']    : default_time.year,
+    	  hsh['month']  ? hsh['month']   : default_time.month,
+    	  hsh['day']    ? hsh['day']     : default_time.day,
+    	  hsh['hour']   ? hsh['hour']    : default_time.hour,
+    	  hsh['minute'] ? hsh['minute']  : default_time.min,
+    	  hsh['second'] ? hsh['second']  : default_time.sec,
+        timezone
+    	)
+    rescue ArgumentError => exc
+      if exc.message == "mon out of range"
+        Printer::error(
+          who: "DateError",
+          msg: "Значение месяца неверное: #{hsh['month'].inspect}"
+        )
+        default_time
+      end
+    end
   end
   # Creates time object from a string
   # @param [String] string string containing time

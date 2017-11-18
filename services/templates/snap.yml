@@ -1,0 +1,4 @@
+---
+regex: snap
+service: snap
+templates: 

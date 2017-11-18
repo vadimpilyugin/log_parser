@@ -4,7 +4,7 @@ require_relative 'tools'
 # The main difference with statistics is that statistics is used for the
 # parsed log data
 module Stats
-  Max_lines = 5
+  MAX_LINES = 5
 
   # initialize(name,descr) - вернет статистику
   # Параметры:
@@ -51,23 +51,25 @@ module Stats
       @name = name
       @descr = descr
       @value = Hash.new { |hash, key| hash[key] = 0 }
+      @count = 0
     end
-    attr_reader :name, :descr, :value
+    attr_reader :name, :descr, :value, :count
 
     # Increase the number of values equal to the given value
     # @param [Object] value value to increase
     # @return [Hash] current value of the distribution  
     def increment(value)
       @value[value] += 1
+      @count += 1
     end
     # Pretty print for the distribution
     # @return [void]
-    def print
-      lines_left = @value.keys.size - Max_lines
+    def print(max_lines = MAX_LINES)
+      lines_left = @value.keys.size - max_lines
       total = @value.values.inject(0){|sum,x| sum + x }
-      @value = @value.to_a[0...Max_lines]
+      # @value = @value.to_a[0...max_lines]
       msg = "всего ".green + "#{total}".red
-      Printer::debug(who:@descr, msg:msg, params:@value.to_a.sort {|a,b| b[1] <=> a[1]}.map{|ar| [ar[0],ar[1].to_s.red]}.to_h)
+      Printer::debug(who:@descr, msg:msg, params:@value.to_a[0...max_lines].sort {|a,b| b[1] <=> a[1]}.map{|ar| [ar[0],ar[1].to_s.red]}.to_h)
       printf "".white
       Printer::debug(who:"\tShow #{lines_left.to_s.red+"".green} more") if lines_left > 0
     end

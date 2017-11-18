@@ -1,91 +1,52 @@
 ---
-# Общая сводка по всем серверам - ip, на какие сервера заходили, ...
-- Distribution: "Топ-10 уникальных ip"
-  :keys:
+- Counter: "Сообщений отфильтровано"
+  service: dovecot
+  type: "Discard"
+          #  -  count
+
+- Counter: "Записано видео"
+  service: motion
+  type: "Motion"
+          #  - motion
+
+- Distribution: "Входов по pop3"
+  service: dovecot
+  type: "Logini-pop3"
+  keys:
   - user_ip
-  :top: 10
-- Distribution: "На какие сервера заходили"
-  :keys:
+
+- Distribution: "Какие IP подключались к нашим серверам"
+  keys:
   - user_ip
-  - :server
-  :top: 20
-  :sort_type: distinct
 
-# Сервер ssh
-
-# Показываем общую статистику удачных/неудачных входов по ssh
-- Counter: "Неудачных попыток входа"
-  :service: sshd
-  :server: ssh
-  :type: "Auth fail"
-
-- Counter: "Удачных попыток входа"
-  :service: sshd
-  :server: ssh
-  :type: "Accepted publickey"
-
-# Общая информация, вроде уникальных ip, сколько раз, какие события происходили...
-
-- Distribution: "Уникальные подключения по ssh"
-  :service: sshd
-  :server: ssh
-  :keys: 
+- Distribution: "Распределение по событиям"
+  keys:
+  - type
   - user_ip
-  :top: 10
+  # sort_type: distinct
 
 - Distribution: "Какие ip какие события вызывали"
-  :service: sshd
-  :server: ssh
-  :keys: 
+  keys: 
+  - type
   - user_ip
-  - :type
-  :top: 10
-  :sort_type: distinct
+  top: 10
+  # sort_type: distinct
 
 - Distribution: "Какие интересные имена пользователей пытаются подключиться"
-  :service: sshd
-  :server: ssh
-  :keys:
+  keys:
   - username
-  :top: 10
+  sort_order: backward
 
 - Distribution: "Какие ip какие имена используют"
-  :service: sshd
-  :server: ssh
-  :keys:
+  keys:
   - user_ip
   - username
-  :top: 10
-  :sort_type: distinct
+  top: 10
+  # sort_type: distinct
 
-# Apache - количество запросов, сколько ошибочных
-- Counter: "Всего запросов"
-  :service: apache
-  :server: apache
-
-- Counter: "Неудачных"
-  :server: apache
-  :except:
-    code: "200"
-# Более детальная информация - распределение по кодам ошибок, какие страницы, топ самых запрашиваемых страниц, ...
-- Distribution: "Топ страниц"
-  :service: apache
-  :server: apache
-  :top: 10
-  :keys:
-  - path
-
-- Distribution: "Распределение по кодам ошибок"
-  :service: apache
-  :server: apache
-  :keys:
-  - code
-- Distribution: "Страницы, выдающие ошибки"
-  :service: apache
-  :server: apache
-  :keys:
-  - path
-  - code
-  :top: 15
-  :except:
-    code: "200"
+- Distribution: "Какие события были зарегестрированы на сервере"
+  server: asi
+  keys:
+  - service_group
+  - type
+  top: 50

@@ -1,15 +1,28 @@
-Ban/unban:
-- 'Found (?<user_ip>\S+)\S+'
-- 'Ban (?<user_ip>\S+)'
-- 'Unban (?<user_ip>\S+)'
-- (?<user_ip>\S+) already banned
-- 'Ignore (?<user_ip>\S+) by ip'
-Fail to ban/unban:
-- 'Failed to execute ban jail'
-- 'Failed to execute unban jail'
-Log rotation:
-- 'Log rotation detected for (?<path>\S+)'
-- 'rollover performed on (?<path>\S+)'
-Strange errors:
-- '(?<what>Invariant check failed)\. Trying to restore a sane environment'
-- 'iptables (.*) -- stderr'
+regex: 'fail2ban'
+service: 'fail2ban'
+templates:
+  Info:
+    Found ip:
+    - 'Found (?<user_ip>\S+)\S+'
+    Banned ip:
+    - 'Ban (?<user_ip>\S+)'
+    Unbanned ip:
+    - 'Unban (?<user_ip>\S+)'
+    Ignoring by ip:
+    - 'Ignore (?<user_ip>\S+) by ip'
+
+  Debug:
+    User already banned:
+    - (?<user_ip>\S+) already banned
+    Log rotation:
+    - 'Log rotation detected for (?<path>\S+)'
+    - 'rollover performed on (?<path>\S+)'
+
+  Errors:
+    Fail to ban/unban:
+    - 'Failed to execute ban jail'
+    - 'Failed to execute unban jail'
+    Invariant check failed:
+    - '(?<what>Invariant check failed)\. Trying to restore a sane environment'
+    iptables output:
+    - 'iptables (.*) -- stderr'

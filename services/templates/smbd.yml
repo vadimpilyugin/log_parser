@@ -1,0 +1,4 @@
+---
+regex: smbd
+service: smbd
+templates: 

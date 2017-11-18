@@ -1,0 +1,11 @@
+table class="table table-hover the-table"
+  thead
+    tr
+      -@header.each do |elem|
+        th #{elem}
+  tbody
+    -@rows.each do |row|
+      tr
+        -row.each do |elem|
+          td 
+            == elem
