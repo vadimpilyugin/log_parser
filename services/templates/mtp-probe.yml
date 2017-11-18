@@ -1,6 +1,0 @@
-regex: 'mtp-probe'
-service: 'mtp-probe'
-templates:
-  Ignore:
-  - '^checking bus \d+, device \d+'
-  - '^bus: \d+, device: \d+ was not an MTP device'

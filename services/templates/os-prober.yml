@@ -1,0 +1,9 @@
+---
+regex: os\-prober
+service: os-prober
+templates:
+  Debug:
+    Skipping DOS partition:
+    - 'debug: \S+ DOS extended partition; skipping'
+    Swap info:
+    - 'debug: \S+ is active swap'

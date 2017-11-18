@@ -18,6 +18,7 @@ Printer::debug(msg:"============= Log Parser v3.02 ============", who:"Init")
 puts
 puts
 
+NUMBER_OF_LINES_TO_PROCESS = 20000
 def process_stats(stats_no:nil)
   # загрузка строк
   logline_stream = LoglineStream.from_directory
@@ -28,7 +29,7 @@ def process_stats(stats_no:nil)
   parsed_logline_stream = p.parsed_logline_stream(logline_stream)
   # обрабатываем статистики
   params = {}
-  params[:table] = parsed_logline_stream.first(20000)
+  params[:table] = parsed_logline_stream.first(NUMBER_OF_LINES_TO_PROCESS)
   params[:stats_no] = stats_no if stats_no
   Statistics.process(**params)
 end

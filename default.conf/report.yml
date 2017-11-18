@@ -45,8 +45,8 @@
   # sort_type: distinct
 
 - Distribution: "Какие события были зарегестрированы на сервере"
+  server: asi
   keys:
-  - server
   - service_group
   - type
   top: 50

@@ -12,6 +12,37 @@ function getUrl (webhook, params) {
   return s;
 }
 
+// проверка на содержание в массиве элемента
+// var myArray = [0,1,2],
+//     needle = 1,
+//     index = contains.call(myArray, needle); // true
+var contains = function(needle) {
+    // Per spec, the way to identify NaN is that it is not equal to itself
+    var findNaN = needle !== needle;
+    var indexOf;
+
+    if(!findNaN && typeof Array.prototype.indexOf === 'function') {
+        indexOf = Array.prototype.indexOf;
+    } else {
+        indexOf = function(needle) {
+            var i = -1, index = -1;
+
+            for(i = 0; i < this.length; i++) {
+                var item = this[i];
+
+                if((findNaN && item !== item) || item === needle) {
+                    index = i;
+                    break;
+                }
+            }
+
+            return index;
+        };
+    }
+
+    return indexOf.call(this, needle) > -1;
+};
+
 var app = new Vue ({
   el: '#app',
   data: {
@@ -33,10 +64,35 @@ var app = new Vue ({
       'alert-dismissable':true,
       'hidden':true
     },
+    // выбор цвета
+    colorselector: '',
+    // количество строк
+    logline_count: 0,
     // константы
     DEFAULT_REGEX: '.*',
     ADD_NEW_CATEGORY: "Add new",
     IGNORE_CATEGORY: "Ignore",
+  },
+  computed: {
+    label_classes: function () {
+      return {
+        'label':true,
+        'label-success':this.colorselector === 'Debug',
+        'label-info':this.colorselector === 'Info',
+        'label-warning':this.colorselector === 'Warning',
+        'label-danger':this.colorselector === 'Error',
+      }
+    },
+    label_text: function () {
+      if (this.colorselector === 'Debug')
+        return 'Debug info';
+      else if (this.colorselector === 'Info')
+        return 'Useful info';
+      else if (this.colorselector === 'Warning')
+        return 'Warning';
+      else
+        return 'Error';
+    },
   },
   watch: {
     // whenever regexp changes, this function will run
@@ -72,8 +128,9 @@ var app = new Vue ({
           .then(function (response) {
             if (response.data["ok"] === true) {
               console.log("loadLines[data].ok", response.data);
-              vm.loglines = response.data["data"];
+              vm.loglines = response.data["data"]["lines"];
               vm.is_regex_wrong = false;
+              vm.logline_count = response.data["data"]["rec_size"];
             }
             else {
               console.log("loadLines[data].error");
@@ -137,7 +194,7 @@ var app = new Vue ({
               // vm.current_category = vm.ADD_NEW_CATEGORY;
             }
             // else {
-              vm.current_category = vm.categories[0];
+              vm.current_category = vm.IGNORE_CATEGORY;
             // }
           }
           else {
@@ -174,9 +231,11 @@ var app = new Vue ({
       }
       this.message_classes.hidden = false;
       vm = this;
-      setInterval(function () { vm.message_classes.hidden = true}, 5000);
+      // setInterval(function () { vm.message_classes.hidden = true}, 5000);
     },
     postTemplate: function () {
+      // debug
+      console.log(this.colorselector);
       // ссылка на приложение
       var vm = this;
       // путь доступа к api
@@ -191,6 +250,7 @@ var app = new Vue ({
       url = getUrl(webhook, {
         'service_group': this.current_service_group,
         'service_category': this.getCategory (),
+        'logline_type': this.colorselector,
         'regexp': this.regexp
       });
       // если параметры отсутствуют
@@ -220,6 +280,9 @@ var app = new Vue ({
           console.log(`postTemplate: could not reach the API. ${error}`);
           vm.displayMessage({ok:false, what: "exception", descr:error});
         });
+    },
+    callFoo: function () {
+      console.log("Pressed on list");
     }
   },
   created: function () {
@@ -233,6 +296,15 @@ var app = new Vue ({
     this.current_service_group = $.urlParam("service_group");
     this.escapeAndChange ($.urlParam("logline"));
     this.loadServiceGroups ();
+
+    $(function() {
+
+      window.prettyPrint && prettyPrint();
+
+      $('#colorselector').colorselector();
+
+    });
+    this.colorselector = 'Debug';
   }
 })  
 

@@ -1,7 +1,0 @@
----
-regex: "[T|t]or"
-service: tor
-templates:
-  Ignore:
-  - Configuration was valid
-  - "\\[notice\\]"

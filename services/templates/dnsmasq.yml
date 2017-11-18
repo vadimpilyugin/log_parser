@@ -1,7 +1,0 @@
-regex: 'dnsmasq'
-service: 'dnsmasq'
-templates:
-  Ignore:
-   - '^setting upstream servers from DBus'
-   - '^using nameserver '
-   - '^reading /etc/resolv.conf'

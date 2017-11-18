@@ -10,7 +10,7 @@ module View
     server_list.each_with_index do |server,i|
       result << {
         name:server,
-        href:(i == 0 ? '/servers/' : "/servers?server=#{server}"),
+        href:(i == 0 ? '/servers' : "/servers?server=#{server}"),
         active: (i == active)
       }
     end

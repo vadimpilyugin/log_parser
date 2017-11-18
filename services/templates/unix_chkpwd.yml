@@ -1,5 +1,4 @@
-regex: 'unix_chkpwd'
-service: 'unix_chkpwd'
-templates:
-  Ignore:
-  - 'password check failed for user \(\S+\)'
+---
+regex: unix_chkpwd
+service: unix_chkpwd
+templates: 

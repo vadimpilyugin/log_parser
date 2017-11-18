@@ -164,9 +164,12 @@ who:"ServiceLoader.update(#{service_group},#{service_regexp},#{new_service_group
     end
   end
 
-  def self.add_template(service_group:,service_category:,regexp:,dir:DEFAULT_DIR)
+  def self.add_template(service_group:,service_category:,regexp:, logline_type:,
+    dir:DEFAULT_DIR)
+
     Printer::debug(
-who:"ServiceLoader.add_template(#{service_group},#{service_category},#{regexp})",
+      who:"ServiceLoader.add_template(#{service_group},#{service_category},"+\
+        +"#{regexp}, #{logline_type})",
     )
     # если сервис не существует
     Printer::assert(
@@ -187,12 +190,19 @@ who:"ServiceLoader.add_template(#{service_group},#{service_category},#{regexp})"
     if content['templates'].nil?
       content['templates'] = {}
     end
-    # если категории не существует
-    if content['templates'][service_category].nil?
-      content['templates'][service_category] = []
+    # если типа не существует
+    if content['templates'][logline_type].nil?
+      content['templates'][logline_type] = {}
     end
+    # если категории не существует
+    if content['templates'][logline_type][service_category].nil?
+      content['templates'][logline_type][service_category] = []
+    end
+    # if content['templates'][service_category].nil?
+    #   content['templates'][service_category] = []
+    # end
     # меняем поля
-    content['templates'][service_category] << regexp;
+    content['templates'][logline_type][service_category] << regexp;
     # проверяем корректность
     check_service_descr(file_content:content)
     # удаляем файл
@@ -254,48 +264,77 @@ who:"ServiceLoader.add_template(#{service_group},#{service_category},#{regexp})"
     )
     # проверяем каждое регулярное выражение в templates
     if file_content['templates']
-      file_content['templates'].each_pair do |category, regexes|
-        Printer::assert(
-          expr: regexes,
-          msg:"Категория #{category} пустая"
-        )
-        regexes.each do |regex|
-          Printer::assert(expr: regex && !regex.empty?, msg:"Regexp is empty")
-          Regexp.new(regex)
+      file_content['templates'].each_pair do |logline_type, categories|
+        if categories
+          categories.each_pair do |category, regexes|
+            if regexes
+              regexes.each do |regex|
+                Printer::assert(
+                  expr: regex && !regex.empty?,
+                  who:"ServiceLoader.check_service_descr",
+                  msg:"Регулярное выражение в категории #{category} пусто"
+                )
+                Regexp.new(regex)
+              end
+            else
+              Printer::assert(
+                expr:false,
+                who:"ServiceLoader.check_service_descr",
+                msg:"Категория #{category} пустая"
+              )
+            end
+          end
+        else
+          Printer::assert(
+            expr:false,
+            who:"ServiceLoader.check_service_descr",
+            msg:"Тип #{logline_type} пуст"
+          )
         end
       end
+      # file_content['templates'].each_pair do |category, regexes|
+      #   Printer::assert(
+      #     expr: regexes,
+      #     msg:"Категория #{category} пустая"
+      #   )
+      #   regexes.each do |regex|
+      #     Printer::assert(expr: regex && !regex.empty?, msg:"Regexp is empty")
+      #     Regexp.new(regex)
+      #   end
+      # end
     end
   end
   def self.transform_templates(templates:)
     if templates
       service_templates = templates
-      # категории
-      service_categories = service_templates.keys
-      # для каждого массива строк-шаблонов
-      service_templates.each_value do |regexes|
-        # создаем новый Regexp и определяем его id
-        regexes.map! do |regex|
-          if !regex.empty?
+      # создаем Regexp, вставляем категорию и тип во внутренний хэш
+      ar = []
+      service_templates.each_pair do |logline_type, categories|
+        categories.each_pair do |category, regexes|
+          regexes.each do |regex|
             @regex_count += 1
-            {
+            ar << {
               regex: Regexp.new(regex),
               regex_id: @regex_count,
-              regex_string: regex
+              regex_string: regex,
+              type:category,
+              logline_type:logline_type
             }
           end
         end
       end
+      ar
       # вставляем описание шаблона внутрь описания регулярного выражения
-      service_templates.each_pair do |type, regexes|
-        regexes.map! {|regex_hash| regex_hash.update(type:type)}
-      end
+      # service_templates.each_pair do |type, regexes|
+      #   regexes.map! {|regex_hash| regex_hash.update(type:type)}
+      # end
       # теперь каждое регулярное выражение сидит в своем хэше внутри массива
       # что-то вроде [
       #   {regex: /foobar/, regex_id: 12, type: 'Foobar String', regex_string: 'foobar'},
       #   {regex: /barfoo/, regex_id: 13, type: 'Barfoo String', regex_string: 'barfoo'}
       # ]
-      service_templates = service_templates.values.sum([])
-      service_templates
+      # service_templates = service_templates.values.sum([])
+      # service_templates
     else
       []
     end
@@ -318,12 +357,23 @@ who:"ServiceLoader.add_template(#{service_group},#{service_category},#{regexp})"
         msg: "имя файла #{service_group} не совпадает с указанным в поле service"
       )
     end
-    # service_group_from_fn = add_ext ? service_group : get_fn(service_group:service_group)
-    # service_group_from_content = add_ext ? content['service'] : get_fn(service_group:content['service'])
+    service_categories = []
+    if content['templates']
+      content['templates'].each do |logline_type, categories|
+        service_categories << categories.keys
+      end
+    end
+    service_categories.flatten!
+    service_categories.sort!
+    service_categories.uniq!
+    if service_categories.include?('Ignore')
+      service_categories.delete('Ignore')
+    end
+    service_categories.unshift('Ignore')
     Service.new(
       service_name: content['service'],
       service_regexp_string: content['regex'],
-      service_categories: (content['templates'] ? content['templates'].keys : []),
+      service_categories: service_categories,
       service_templates: transform_templates(templates:content['templates']),
     )
   end

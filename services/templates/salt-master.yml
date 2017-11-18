@@ -1,5 +1,0 @@
-regex: 'salt-master'
-service: 'salt-master'
-templates:
-  Warnings:
-  - \[WARNING \] Unable to find IPv6 record for  

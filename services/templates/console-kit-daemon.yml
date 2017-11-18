@@ -1,0 +1,4 @@
+---
+regex: console\-kit\-daemon
+service: console-kit-daemon
+templates: 

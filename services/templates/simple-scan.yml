@@ -1,5 +1,0 @@
-regex: 'simple-scan'
-service: 'simple-scan'
-templates:
-  Ignore:
-  - '\S+: no \S+ attributes found in \S+'

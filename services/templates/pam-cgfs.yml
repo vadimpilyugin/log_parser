@@ -1,5 +1,0 @@
-regex: 'pam-cgfs'
-service: 'pam-cgfs'
-templates:
-  Ignore:
-  - 'Failed to create a cgroup for user \S+'

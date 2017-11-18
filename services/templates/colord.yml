@@ -1,0 +1,4 @@
+---
+regex: colord
+service: colord
+templates: 

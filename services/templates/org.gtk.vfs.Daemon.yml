@@ -1,7 +1,4 @@
 ---
 regex: org\.gtk\.vfs\.Daemon
 service: org.gtk.vfs.Daemon
-templates:
-  Warning:
-  - "\\*\\* \\(process:\\d+\\): WARNING \\*\\*: Couldn't create directory monitor
-    on .* Error: Действие не поддерживается внутренней реализацией"
+templates: 

@@ -1,8 +1,0 @@
-regex: 'crontab'
-service: 'crontab'
-templates:
-  List:
-    - \((?<username>\S+)\) LIST \((?<by_username>\S+)\)
-  Edit:
-    - \((?<username>\S+)\) REPLACE \((?<by_username>\S+)\)
-    - \((?<username>\S+)\) (BEGIN|END) EDIT \((?<by_username>\S+)\)

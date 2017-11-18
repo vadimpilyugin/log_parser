@@ -1,8 +1,4 @@
-regex: 'dbus'
-service: 'dbus'
-templates:
-  Ignore:
-  - Rejected send message, \d+ matched rules
-  - message repeated \d+ times
-  - Activating via systemd
-  - Successfully activated service
+---
+regex: dbus
+service: dbus
+templates: 

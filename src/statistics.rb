@@ -271,7 +271,7 @@ class Distribution
   end
 
   def empty?
-    @distrib.empty?
+    @distrib.count{|k,v| k.class == String} == 0
   end
 
   def clear

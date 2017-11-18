@@ -45,6 +45,7 @@ def get_loglines_no_template_found(service_group:, regexp:'.*')
         end
       end
       # если строк слишком много
+      rec_size = recognized_lines.size
       if recognized_lines.size > max_lines
         Printer::note(
           msg: "Строк слишком много (#{recognized_lines.size}), возвращаем #{max_lines}"
@@ -55,7 +56,10 @@ def get_loglines_no_template_found(service_group:, regexp:'.*')
       # возвращаем отсеянные строки
       return {
         "ok" => true,
-        "data" => recognized_lines,
+        "data" => {
+          "lines" => recognized_lines,
+          "rec_size" => rec_size
+        }
       }
     rescue StandardError => exc
       return {
@@ -125,7 +129,7 @@ def get_string_escape(string:)
   # возвращаем отэскейпенную строку
   return {
     "ok" => true,
-    "data" => Regexp.escape(string).gsub("\\ "," ")
+    "data" => Regexp.escape(string).gsub("\\ "," ").gsub(/\d+/,'\d+')
   }
 end
 
@@ -266,16 +270,19 @@ def get_servers(server:nil)
     slim :main
   else
     # зашли на какой-то отдельный сервер
-    # @counters = Statistics.all.keep_if do |st|
-    #   st.conditions.server == server && st.class == Counter
-    # end
-    # @dist_arr = Statistics.all.keep_if do |st|
-    #   st.conditions.server == server && st.class == Distribution
-    # end
-    # @pagination = View.pagination(
-    #   server_list:server_list,
-    #   active:server_list[1..-1].index{|serv| serv == server}+1,
-    # )
-    # slim :main
+    @counters = $stats['NORMAL_STATS'].map{|stat_id| Statistics[stat_id]}.keep_if do |st|
+      st.conditions.server == server && st.class == Counter
+    end
+    @dist_arr = $stats['NORMAL_STATS'].map{|stat_id| Statistics[stat_id]}.keep_if do |st|
+      st.conditions.server == server && st.class == Distribution
+    end
+    server_list = Statistics[$stats['SERVER_LIST']].list
+    @pagination = View.pagination(
+      server_list:server_list,
+      active:server_list.index{|serv| serv == server}+1,
+    )
+    @template_not_found = nil
+    @unknown_services = nil
+    slim :main
   end
 end

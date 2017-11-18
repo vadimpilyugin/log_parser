@@ -42,6 +42,7 @@ var app = new Vue ({
   },
   watch: {
     current_group: function (new_current_group) {
+      this.message_classes.hidden = true;
       // если новая группа это Add new
       if (new_current_group.service_group === this.ADD_NEW) {
         if (this.first_time) {
@@ -177,7 +178,7 @@ var app = new Vue ({
         }
         this.message_classes.hidden = false;
         vm = this;
-        setInterval(function () { vm.message_classes.hidden = true}, 5000);
+        // setInterval(function () { vm.message_classes.hidden = true}, 5000);
       },
       postService: function () {
         // проверка параметров

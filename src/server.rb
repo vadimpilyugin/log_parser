@@ -2,6 +2,7 @@ require_relative 'views'
 require 'sinatra'
 require 'sinatra/reloader'
 load 'src/api.rb'
+load 'src/views.rb'
 load 'services/service.rb'
 
 module ApiHelpers
@@ -117,6 +118,7 @@ get '/string/escape' do
     string: params["string"]
   ).to_json
 end
+
 
 # params[service_group]
 # params[service_regexp]
@@ -259,6 +261,7 @@ post '/remove/service' do
   end
 end
 
+# logline_type
 post '/add/template' do
   content_type :json
   service_group = params['service_group']
@@ -267,7 +270,8 @@ post '/add/template' do
     templates = Services.add_template(
       service_group: service_group,
       service_category: service_category,
-      regexp: params['regexp']
+      regexp: params['regexp'],
+      logline_type: params['logline_type']
     )
     # массив с подошедшими строками
     ar = []
@@ -283,6 +287,12 @@ post '/add/template' do
           false
         end
       end
+    if Statistics[$stats['TEMPLATE_NOT_FOUND']].distrib[service_group]\
+      .count {|k,v| k.class == String} == 0
+
+      Printer::debug(msg:"Удаляем из TEMPLATE_NOT_FOUND группу #{service_group}")
+      Statistics[$stats['TEMPLATE_NOT_FOUND']].distrib.delete(service_group)
+    end
     pls = Parser.new.parsed_logline_stream(ar.each)
     # NORMAL_STATS - статистики из конфига
     # TODO: пока не могу, так как они финализированы

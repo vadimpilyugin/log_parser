@@ -1,8 +1,0 @@
-regex: 'urfkill'
-service: 'urfkill'
-templates:
-  Ignore:
-  - '^removing killswitch idx '
-  - '^adding killswitch type '
-  - 'Setting device .* to unblocked'
-  - 'set_soft: Setting .* to unblocked'

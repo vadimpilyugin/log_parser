@@ -46,7 +46,8 @@ class Service
         linedata: $~.named_captures,
         regex_id: regex_hash[:regex_id],
         type: regex_hash[:type],
-        regex: regex_hash[:regex]
+        regex: regex_hash[:regex],
+        logline_type: regex_hash[:logline_type]
       }
     end
   end
@@ -70,11 +71,10 @@ class Services
     end
     sort
     # список сервисов непустой
-    Printer::assert(
-      expr:!@service_groups.empty?,
+    Printer::note(
       who: "Services.init",
       msg: "список @service_groups пустой!"
-    )
+    ) if @service_groups.empty?
   end
 
   def self.add_service(srv:)
@@ -99,33 +99,30 @@ class Services
 
   def self.sort
     # список сервисов непустой
-    Printer::assert(
-      expr:!@service_groups.empty?,
-      who: "Services.add_template",
+    Printer::note(
+      who: "Services.sort",
       msg: "список @service_groups пустой!"
-    )
+    ) if @service_groups.empty?
     # сортируем по имени группы
     @service_groups.deep_sort_by {|o| o[0]}
   end
 
   def self.[](service)
     # список сервисов непустой
-    Printer::assert(
-      expr:!@service_groups.empty?,
-      who: "Services.add_template",
+    Printer::note(
+      who: "Services.[]",
       msg: "список @service_groups пустой!"
-    )
+    ) if @service_groups.empty?
     # ищем среди всех сервисов по регулярным выражениям
     @service_groups.values.find {|srv| srv.belongs?(service)}
   end
 
   def self.by_group(service_group:)
     # список сервисов непустой
-    Printer::assert(
-      expr:!@service_groups.empty?,
-      who: "Services.add_template",
+    Printer::note(
+      who: "Services.by_group",
       msg: "список @service_groups пустой!"
-    )
+    ) if @service_groups.empty?
     # ищем среди всех сервисов по идентификатору группы
     @service_groups[service_group]
   end
@@ -158,13 +155,13 @@ class Services
       msg: "сервис не найден"
     )
     # сервис существует
-    @service_groups.delete(service_group)
     # обновляем файл
     ServiceLoader.update(
       service_group:service_group,
       service_regexp:service_regexp,
       new_service_group:new_service_group
     )
+    @service_groups.delete(service_group)
     # загружаем заново
     load_and_add(service_group:new_service_group)
   end
@@ -184,7 +181,7 @@ class Services
     srv
   end
 
-  def self.add_template(service_group:,service_category:,regexp:)
+  def self.add_template(service_group:,service_category:,regexp:,logline_type:)
 
     Printer::debug(who:"Services.add_template(#{service_group},#{service_category},#{regexp})")
     # список сервисов непустой
@@ -199,14 +196,21 @@ class Services
       who: "Services.add_template",
       msg: "сервис #{service_group} не найден"
     )
-    # сервис существует
-    @service_groups.delete(service_group)
+    # проверяем, что logline_type в нужных пределах
+    Printer::assert(
+      expr: ['Debug','Info','Warning','Error'].include?(logline_type),
+      who: "Services.add_template",
+      msg: "logline_type == #{logline_type} не в нужных пределах"
+    )
     # обновляем файл
     templates = ServiceLoader.add_template(
       service_group: service_group,
       service_category: service_category,
-      regexp: regexp
+      regexp: regexp,
+      logline_type: logline_type
     )
+    # сервис существует
+    @service_groups.delete(service_group)
     # загружаем заново
     load_and_add(service_group:service_group)
     return templates

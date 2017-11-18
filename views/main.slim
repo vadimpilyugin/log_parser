@@ -40,10 +40,10 @@ html
             / - if !@wrong_format_lines.empty?
               == err_card(stat: @wrong_format_lines)
 
-            - if !@unknown_services.empty?
+            - if @unknown_services && !@unknown_services.empty?
               == unknown_services(stat: @unknown_services)
 
-            - if !@template_not_found.empty?
+            - if @template_not_found && !@template_not_found.empty?
               == err_card(stat:@template_not_found)
         div class="col-md-1"
 
