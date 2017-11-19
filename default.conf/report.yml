@@ -21,15 +21,9 @@
 
 - Distribution: "Распределение по событиям"
   keys:
-  - type
   - user_ip
-  # sort_type: distinct
-
-- Distribution: "Какие ip какие события вызывали"
-  keys: 
   - type
-  - user_ip
-  top: 10
+  top: 5
   # sort_type: distinct
 
 - Distribution: "Какие интересные имена пользователей пытаются подключиться"

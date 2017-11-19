@@ -1,5 +1,21 @@
 require 'dm-core'
 
+class MyDate
+  attr_reader :year,:month,:day,:hour,:minute,:second,:timezone
+  def initialize(year,month,day,hour,minute,second,timezone)
+    @year = year.to_i
+    @month = Date::MONTHNAMES.index("month")
+    @month = 0 unless @month
+    @day = day.to_i
+    @hour = hour.to_i
+    @minute = minute.to_i
+    @second = second.to_i
+    @timezone = timezone
+    # Printer::note(who:"MyDate(#{@year},#{@month},#{@day},#{@hour},#{@minute},#{@second},#{@timezone})")
+    # Printer::note(who:"MyDate(#{@year.class},#{@month.class},#{@day.class},#{@hour.class},#{@minute.class},#{@second.class},#{@timezone.class})")
+  end
+end
+
 # Various date manipulations.
 class CreateDate
   # Create Ruby Time object from hash of parameters. Default to Time.now
@@ -11,29 +27,39 @@ class CreateDate
   # @option hsh [Integer] 'minute' minute
   # @option hsh [Integer] 'second' second
   # @return [Time] time object built from params. Default to Time.now
-  def self.create(hsh)
-  	default_time = Time.now
-    timezone = hsh["timezone"] ? hsh["timezone"] : "+0300"
-    timezone = timezone[0..2] + ":" + timezone[3..-1]
-    begin
-    	return Time.new(
-    	  hsh['year']   ? hsh['year']    : default_time.year,
-    	  hsh['month']  ? hsh['month']   : default_time.month,
-    	  hsh['day']    ? hsh['day']     : default_time.day,
-    	  hsh['hour']   ? hsh['hour']    : default_time.hour,
-    	  hsh['minute'] ? hsh['minute']  : default_time.min,
-    	  hsh['second'] ? hsh['second']  : default_time.sec,
-        timezone
-    	)
-    rescue ArgumentError => exc
-      if exc.message == "mon out of range"
-        Printer::error(
-          who: "DateError",
-          msg: "Значение месяца неверное: #{hsh['month'].inspect}"
-        )
-        default_time
-      end
-    end
+
+	CURRENT_TIME = Time.now
+  DEFAULT_TIMEZONE = "+03:00"
+  DEFAULT_TIME = MyDate.new(CURRENT_TIME.year,CURRENT_TIME.month,CURRENT_TIME.day,
+    CURRENT_TIME.hour,CURRENT_TIME.min,CURRENT_TIME.sec,DEFAULT_TIMEZONE)
+
+  def self.create(
+    year:   DEFAULT_TIME.year, 
+    month:  DEFAULT_TIME.month, 
+    day:    DEFAULT_TIME.day, 
+    hour:   DEFAULT_TIME.hour, 
+    minute: DEFAULT_TIME.minute, 
+    second: DEFAULT_TIME.second,
+    timezone: DEFAULT_TIME.timezone
+  )
+    # begin
+      MyDate.new(year, month, day, hour, minute, second, timezone)
+      # Time.new(year, month, day, hour, minute, second, timezone)
+    # rescue ArgumentError => exc
+    #   if exc.message == "mon out of range"
+    #     Printer::error(
+    #       who: "DateError",
+    #       msg: "Значение месяца неверное: #{month.inspect}"
+    #     )
+    #     # Time.new(year, DEFAULT_TIME.month, day, hour, minute, second, timezone)
+    #   else
+    #     Printer::error(
+    #       who: "DateError",
+    #       msg: "Значение поля неверное: #{exc.inspect}"
+    #     )
+    #     DEFAULT_TIME
+    #   end
+    # end
   end
   # Creates time object from a string
   # @param [String] string string containing time

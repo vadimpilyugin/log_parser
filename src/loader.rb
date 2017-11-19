@@ -11,10 +11,12 @@ class LoglineStream
   # чтобы обязательно последним стоял слэш
   DEFAULT_LOG_FOLDER << SLASH unless DEFAULT_LOG_FOLDER[-1] == SLASH
 
-  def self.from_directory(log_folder:DEFAULT_LOG_FOLDER)
+  def self.from_directory(log_folder:DEFAULT_LOG_FOLDER, 
+    n_lines_to_process:Float::INFINITY, n_lines_to_skip:0)
     # Printer::assert(expr:log_folder[-1] == SLASH, msg:"Последним не стоит слэш")
     # возвращается итератор по строкам логов
     Enumerator.new do |yielder|
+      n_lines = 0
       # для каждого имени файла внутри директории с логами
       Dir.foreach(log_folder) do |server_name|
         # папка сервера это папка логов плюс имя сервера
@@ -31,11 +33,19 @@ class LoglineStream
               File.open(full_path, 'r') do |file|
                 # каждую строку файла отдаем как результат
                 file.each do |line|
+                  if n_lines_to_skip > 0
+                    n_lines_to_skip -= 1
+                    next
+                  end
                   yielder.yield(
                     logline:line,
                     filename:"/#{server_name}/#{filename}",
                     server:server_name
                   )
+                  n_lines += 1
+                  if n_lines >= n_lines_to_process
+                    raise StopIteration
+                  end
                 end
               end
             end

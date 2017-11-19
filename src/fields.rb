@@ -13,13 +13,14 @@ class Fields
 				sort_order:"sort_order",
 				no_finalize:"no_finalize",
 				except:"except",
+				save_lines:"save_lines",
 			}
 		when "LogFormat"
 			{
 				msg:"msg",
 				service:"service",
 				server:"server",
-				date_fields:['year','month','day','hour','minute','second', 'timezone']
+				date_fields:['year','month','day','hour','minute','second','timezone']
 			}
 		when "DistributionKeys"
 			{
@@ -33,6 +34,7 @@ class Fields
 				"msg" => true,
 				"service_group" => true,
 				"except" => true,
+				"save_lines" => true,
 			}
 		end
 	end

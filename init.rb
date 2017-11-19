@@ -1,3 +1,5 @@
+DEBUG = true
+
 system "clear"
 puts("Preparation: Initialization started")
 
@@ -12,23 +14,29 @@ require_relative 'src/statistics'
 
 puts
 puts
-Printer::debug(msg:"============= Log Parser v3.02 ============", who:"Init")
+Printer::debug(msg:"============= Log Parser v3 ============", who:"Init")
 puts
 puts
 
 
-NUMBER_OF_LINES_TO_PROCESS = 300000
+NUMBER_OF_LINES_TO_PROCESS = 1000000
+NUMBER_OF_LINES_TO_SKIP = 0
+
 def process_stats(stats_no:nil)
   # загрузка строк
-  logline_stream = LoglineStream.from_directory
-  # 100000.times {logline_stream.next}
-  # парсер
-  p = Parser.new
+  if DEBUG
+    logline_stream = LoglineStream.from_directory(
+      n_lines_to_process:NUMBER_OF_LINES_TO_PROCESS,
+      n_lines_to_skip: NUMBER_OF_LINES_TO_SKIP
+    )
+  else
+    logline_stream = LoglineStream.from_directory
+  end
   # распарсенный поток строк
-  parsed_logline_stream = p.parsed_logline_stream(logline_stream)
+  pls = Parser.new.parsed_logline_stream(logline_stream)
   # обрабатываем статистики
   params = {}
-  params[:table] = parsed_logline_stream.first(NUMBER_OF_LINES_TO_PROCESS)
+  params[:table] = pls
   params[:stats_no] = stats_no if stats_no
   Statistics.process(**params)
 end
@@ -41,7 +49,7 @@ $stats['NORMAL_STATS'] = Statistics.init
 # добавляем имена серверов для веб-странички
 $stats['SERVER_LIST'] = Statistics.create_stat(
   "Distribution" => "Названия серверов",
-  "keys" => ["server"]
+  "keys" => ["server"],
 )
 # строки, для которых не найдено шаблона
 # красная снизу
@@ -49,33 +57,28 @@ $stats['TEMPLATE_NOT_FOUND'] = Statistics.create_stat(
   "Distribution" => "Нераспознанные строки",
   "errno" => Parser::TEMPLATE_NOT_FOUND,
   "no_finalize" => true,
-  "keys" => ["service_group","msg"]
+  "keys" => ["service_group","msg"],
+  "save_lines" => true
 )
-# статистика для списка сервисов, для которых есть нераспознанные строки
-# TODO: избавиться в пользу TEMPLATE_NOT_FOUND
-# $stats['NO_TEMPLATE_FOUND'] = Statistics.create_stat(
-#   "Distribution" => "Шаблон не найден",
-#   "errno" => Parser::TEMPLATE_NOT_FOUND,
-#   "keys" => ["service_group"]
-# )
 # статистика для поиска всех сервисов, обнаруженных в логах
 $stats['DISCOVERED_SERVICES'] = Statistics.create_stat(
   "Distribution" => "Обнаруженные сервисы",
   "keys" => ["service"],
 )
+# статистика для отображения строк без формата
+$stats['WRONG_FORMAT'] = Statistics.create_stat(
+  "Distribution" => "Неизвестный формат",
+  "errno" => Parser::WRONG_FORMAT,
+  "keys" => ["filename", "msg"],
+)
 # статистика для определения неизвестных сервисов
-# красная сверху
 $stats['UNKNOWN_SERVICES'] = Statistics.create_stat(
   "Distribution" => "Неизвестные сервисы",
   "errno" => Parser::UNKNOWN_SERVICE,
   "no_finalize" => true,
-  "keys" => ["service"]
+  "keys" => ["service"],
+  "save_lines" => true
 )
-# статистика для соответствия "сервис - строки"
-# $stats['ALL_SERVICES'] = Statistics.create_stat(
-#   "Distribution" => "Строки сервисов",
-#   "keys" => ["service", "msg"]
-# )
 process_stats
 # выводим результаты
 require_relative 'src/server'

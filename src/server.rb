@@ -119,7 +119,6 @@ get '/string/escape' do
   ).to_json
 end
 
-
 # params[service_group]
 # params[service_regexp]
 post '/add/service' do
