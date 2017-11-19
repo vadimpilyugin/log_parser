@@ -50,7 +50,7 @@ end
 #
 class Printer
 
-  LOG_EVERY_N = 1
+  LOG_EVERY_N = 5000
 
   class Chars
     DELIM = ": "

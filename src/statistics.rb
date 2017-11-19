@@ -109,7 +109,7 @@ class Statistics
     table.each_with_index do |line_hash,i|
       Printer::debug(
         who:"Обработано строк",
-        msg:"#{i+1}".red+"/".white+"#{table.size}".red+"".white,
+        msg:"#{i}".red+"".white,
         in_place:true,
         log_every_n: true,
         line_no: i,
@@ -234,12 +234,15 @@ class Distribution
   BACKWARD_SORT_ORDER = 'backward'
 
   DEFAULT_TOP_VALUE = 10
+  DEFAULT_SAVE_LINES = false
+
   KEYS_FIELD    = Fields["Statistics"][:keys]
   EXCEPT_FIELD  = Fields["Statistics"][:except]
   TOP_FIELD     = Fields["Statistics"][:top]
   SORT_FIELD    = Fields["Statistics"][:sort_type]
   SORT_ORDER    = Fields["Statistics"][:sort_order]
   NO_FINALIZE   = Fields["Statistics"][:no_finalize]
+  SAVE_LINES_FIELD = Fields["Statistics"][:save_lines]
 
   def initialize(stat_params)
     @descr      = stat_params.delete "Distribution"
@@ -248,19 +251,21 @@ class Distribution
     except = {} unless except
     @except = {}
     except.keys.each {|key| @except[Fields.keys_to_sym(key)] = except[key]}
-    @except     = Fields.keys_to_sym stat_params.delete(KEYS_FIELD)
-    @top        = stat_params.delete TOP_FIELD
-    @sort_type  = stat_params.delete SORT_FIELD
-    @sort_order  = stat_params.delete SORT_ORDER
-    @no_finalize = stat_params.delete NO_FINALIZE
+    @except       = Fields.keys_to_sym stat_params.delete(KEYS_FIELD)
+    @top          = stat_params.delete TOP_FIELD
+    @sort_type    = stat_params.delete SORT_FIELD
+    @sort_order   = stat_params.delete SORT_ORDER
+    @no_finalize  = stat_params.delete NO_FINALIZE
+    @save_lines   = stat_params.delete(SAVE_LINES_FIELD)
     # binding.irb
     @conditions = Condition.new(stat_params.keys_to_sym.update(keys:@keys))
-    @distrib    = Distribution::hash_cnt(@keys.size)
+    @distrib    = hash_cnt(@keys.size)
 
-    @sort_type  = DISTINCT_SORT_TYPE if @sort_type.nil?
-    @sort_order  = FORWARD_SORT_ORDER if @sort_order.nil?
-    @top        = DEFAULT_TOP_VALUE if @top.nil?
-    @no_finalize = false if @no_finalize.nil?
+    @sort_type    = DISTINCT_SORT_TYPE if @sort_type.nil?
+    @sort_order   = FORWARD_SORT_ORDER if @sort_order.nil?
+    @top          = DEFAULT_TOP_VALUE if @top.nil?
+    @no_finalize  = false if @no_finalize.nil?
+    @save_lines   = DEFAULT_SAVE_LINES if @save_lines.nil?
     Printer::assert(
       expr: !@keys.nil? && !@keys.empty?,
       who: @descr,
@@ -274,15 +279,18 @@ class Distribution
 
   def clear
     @distrib.clear
-    @distrib = Distribution::hash_cnt(@keys.size)
+    @distrib = hash_cnt(@keys.size)
   end
 
-  def Distribution.hash_cnt(cnt)
+  def hash_cnt(cnt)
     if cnt > 0
       Hash.new {|hash, key| (key == :distinct or key == :total) ? 0 : hash[key] = hash_cnt(cnt-1)}
     else
-      MyArray.new
-      # 0
+      if @save_lines
+        MyArray.new
+      else
+        0
+      end
     end
   end
 
@@ -301,7 +309,11 @@ class Distribution
     end
     distr_part[:distinct] += 1 unless distr_part.has_key?(keys.last)
     distr_part[:total] += 1
-    distr_part[keys.last] << line_hash
+    if @save_lines
+      distr_part[keys.last] << line_hash
+    else
+      distr_part[keys.last]+=1
+    end
   end
 
   def increment(line_hash)
@@ -313,6 +325,7 @@ class Distribution
     end
   end
   def finalize
+    Printer::debug(who:"finalize", msg:@descr)
     @distrib = @distrib.deep_sort_by do |o|
       if o[1].class == Hash
         sym = @sort_type == TOTAL_SORT_TYPE ? :total : :distinct
@@ -323,18 +336,26 @@ class Distribution
         end
       else
         if @sort_order == FORWARD_SORT_ORDER
-          -o[1].size
+          if @save_lines
+            -o[1].size
+          else
+            -o[1]
+          end
         else
-          o[1].size
+          if @save_lines
+            o[1].size
+          else
+            o[1]
+          end
         end
       end
     end
   end
 
   def list
-    hsh = @distrib.clone
-    hsh.delete(:total)
-    hsh.delete(:distinct)
-    hsh.keys.sort
+    ar = @distrib.keys.clone
+    ar.delete(:total)
+    ar.delete(:distinct)
+    ar.sort
   end
 end

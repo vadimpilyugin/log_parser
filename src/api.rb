@@ -274,8 +274,10 @@ def get_servers(server:nil)
       server_list:server_list,
       active:0
     )
+    Printer::debug(msg:"Middle")
     @template_not_found = Statistics[$stats['TEMPLATE_NOT_FOUND']]
     @unknown_services = Statistics[$stats['UNKNOWN_SERVICES']]
+    @wrong_format_lines = Statistics[$stats['WRONG_FORMAT']]
     # @wrong_format_lines = Statistics[$stats['WRONG_FORMAT_LINES']]
     slim :main
   else

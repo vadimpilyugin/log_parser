@@ -31,7 +31,7 @@ class LogFormat
 
   def LogFormat.parse(logline)
     if logline =~ @format
-      data = $~.named_captures
+      $~.named_captures
     else
       nil
     end
@@ -73,10 +73,18 @@ class LogFormat
       line_hash[:server] = linedata[SERVER_FIELD]
       linedata.delete SERVER_FIELD
     end
+    date_params = {}
+    DATE_FIELDS.each do |date_field| 
+      if linedata.has_key?(date_field)
+        date_params[date_field.to_sym] = linedata[date_field] 
+        linedata.delete(date_field)
+      end
+    end
+    line_hash[:date] = CreateDate.create(**date_params)
     # получим значение даты в виде Ruby-объекта и вынесем его во внешний хэш
-    line_hash[:date] = CreateDate.create linedata
+    # line_hash[:date] = CreateDate.create linedata
     # уберем ненужные теперь поля с распарсенной датой из внутреннего хэша
-    DATE_FIELDS.each {|date_field| linedata.delete date_field}
+    # DATE_FIELDS.each {|date_field| linedata.delete date_field}
     line_hash[:linedata] = linedata
     line_hash
   end
@@ -100,6 +108,8 @@ class LogFormat
   end
 
   def LogFormat.init_formats
+    puts
+    Printer::debug(who:"LogFormat.init_formats",msg:"Инициализация форматов")
     @all_formats = ObjectSpace.each_object(Class).select {|klass| klass < self}
     # если дефолтный формат стоит не на последнем месте
     if @all_formats[-1] != NoFormat

@@ -17,9 +17,10 @@ module View
     result
   end
 
-  def table(header:, rows:)
+  def table(header:, rows:, except:[])
     @header = header
     @rows = rows
+    @except = except
     Slim::Template.new("views/table.slim").render(self)
   end
 
@@ -31,6 +32,7 @@ module View
     @cnt += 1
     # для каждого распределения
     dist_arr.each do |distr|
+      Printer::debug(msg:"Distr arr: #{distr.descr}")
       s << recursive_card(
         header: distr.descr,
         panel_group: "pgroup0",
@@ -105,31 +107,34 @@ module View
         count: values_hsh[:distinct]
       )
     else
-      values_hsh_copy = values_hsh.clone
-      values_hsh_copy.delete(:total)
-      values_hsh_copy.delete(:distinct)
-      values_hsh_copy.transform_values! do |val|
-        simple_card(
-          card_style:"border-light",
-          header: 'Строки',
-          card_body: simple_list(list_items:val.get_lines),
-          count: val.size
-        )
-      end
-      values_hsh_copy = values_hsh_copy.to_a[0...top]
+      # values_hsh_copy = values_hsh.clone
+      # values_hsh_copy.delete(:total)
+      # values_hsh_copy.delete(:distinct)
+      # values_hsh_copy.transform_values! do |val|
+      #   simple_card(
+      #     card_style:"border-light",
+      #     header: 'Строки',
+      #     # TODO: api request for additional lines
+      #     card_body: #simple_list(list_items:val.get_lines.first(MAX_ERR_ROWS)),
+      #     count: val.size
+      #   )
+      # end
+      # values_hsh_copy = values_hsh_copy.to_a[0...top]
+      # binding.irb
       simple_card(
         card_style:"border-light",
         header: header,
         card_body: table(
           header:['Значение', 'Количество'],
-          rows:values_hsh_copy
+          rows: values_hsh.first(MAX_ERR_ROWS).to_h, #values_hsh_copy,
+          except: [:total, :distinct]
         ),
         panel_group: panel_group,
-        count: values_hsh_copy.size
+        count: values_hsh.size-2
       )
     end
   end
-  MAX_ERR_ROWS = 50
+  MAX_ERR_ROWS = 10
   def lines_to_rows(loglines)
     loglines_copy = loglines.clone
     loglines_copy.delete(:total)

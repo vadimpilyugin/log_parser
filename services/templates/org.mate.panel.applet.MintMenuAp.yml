@@ -1,0 +1,11 @@
+---
+regex: org\.mate\.panel\.applet\.MintMenuAp
+service: org.mate.panel.applet.MintMenuAp
+templates:
+  Error:
+    Ignore:
+    - "\\[\\d+\\-\\d+\\-\\d+ \\d+:\\d+:\\d+,\\d+ pyinotify ERROR\\] rm_watch: cannot
+      remove WD=\\d+, Errno=Недопустимый аргумент \\(EINVAL\\)"
+  Debug:
+    Ignore:
+    - "\\[TimeStamp\\]\\-\\-\\-\\-\\-main\\-\\-\\-\\-\\-begin"

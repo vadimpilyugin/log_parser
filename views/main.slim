@@ -37,7 +37,7 @@ html
             - else
               == distr_to_html(dist_arr:@dist_arr)
 
-            / - if !@wrong_format_lines.empty?
+            - if @wrong_format_lines && !@wrong_format_lines.empty?
               == err_card(stat: @wrong_format_lines)
 
             - if @unknown_services && !@unknown_services.empty?

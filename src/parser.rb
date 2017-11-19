@@ -115,6 +115,8 @@ class Parser
         msg: "#{parsed_msg[:regex]} пересекается названиями полей с #{log_format}!"
       )
     end
+    # удаляем исходную строку
+    line_hash.delete(:logline)
     # объединяем linedat-ы формата и сообщения
     parsed_msg[:linedata].update(parsed_line[:linedata])
     return line_hash.update(
@@ -127,17 +129,17 @@ class Parser
       errno: OK # чтобы перезаписывать errno ошибочных строк
     ).update(parsed_msg)
   end
-  def Parser.parse_dir
-    table = []
-    @bad_lines = {:total => 0}
-    Loader.get_logs_names.each_pair do | server, files |
-      files.each do |filename|
-        table += Parser.parse!(filename,server)
-        Printer::debug(who:"Init", msg:"#{filename} was successfully parsed, now table has #{table.size.to_s.red+"".white} lines")
-      end
-    end
-    table
-  end
+  # def Parser.parse_dir
+  #   table = []
+  #   @bad_lines = {:total => 0}
+  #   Loader.get_logs_names.each_pair do | server, files |
+  #     files.each do |filename|
+  #       table += Parser.parse!(filename,server)
+  #       Printer::debug(who:"Init", msg:"#{filename} was successfully parsed, now table has #{table.size.to_s.red+"".white} lines")
+  #     end
+  #   end
+  #   table
+  # end
 
   def parse(log_stream)
     # для каждой строки во входном потоке
@@ -188,7 +190,7 @@ class Parser
           @erroneous_lines << parsed_line
         end
         yielder.yield(parsed_line)
-        Printer::debug who:"Parser", msg:"Строк #{cnt}", in_place:true if cnt % Printer::LOG_EVERY_N == 0
+        # Printer::debug who:"Parser", msg:"Строк #{cnt}", in_place:true if cnt % Printer::LOG_EVERY_N == 0
         cnt += 1
       end
     end
