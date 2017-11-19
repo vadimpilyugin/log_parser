@@ -1,6 +1,4 @@
-Session:
-  - 'pam_unix\(sudo:session\): session closed for user (?<user>\S+)'
-  - 'pam_unix\(sudo:session\): session opened for user (?<user>\S+) by \(uid=(?<by_user>\S+)\)'
-
-Executed:
-  - '(?<by_user>\S+)\s*: TTY=.* ; PWD=.* ; USER=(?<user>\S+) ; COMMAND=(?<cmd>.*)'
+---
+regex: sudo
+service: sudo
+templates: 

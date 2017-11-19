@@ -1,3 +1,0 @@
-Ignore:
-  - couldn't allocate secure memory to keep passwords and or keys from being written to the disk
-  - asked to register item \S+, but it's already registered

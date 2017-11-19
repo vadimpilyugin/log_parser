@@ -5,7 +5,7 @@ require_relative "../tools"
 
 class TestReport < Minitest::Test
 
-  def test_assert
+  def test_printer
   	begin
   	  Printer::assert(expr:2+2 == 5, msg:"2+2 = 5")
   	rescue Error::AssertError
@@ -22,7 +22,6 @@ class TestReport < Minitest::Test
   	  assert true, "Error in Printer::fatal"
   	end
   	Printer::note(msg:"Файл не существует, создаю...", who:"test_assert")
-    Printer::note(msg:"Это не должно быть на экране", expr:false, who:"Printer::note")
   	100.times do |i|
   	  Printer::debug(msg:"#{i+1} файлов создано...", in_place:true)
   	  sleep(0.02)

@@ -1,3 +1,0 @@
-Ignore:
-  - '\* (Starting|Stopping) network daemon: mosquitto'
-  - '\.\.\.done.'

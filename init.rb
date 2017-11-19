@@ -1,84 +1,84 @@
+DEBUG = true
+
 system "clear"
 puts("Preparation: Initialization started")
 
-require_relative 'src/tools'
-require_relative 'src/config'
-require_relative 'src/parser'
+require 'sinatra'
+require 'irb'
+require 'json'
+
 require_relative 'src/loader'
-require_relative 'src/db'
-require_relative 'src/helpers'
+require_relative 'services/service'
+require_relative 'src/parser'
+require_relative 'src/statistics'
 
 puts
 puts
-Printer::debug(msg:"============= Log Parser v1.2 ============", who:"Init")
+Printer::debug(msg:"============= Log Parser v3 ============", who:"Init")
 puts
 puts
 
-save_results = Config['database']['save_result'] == 'true' ? true : false
-create_report = Config['overall']['create_report'] == 'true' ? true : false
-load_from_file = Config['overall']['load_from_file'] == 'false' ? false : Tools.abs_path(Config['overall']['load_from_file'])
 
-start_time=Time.now
+NUMBER_OF_LINES_TO_PROCESS = 1000000
+NUMBER_OF_LINES_TO_SKIP = 0
 
-table = []
-if load_from_file
-  table = Database.load load_from_file
-else
-  Loader.get_logs_names.each_pair do | server, files |
-    files.each do |filename|
-      table += Parser.parse!(filename,server)
-      Printer::debug(who:"Init", msg:"#{filename} was successfully parsed, now table has #{table.size.to_s.red+"".white} lines")
-    end
+def process_stats(stats_no:nil)
+  # загрузка строк
+  if DEBUG
+    logline_stream = LoglineStream.from_directory(
+      n_lines_to_process:NUMBER_OF_LINES_TO_PROCESS,
+      n_lines_to_skip: NUMBER_OF_LINES_TO_SKIP
+    )
+  else
+    logline_stream = LoglineStream.from_directory
   end
-end
-Printer::debug(who:"Preparation time:", msg:"#{(Time.now-start_time)} сек.".red)
-#start_time=Time.now
-
-if save_results
-  filename = Tools.abs_path Config['database']['database_file']
-  Database.save!(filename, table)
-  Printer::debug(who:"Init", msg:"Log file was successfully saved to #{filename}")
+  # распарсенный поток строк
+  pls = Parser.new.parsed_logline_stream(logline_stream)
+  # обрабатываем статистики
+  params = {}
+  params[:table] = pls
+  params[:stats_no] = stats_no if stats_no
+  Statistics.process(**params)
 end
 
-# Создаем отчеты по базе данных
-if create_report
-  require_relative 'src/statistics'
-  report_config = Config['report']['report_config']
-  config = YAML.load_file Tools.abs_path(report_config)
-  Printer::debug(who:"Init", msg:"Configuration file for report was loaded successfully")
-  st = Statistics.new(config)
-  st.add({"Distribution" => "Pagination", :keys => [:server]})
-  st.add({"Distribution" => "For each server", :keys => [:server, :service, :type]})
-  st.process(table)
-  pagination = st.by_descr("Pagination")
-  for_each_server = st.by_descr("For each server")
-  st.remove("Pagination")
-  st.remove("For each server")
-
-  Printer::debug(who:"Full processing time:", msg:"#{(Time.now-start_time)} сек.".red+"".white)
-  # Запускаем сервер
-  require 'sinatra'
-  configure do
-    helpers Helpers
-    # set :bind, "138.68.105.137"
-    # set :port, 4567
-    # set :public_folder, File.dirname(__FILE__)+'/public'
-    # set :root, File.dirname(__FILE__)
-
-  end
-
-  get '/' do
-    @stats = st
-    @pagination = pagination
-    @bad_lines = Parser.bad_lines
-    # Массив статистик
-    slim :main
-  end
-  get "/:server" do
-    @stats = st
-    @pagination = pagination
-    @for_each_server = for_each_server
-    @server = params['server']
-    slim :server_view
-  end
-end
+# загрузка сервисов
+Services.init
+# статистики из файла
+$stats = {}
+$stats['NORMAL_STATS'] = Statistics.init
+# добавляем имена серверов для веб-странички
+$stats['SERVER_LIST'] = Statistics.create_stat(
+  "Distribution" => "Названия серверов",
+  "keys" => ["server"],
+)
+# строки, для которых не найдено шаблона
+# красная снизу
+$stats['TEMPLATE_NOT_FOUND'] = Statistics.create_stat(
+  "Distribution" => "Нераспознанные строки",
+  "errno" => Parser::TEMPLATE_NOT_FOUND,
+  "no_finalize" => true,
+  "keys" => ["service_group","msg"],
+  "save_lines" => true
+)
+# статистика для поиска всех сервисов, обнаруженных в логах
+$stats['DISCOVERED_SERVICES'] = Statistics.create_stat(
+  "Distribution" => "Обнаруженные сервисы",
+  "keys" => ["service"],
+)
+# статистика для отображения строк без формата
+$stats['WRONG_FORMAT'] = Statistics.create_stat(
+  "Distribution" => "Неизвестный формат",
+  "errno" => Parser::WRONG_FORMAT,
+  "keys" => ["filename", "msg"],
+)
+# статистика для определения неизвестных сервисов
+$stats['UNKNOWN_SERVICES'] = Statistics.create_stat(
+  "Distribution" => "Неизвестные сервисы",
+  "errno" => Parser::UNKNOWN_SERVICE,
+  "no_finalize" => true,
+  "keys" => ["service"],
+  "save_lines" => true
+)
+process_stats
+# выводим результаты
+require_relative 'src/server'

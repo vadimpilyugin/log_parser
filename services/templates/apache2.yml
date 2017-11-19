@@ -1,1 +1,9 @@
-/home/serg/Work/Students/Пилюгин_Вадим/log_parser/services/templates/apache.yml
+---
+regex: apache2
+service: apache2
+templates:
+  Debug:
+    Reloading Apache:
+    - Reloading Apache httpd web server apache2
+    Ignore:
+    - "\\*"

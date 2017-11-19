@@ -1,4 +1,0 @@
-Ignore:
-  - 'pam_ecryptfs: seteuid error'
-  - 'gkr-pam: unlocked login keyring'
-  - 'pam_unix\(cinnamon-screensaver:auth\): authentication failure; '

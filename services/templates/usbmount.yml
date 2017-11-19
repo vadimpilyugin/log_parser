@@ -1,10 +1,4 @@
-Ignore:
-  - 'loaded usbmount configurations'
-  - 'usbmount execution finished'
-  - 'trying to acquire lock'
-  - 'acquired lock'
-  - '\S+ does not contain a filesystem or disklabel'
-  - '\S+ contains filesystem type \S+'
-  - 'executing command: u?mount '
-  - 'executing command: run-parts '
-  - 'mountpoint \S+ is available for \S+'
+---
+regex: usbmount
+service: usbmount
+templates: 

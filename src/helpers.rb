@@ -9,7 +9,7 @@ module Helpers
   #       <li><a href="#">All<span class="badge">1500</span></a></li>
   #       <li><a href="#">Server 1<span class="badge">1000</span></a></li>
   #       <li><a href="#">Server 2<span class="badge">500</span></a></li>
-  #   </ul>                                
+  #   </ul>
   # }
   # @example
   # {
@@ -161,7 +161,7 @@ module Helpers
           s << tabs+'  <div class="panel panel-default">' << "\n"
           s << tabs+'    <div class="panel-body">' << "\n"
           s << tabs+'      <h4 class="panel-title">' << "\n"
-          # number in gray circle to the right
+          # number in grey circle to the right
           s << tabs+'        <a data-toggle="collapse" href="' << "#collapse#{@inc}" << '">' << strnum(key,value[sort_type.to_sym]) << '</a>' << "\n"
           s << tabs+'      </h4>' << "\n"
           s << tabs+'    </div>' << "\n"
@@ -212,6 +212,10 @@ module Helpers
     "#{key}: #{value}"
   end
 
+  def nbspfy(str)
+    str.gsub(/  /) {|match| "&nbsp;&nbsp;"}
+  end
+
   # @param [Hash] params
   # @option params [Array<String,String,String>] row row content
   # @option params [Fixnum] row_num row number
@@ -231,7 +235,7 @@ module Helpers
     s << "\n"
     s << tabs+'  <th scope="row">' << "#{params[:row_num]}" << '</th>' << "\n"
     params[:row].each do |elem|
-      s << tabs+'  <td>' << elem.to_s << '</td>' << "\n"
+      s << tabs+'  <td>' << nbspfy(elem.to_s) << '</td>' << "\n"
     end
     s << tabs+'</tr>' << "\n"
     s
@@ -362,15 +366,15 @@ module Helpers
   end
 
   def big_text
-  	"Anim pariatur cliche reprehenderit, enim eiusmod high 
-  	life accusamus terry richardson ad squid. 3 wolf moon officia 
-  	aute, non cupidatat skateboard dolor brunch. Food truck quinoa 
-  	nesciunt laborum eiusmod. Brunch 3 wolf moon tempor, sunt aliqua 
-  	put a bird on it squid single-origin coffee nulla assumenda shoreditch et. 
-  	Nihil anim keffiyeh helvetica, craft beer labore wes anderson cred nesciunt 
-  	sapiente ea proident. Ad vegan excepteur butcher vice lomo. 
-  	Leggings occaecat craft beer farm-to-table, raw denim aesthetic 
-  	synth nesciunt you probably haven't heard of them accusamus labore 
+  	"Anim pariatur cliche reprehenderit, enim eiusmod high
+  	life accusamus terry richardson ad squid. 3 wolf moon officia
+  	aute, non cupidatat skateboard dolor brunch. Food truck quinoa
+  	nesciunt laborum eiusmod. Brunch 3 wolf moon tempor, sunt aliqua
+  	put a bird on it squid single-origin coffee nulla assumenda shoreditch et.
+  	Nihil anim keffiyeh helvetica, craft beer labore wes anderson cred nesciunt
+  	sapiente ea proident. Ad vegan excepteur butcher vice lomo.
+  	Leggings occaecat craft beer farm-to-table, raw denim aesthetic
+  	synth nesciunt you probably haven't heard of them accusamus labore
   	sustainable VHS"
   end
 end

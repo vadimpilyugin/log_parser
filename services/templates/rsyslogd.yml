@@ -1,6 +1,4 @@
-Strange errors:
-- 'rsyslogd was HUPed'
-Ignore:
-- '-- MARK --'
-- 'rsyslogd.s groupid changed to \d+'
-- '.* start$'
+---
+regex: rsyslogd
+service: rsyslogd
+templates: 

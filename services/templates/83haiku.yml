@@ -1,2 +1,0 @@
-Ignore:
-  - 'debug: \S+ is not a BeFS partition: exiting'

@@ -1,0 +1,31 @@
+div.form-group textarea.form-control {
+  font-size: large;
+  margin-top: 5px;
+}
+
+#app {
+  margin-top: 20px;
+}
+
+#button {
+  margin-top: 20px;
+}
+
+#color_row {
+  margin-top: 10px;
+  padding-left: 20px;
+}
+
+#type {
+  display: inline;
+  padding-left: 15px;
+}
+
+span.label {
+  margin-left: 20px;
+  font-size: 14px;
+}
+
+.table {
+  font-size: 18px;
+}

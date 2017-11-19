@@ -1,2 +1,4 @@
-Ignore:
-- snaps up to date\.$
+---
+regex: snap
+service: snap
+templates: 

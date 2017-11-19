@@ -1,6 +1,11 @@
-New session:
-- 'New session (?<sessid>\S+) of user (?<username>\S+)'
-Removed session:
-- 'Removed session (?<sessid>\S+)'
-Ignore:
-  - 'Existing logind session ID \d+ used by new audit session, ignoring'
+regex: 'systemd-logind'
+service: 'systemd-logind'
+templates:
+  Info:
+    New session:
+    - 'New session (?<sessid>\S+) of user (?<username>[^\.]+)'
+    Removed session:
+    - 'Removed session (?<sessid>\S+)'
+  Debug:
+    Ignore:
+      - 'Existing logind session ID \d+ used by new audit session, ignoring'

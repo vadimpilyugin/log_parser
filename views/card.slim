@@ -1,0 +1,22 @@
+- if @empty
+  div class="card #{@card_style}"
+    div class="card-header #{@header_style}"
+      h5 class="mb-0"
+        == @header + ' - Пусто!'
+- else
+  div class="card #{@card_style}"
+    div class="card-header #{@header_style}"
+      h5 class="mb-0"
+        a style="#{@header_color}" data-toggle="collapse" href="#collapse#{@cnt}" data-parent="#{'#'+@panel_group if @panel_group && !@panel_group.empty?}"
+          == @header
+          - if @count
+            == badge(value:@count)
+          - else
+            span
+    div id="collapse#{@cnt}" class="collapse" 
+      - if @new_panel_group
+        div class="card-body" id="#{@new_panel_group}"
+          == @card_body
+      - else
+        div class="card-body"
+          == @card_body

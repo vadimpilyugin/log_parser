@@ -1,6 +1,11 @@
-Successfull attempt:
-- Successful su for (?<username>\S+) by root
-Something:
-- '\+ \?\?\? root:(?<username>\S+)'
-pam session activity:
-- 'pam_unix\(su:session\): session (\S+) for user (?<username>\S+)'
+regex: 'su'
+service: 'su'
+templates:
+  Info:
+    Successfull attempt:
+    - Successful su for (?<username>\S+) by root
+  Debug:
+    Something:
+    - '\+ \?\?\? root:(?<username>\S+)'
+    pam session activity:
+    - 'pam_unix\(su:session\): session (\S+) for user (?<username>\S+)'

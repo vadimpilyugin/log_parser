@@ -1,4 +1,0 @@
-Ignore:
-  - '\* (Stopping|Starting) NTP server ntpd'
-  - '(Stopping|Starting) NTP server: ntpd'
-  - '\.\.\.done\.'

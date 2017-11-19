@@ -1,0 +1,21 @@
+table class="table table-hover"
+  thead
+    tr
+      -@header.each do |elem|
+        th #{elem}
+  tbody
+    - if @rows.class == Array
+      -@rows.each do |row|
+        tr
+          -row.each do |elem|
+            td 
+              == elem
+    - elsif @rows.class == Hash 
+      - @rows.each_pair do |k,v|
+        - if !@except.include?(k)
+          tr
+            td #{k}
+            - if v.class == MyArray
+              td #{v.size}
+            - else 
+              td #{v}

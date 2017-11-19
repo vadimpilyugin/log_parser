@@ -1,7 +1,0 @@
-Ignore:
-- ^Unmounting \S+
-- ^Mounted \S+
-- ^Cmdline options
-- ^Mount options
-- Global ownership and permissions enforced
-- Version \S+ integrated FUSE

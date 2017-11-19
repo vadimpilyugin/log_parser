@@ -1,4 +1,0 @@
-Ignore:
-  - '.* snapmgr.go:422: No snaps to auto-refresh found'
-  - '.* snapmgr.go:411: Cannot prepare auto-refresh change'
-  - '.* stateengine.go:98: state ensure error'
