@@ -51,6 +51,7 @@ end
 class Printer
 
   LOG_EVERY_N = 5000
+  last_in_place = false
 
   class Chars
     DELIM = ": "
@@ -81,6 +82,13 @@ class Printer
     log_every_n: false, line_no: 0)
 
     if !log_every_n || log_every_n && line_no % LOG_EVERY_N == 0
+      if last_in_place && !in_place
+        printf(Chars::LF)
+        last_in_place = false
+      elsif in_place
+        last_in_place = true
+      end
+
       printf(who.to_s.public_send(who_color)+\
         Chars::DELIM+msg.to_s.public_send(msg_color)
       )

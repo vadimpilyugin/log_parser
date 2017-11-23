@@ -1,4 +1,4 @@
-DEBUG = true
+DEBUG = false
 
 system "clear"
 puts("Preparation: Initialization started")
@@ -19,7 +19,7 @@ puts
 puts
 
 
-NUMBER_OF_LINES_TO_PROCESS = 1000000
+NUMBER_OF_LINES_TO_PROCESS = 0
 NUMBER_OF_LINES_TO_SKIP = 0
 
 def process_stats(stats_no:nil)
