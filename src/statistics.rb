@@ -97,7 +97,7 @@ class Statistics
     else
       Printer::error(
         who: "Статистика без названия",
-        params: stat_opts
+        params: params
       )
     end
     @stats_counter += 1
@@ -127,7 +127,6 @@ class Statistics
         in_place:true
       )
     end
-    puts
     Printer::debug(msg:"Статистики построены!")
   end
 end

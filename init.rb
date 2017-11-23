@@ -1,4 +1,4 @@
-DEBUG = true
+DEBUG = false
 
 system "clear"
 puts("Preparation: Initialization started")
@@ -19,7 +19,7 @@ puts
 puts
 
 
-NUMBER_OF_LINES_TO_PROCESS = 30000
+NUMBER_OF_LINES_TO_PROCESS = 100000
 NUMBER_OF_LINES_TO_SKIP = 0
 
 def process_stats(stats_no:nil)
@@ -33,12 +33,25 @@ def process_stats(stats_no:nil)
     logline_stream = LoglineStream.from_directory
   end
   # распарсенный поток строк
-  pls = Parser.new.parsed_logline_stream(logline_stream)
+  p = Parser.new
+  pls = p.parsed_logline_stream(logline_stream)
   # обрабатываем статистики
   params = {}
   params[:table] = pls
   params[:stats_no] = stats_no if stats_no
+  # timer
+  start_time=Time.now
   Statistics.process(**params)
+  Printer::debug(
+    who: "==================== Статистика парсера ====================",
+    params: {
+      "Полное время" => "#{(Time.now-start_time).round(2)} сек.",
+      "Производительность" => "#{(p.cnt/(Time.now-start_time)).round(2)} строк/сек."
+    }
+  )
+  Printer::debug(
+    who: "============================================================="
+  )
 end
 
 # загрузка сервисов

@@ -45,7 +45,7 @@ class Parser
     @erroneous_lines = []
   end
 
-  attr_reader :parsed_lines, :filename_to_format_mapping, :erroneous_lines
+  attr_reader :parsed_lines, :filename_to_format_mapping, :erroneous_lines, :cnt
 
   def parse_line(line_hash)
     # если у файла еще не определен формат
@@ -175,12 +175,12 @@ class Parser
 
   def parsed_logline_stream(log_stream)
     Enumerator.new do |yielder|
-      cnt = 0
+      @cnt = 0
       loop do
         parsed_line = parse_line(log_stream.next)
         yielder.yield(parsed_line)
-        # Printer::debug who:"Parser", msg:"Строк #{cnt}", in_place:true if cnt % Printer::LOG_EVERY_N == 0
-        cnt += 1
+        # Printer::debug who:"Parser", msg:"Строк #{@cnt}", in_place:true if @cnt % Printer::LOG_EVERY_N == 0
+        @cnt += 1
       end
     end
   end
