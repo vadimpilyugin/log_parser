@@ -107,13 +107,13 @@ class Statistics
   def self.process(table:, stats_no:@stats.keys)
     Printer::debug(msg:"Начинаем обработку")
     table.each_with_index do |line_hash,i|
-      Printer::debug(
-        who:"Обработано строк",
-        msg:"#{i}".red+"".white,
-        in_place:true,
-        log_every_n: true,
-        line_no: i,
-      )
+      # Printer::debug(
+      #   who:"Обработано строк",
+      #   msg:"#{i}".red+"".white,
+      #   in_place:true,
+      #   log_every_n: true,
+      #   line_no: i,
+      # )
       stats_no.each do |stat_no|
         @stats[stat_no].increment(line_hash)
       end
@@ -298,10 +298,10 @@ class Distribution
     distr_part = @distrib
     keys[0..-2].each do |key|
       if distr_part[:distinct].nil?
-        Printer::debug(
-          who: @descr,
-          msg: @distrib.object_id
-        )
+        # Printer::debug(
+        #   who: @descr,
+        #   msg: @distrib.object_id
+        # )
       end
       distr_part[:distinct] += 1 unless distr_part.has_key?(key)
       distr_part[:total] += 1

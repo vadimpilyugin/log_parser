@@ -17,18 +17,24 @@ class Parser
   TEMPLATE_NOT_FOUND = 3
   WRONG_FORMAT = 4
 
+  STRERROR_OK = "All OK"
+  STRERROR_FORMAT_NOT_FOUND = "Отсутствует описание формата лога"
+  STRERROR_UNKNOWN_SERVICE = "Неопознанный сервис"
+  STRERROR_TEMPLATE_NOT_FOUND = "Не найден шаблон"
+  STRERROR_WRONG_FORMAT = "Строка не соответствует формату остального лога"
+
   def Parser.strerror(errno)
     case errno
     when OK
-      "All OK"
+      STRERROR_OK
     when FORMAT_NOT_FOUND
-      "Отсутствует описание формата лога"
+      STRERROR_FORMAT_NOT_FOUND
     when UNKNOWN_SERVICE
-      "Неопознанный сервис"
+      STRERROR_UNKNOWN_SERVICE
     when TEMPLATE_NOT_FOUND
-      "Не найден шаблон"
+      STRERROR_TEMPLATE_NOT_FOUND
     when WRONG_FORMAT
-      "Строка не соответствует формату остального лога"
+      STRERROR_WRONG_FORMAT
     end
   end
 
@@ -129,17 +135,6 @@ class Parser
       errno: OK # чтобы перезаписывать errno ошибочных строк
     ).update(parsed_msg)
   end
-  # def Parser.parse_dir
-  #   table = []
-  #   @bad_lines = {:total => 0}
-  #   Loader.get_logs_names.each_pair do | server, files |
-  #     files.each do |filename|
-  #       table += Parser.parse!(filename,server)
-  #       Printer::debug(who:"Init", msg:"#{filename} was successfully parsed, now table has #{table.size.to_s.red+"".white} lines")
-  #     end
-  #   end
-  #   table
-  # end
 
   def parse(log_stream)
     # для каждой строки во входном потоке
@@ -149,6 +144,7 @@ class Parser
       Printer::debug who:"Parser", msg:"Закончили парсинг"
       return self
     end
+    ignore_class = "Ignore"
     log_stream.each_with_index do |line_hash,i|
       Printer::debug(
         who:"Parser",
@@ -159,7 +155,7 @@ class Parser
       )
       cnt += 1
       parsed_line = parse_line(line_hash)
-      if parsed_line[:ok] && parsed_line[:linedata][:type] != "Ignore"
+      if parsed_line[:ok] && parsed_line[:linedata][:type] != ignore_class
         @parsed_lines << parsed_line #refine_parsed_line(parsed_line)
       elsif !parsed_line[:ok]
         # для того, чтобы показывать msg в erroneous stat
@@ -182,13 +178,6 @@ class Parser
       cnt = 0
       loop do
         parsed_line = parse_line(log_stream.next)
-        if parsed_line[:ok] && parsed_line[:linedata][:type] != "Ignore"
-          @parsed_lines << parsed_line #refine_parsed_line(parsed_line)
-        elsif !parsed_line[:ok]
-          # для того, чтобы показывать msg в erroneous stat
-          parsed_line[:msg] = parsed_line[:logline] unless parsed_line.has_key?(:msg)
-          @erroneous_lines << parsed_line
-        end
         yielder.yield(parsed_line)
         # Printer::debug who:"Parser", msg:"Строк #{cnt}", in_place:true if cnt % Printer::LOG_EVERY_N == 0
         cnt += 1
