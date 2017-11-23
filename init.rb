@@ -14,7 +14,7 @@ require_relative 'src/statistics'
 
 puts
 puts
-Printer::debug(msg:"============= Log Parser v3 ============", who:"Init")
+Printer::debug(msg:"============= Log Parser v4 ============", who:"Init")
 puts
 puts
 
