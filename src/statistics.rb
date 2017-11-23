@@ -236,6 +236,8 @@ class Distribution
   DEFAULT_TOP_VALUE = 10
   DEFAULT_SAVE_LINES = false
 
+  MAX_ERROR_LINES = 5000
+
   KEYS_FIELD    = Fields["Statistics"][:keys]
   EXCEPT_FIELD  = Fields["Statistics"][:except]
   TOP_FIELD     = Fields["Statistics"][:top]
@@ -297,12 +299,6 @@ class Distribution
   def update_distrib(keys:,line_hash:)
     distr_part = @distrib
     keys[0..-2].each do |key|
-      if distr_part[:distinct].nil?
-        # Printer::debug(
-        #   who: @descr,
-        #   msg: @distrib.object_id
-        # )
-      end
       distr_part[:distinct] += 1 unless distr_part.has_key?(key)
       distr_part[:total] += 1
       distr_part = distr_part[key]
@@ -310,7 +306,10 @@ class Distribution
     distr_part[:distinct] += 1 unless distr_part.has_key?(keys.last)
     distr_part[:total] += 1
     if @save_lines
-      distr_part[keys.last] << line_hash
+      # проверяем переполнение
+      if distr_part[keys.last].size < MAX_ERROR_LINES
+        distr_part[keys.last] << line_hash
+      end
     else
       distr_part[keys.last]+=1
     end
