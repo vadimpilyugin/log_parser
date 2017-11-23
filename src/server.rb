@@ -51,9 +51,6 @@ end
 # params[type]
 get '/services' do
   content_type :json
-  # opts = {}
-  # opts = Hash[params.map{|(k,v)| [k.to_sym,v]}] if params
-  # get_services(**opts).to_json
   get_services(
     regexp: params["regexp"],
     type: params["type"]
@@ -64,9 +61,6 @@ end
 # params[type]
 get '/services/no_template_found' do
   content_type :json
-  # opts = {}
-  # opts = Hash[params.map{|(k,v)| [k.to_sym,v]}] if params
-  # get_services(**opts).to_json
   get_services(
     type: "no_template_found"
   ).to_json
@@ -75,9 +69,6 @@ end
 # params[type]
 get '/services/all_service_groups' do
   content_type :json
-  # opts = {}
-  # opts = Hash[params.map{|(k,v)| [k.to_sym,v]}] if params
-  # get_services(**opts).to_json
   get_services(
     type: params["type"]
   ).to_json
@@ -86,9 +77,6 @@ end
 # params[service]
 get '/service/categories' do
   content_type :json
-  # opts = {}
-  # opts = Hash[params.map{|(k,v)| [k.to_sym,v]}] if params
-  # get_service_categories(**opts).to_json
   get_service_categories(
     service_group: params["service_group"]
   ).to_json
@@ -99,9 +87,6 @@ end
 # params[regexp] - опциональный
 get '/loglines/no_template_found' do
   content_type :json
-  # opts = {}
-  # opts = Hash[params.map{|(k,v)| [k.to_sym,v]}] if params
-  # get_loglines_no_template_found(**opts).to_json
   get_loglines_no_template_found(
     regexp: params["regexp"],
     service_group: params["service_group"]
@@ -111,9 +96,6 @@ end
 # params[string]
 get '/string/escape' do
   content_type :json
-  # opts = {}
-  # opts = Hash[params.map{|(k,v)| [k.to_sym,v]}] if params
-  # get_string_escape(**opts).to_json
   get_string_escape(
     string: params["string"]
   ).to_json
@@ -144,17 +126,6 @@ post '/add/service' do
     pls = Parser.new.parsed_logline_stream(ar.each)
     # теперь добавим в число ненайденных шаблонов
     Statistics.process(table:pls,stats_no:[$stats['TEMPLATE_NOT_FOUND']])
-
-    # обновляем статистику
-    # Statistics[$stats['UNKNOWN_SERVICES']].clear
-    # Statistics[$stats['NO_TEMPLATE_FOUND']].clear
-    # Statistics[$stats['TEMPLATE_NOT_FOUND']].clear
-    # process_stats(stats_no:[
-      # $stats['UNKNOWN_SERVICES'],
-      # $stats['NO_TEMPLATE_FOUND'],
-      # $stats['TEMPLATE_NOT_FOUND']
-    # ]
-    # )
     {
       ok:true,
       data:"Новый сервис добавлен: #{srv.service_name}"
@@ -201,16 +172,6 @@ post '/update/service' do
     pls = Parser.new.parsed_logline_stream(ar.each)
     # теперь добавим в число ненайденных шаблонов
     Statistics.process(table:pls,stats_no:[$stats['TEMPLATE_NOT_FOUND']])
-    # обновляем статистику
-    # Statistics[$stats['UNKNOWN_SERVICES']].clear
-    # Statistics[$stats['NO_TEMPLATE_FOUND']].clear
-    # Statistics[$stats['TEMPLATE_NOT_FOUND']].clear
-    # process_stats(stats_no:[
-      # $stats['UNKNOWN_SERVICES'],
-      # $stats['NO_TEMPLATE_FOUND'],
-      # $stats['TEMPLATE_NOT_FOUND']
-    # ]
-    # )
     {
       ok:true,
       data: "Обновили сервис: #{service_group} ~~> #{srv.service_name}"
@@ -234,16 +195,6 @@ post '/remove/service' do
     srv = Services.delete(
       service_group:params["service_group"]
     )
-    # обновляем статистику
-    # Statistics[$stats['UNKNOWN_SERVICES']].clear
-    # Statistics[$stats['NO_TEMPLATE_FOUND']].clear
-    # Statistics[$stats['TEMPLATE_NOT_FOUND']].clear
-    # process_stats(stats_no:[
-      # $stats['UNKNOWN_SERVICES'],
-      # $stats['NO_TEMPLATE_FOUND'],
-      # $stats['TEMPLATE_NOT_FOUND']
-    # ]
-    # )
     {
       ok:true,
       data:srv.inspect

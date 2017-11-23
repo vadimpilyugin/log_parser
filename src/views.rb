@@ -47,8 +47,9 @@ module View
     '<span class="badge badge-secondary" style="float:right">'+"#{value}"+'</span>'
   end
 
-  def link(href:, descr:)
-    '<a href='+href+'>'+descr+'</a>'
+  def link(href:, descr:,new_tab:false)
+    new_tab = new_tab ? ' target="_blank" ' : ''
+    '<a href='+href+new_tab+'>'+descr+'</a>'
   end
 
   def simple_card(card_style:"", header_style:"", header_color:"", header:"",
@@ -161,7 +162,9 @@ module View
             href:"regexp.html?service_group=#{URI.escape(lines.first[:service_group])}"+\
               "&service=#{URI.escape(service)}"+\
               "&logline=#{URI.escape(logline)}",
-            descr:"Добавить шаблон")
+            descr:"Добавить шаблон",
+            new_tab:true
+          )
         ]
       when Parser::WRONG_FORMAT
         [logline, UNDEFINED_SERVICE, Parser.strerror(lines.first[:errno])]
@@ -177,7 +180,8 @@ module View
         service,
         link(
           href:"/service_regexp_new.html?service=#{URI.escape(service)}",
-          descr:"Добавить сервис"
+          descr:"Добавить сервис",
+          new_tab:true
         )
       ]
     end
