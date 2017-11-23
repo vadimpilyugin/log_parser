@@ -24,12 +24,21 @@ class LoglineStream
         # если это папка и не . или ..
         if File.directory?(server_folder) && server_name != '.' && server_name != '..'
           # для каждого имени файла внутри папки сервера
+          Printer::debug(
+            who:"Заходим в папку",
+            msg:server_folder
+          )
           Dir.foreach(server_folder) do |filename|
             # получаем полное имя файла
             full_path = server_folder+SLASH+filename
             # проверяем, что файл не является . или .. или директорией
             if File.file? full_path
               # открываем файл
+              Printer::debug(
+                who:"Открываем файл",
+                msg:full_path
+              )
+              line_no = 1
               File.open(full_path, 'r') do |file|
                 # каждую строку файла отдаем как результат
                 file.each do |line|
@@ -37,9 +46,17 @@ class LoglineStream
                     n_lines_to_skip -= 1
                     next
                   end
+                  Printer::debug(
+                    who: full_path,
+                    msg: line_no.to_s.red+"".white,
+                    log_every_n: true,
+                    line_no: line_no,
+                    in_place: true
+                  )
+                  line_no += 1
                   yielder.yield(
                     logline:line,
-                    filename:"/#{server_name}/#{filename}",
+                    filename:full_path,
                     server:server_name
                   )
                   n_lines += 1
