@@ -1,4 +1,4 @@
-DEBUG = false
+DEBUG = true
 
 system "clear"
 puts("Preparation: Initialization started")
@@ -19,7 +19,7 @@ puts
 puts
 
 
-NUMBER_OF_LINES_TO_PROCESS = 0
+NUMBER_OF_LINES_TO_PROCESS = 30000
 NUMBER_OF_LINES_TO_SKIP = 0
 
 def process_stats(stats_no:nil)
@@ -53,6 +53,7 @@ $stats['SERVER_LIST'] = Statistics.create_stat(
 )
 # строки, для которых не найдено шаблона
 # красная снизу
+# сохраняем строки, чтобы после добавления шаблона перепарсить
 $stats['TEMPLATE_NOT_FOUND'] = Statistics.create_stat(
   "Distribution" => "Нераспознанные строки",
   "errno" => Parser::TEMPLATE_NOT_FOUND,

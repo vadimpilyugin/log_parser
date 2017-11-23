@@ -1,4 +1,6 @@
 ---
+
+# Счетчики на главной
 - Counter: "Сообщений отфильтровано"
   service: dovecot
   type: "Discard"
@@ -9,9 +11,10 @@
   type: "Motion"
           #  - motion
 
+# Статистики на главной
 - Distribution: "Входов по pop3"
   service: dovecot
-  type: "Logini-pop3"
+  type: "Login"
   keys:
   - user_ip
 
@@ -24,7 +27,6 @@
   - user_ip
   - type
   top: 5
-  # sort_type: distinct
 
 - Distribution: "Какие интересные имена пользователей пытаются подключиться"
   keys:
@@ -36,8 +38,9 @@
   - user_ip
   - username
   top: 10
-  # sort_type: distinct
 
+
+# На сервере asi
 - Distribution: "Какие события были зарегестрированы на сервере"
   server: asi
   keys:

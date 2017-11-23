@@ -1,2 +1,7 @@
-Connection information:
-- '(?<user_ip>\S+) - - \[.*\] "(?<method>\S+) (?<path>[^?\s]*)(\?(?<params>\S+))? HTTP\/\d\.\d" (?<code>\d+)'
+---
+regex: apache
+service: apache
+templates:
+  Info:
+    New connection:
+    - '(?<user_ip>\S+) - - \[.*\] "(?<method>\S+) (?<path>[^?\s]*)(\?(?<params>\S+))? HTTP\/\d\.\d" (?<code>\d+)'
