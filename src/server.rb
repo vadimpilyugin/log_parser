@@ -2,6 +2,7 @@ require_relative 'views'
 require 'sinatra'
 require 'sinatra/reloader'
 load 'src/api.rb'
+load 'src/printer.rb'
 load 'src/views.rb'
 load 'services/service.rb'
 
@@ -210,6 +211,7 @@ post '/remove/service' do
     resp.to_json
   end
 end
+
 
 # logline_type
 post '/add/template' do

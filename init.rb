@@ -41,7 +41,11 @@ def process_stats(stats_no:nil)
   params[:stats_no] = stats_no if stats_no
   # timer
   start_time=Time.now
-  Statistics.process(**params)
+  begin 
+    Statistics.process(**params)
+  rescue Interrupt
+    puts "Exiting..."
+  end
   Printer::debug(
     who: "==================== Статистика парсера ====================",
     params: {

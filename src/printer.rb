@@ -52,6 +52,7 @@ class Printer
 
   LOG_EVERY_N = 5000
   @last_in_place = false
+  @log_file = File.open("log", "w") if @log_file.nil?
 
   class Chars
     DELIM = ": "
@@ -76,6 +77,14 @@ class Printer
     YELLOW = 'yellow'
   end
 
+  def self.write_to_file(who, msg, params)
+    
+    @log_file.printf("#{Time.now}\t[#{who.to_s.perc_esc}]\t#{msg.to_s.perc_esc}\n")
+    params.each_pair do |k,v|
+      @log_file.puts("\t#{k.to_s.perc_esc}: #{v.to_s.perc_esc}\n")
+    end
+  end
+
   def self.generic_print(
     who:, msg:, in_place:false, params:{}, \
     who_color:Colors::WHITE, msg_color:Colors::WHITE, delim:Chars::DELIM,
@@ -89,8 +98,8 @@ class Printer
         @last_in_place = true
       end
 
-      printf(who.to_s.public_send(who_color)+\
-        Chars::DELIM+msg.to_s.public_send(msg_color)
+      printf(who.to_s.perc_esc.public_send(who_color)+\
+        Chars::DELIM+msg.to_s.perc_esc.public_send(msg_color)
       )
       if in_place
         printf Chars::CR
@@ -101,6 +110,7 @@ class Printer
             Chars::DELIM+s2.to_s.perc_esc.white+Chars::LF
         end
       end
+      write_to_file who, msg, params
     end
   end
 
