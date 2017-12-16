@@ -102,6 +102,10 @@ get '/string/escape' do
   ).to_json
 end
 
+get '/console' do
+  binding.irb
+end
+
 # params[service_group]
 # params[service_regexp]
 post '/add/service' do

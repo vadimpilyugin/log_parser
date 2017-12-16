@@ -9,3 +9,7 @@ templates:
   Debug:
     Ignore:
     - "\\[TimeStamp\\]\\-\\-\\-\\-\\-main\\-\\-\\-\\-\\-begin"
+    - "\\(pix:\\d+\\): Gtk\\-CRITICAL \\*\\*: gtk_widget_set_visible: assertion 'GTK_IS_WIDGET
+      \\(widget\\)' failed"
+    - "\\(pix:\\d+\\): Gtk\\-CRITICAL \\*\\*: .*: assertion .* failed"
+    - "\\(pix:\\d+\\): GLib\\-GObject\\-CRITICAL \\*\\*: .*: assertion .* failed"

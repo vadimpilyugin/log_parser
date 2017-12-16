@@ -137,9 +137,11 @@ end
 # get '/string/escape' do
 def get_string_escape(string:)
   # возвращаем отэскейпенную строку
+  string = Regexp.escape(string)
+  string.gsub!(/\d+\\\.\d+\\\.\d+\\\.\d+/, '(?<user_ip>\d+\.\d+\.\d+\.\d+)')
   return {
     "ok" => true,
-    "data" => Regexp.escape(string).gsub("\\ "," ").gsub(/\d+/,'\d+')
+    "data" => string.gsub("\\ "," ").gsub(/\d+/,'\d+')
   }
 end
 
