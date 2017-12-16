@@ -2,6 +2,7 @@ require_relative 'views'
 require 'sinatra'
 require 'sinatra/reloader'
 load 'src/api.rb'
+load 'src/printer.rb'
 load 'src/views.rb'
 load 'services/service.rb'
 
@@ -99,6 +100,10 @@ get '/string/escape' do
   get_string_escape(
     string: params["string"]
   ).to_json
+end
+
+get '/console' do
+  binding.irb
 end
 
 # params[service_group]
@@ -210,6 +215,7 @@ post '/remove/service' do
     resp.to_json
   end
 end
+
 
 # logline_type
 post '/add/template' do

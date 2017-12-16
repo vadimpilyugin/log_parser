@@ -1,4 +1,11 @@
 ---
 regex: smbd
 service: smbd
-templates: 
+templates:
+  Debug:
+    Ignore:
+    - "\\* Reloading /etc/samba/smb\\.conf smbd"
+    - "\\.\\.\\.done\\."
+    - 'pam_unix\(samba:session\): session closed for user nobody'
+    - "\\* Stopping SMB/CIFS daemon smbd"
+    - "\\* Starting SMB/CIFS daemon smbd"

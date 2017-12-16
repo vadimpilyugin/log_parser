@@ -194,7 +194,7 @@ var app = new Vue ({
               // vm.current_category = vm.ADD_NEW_CATEGORY;
             }
             // else {
-              vm.current_category = vm.IGNORE_CATEGORY;
+              // vm.current_category = vm.IGNORE_CATEGORY;
             // }
           }
           else {
