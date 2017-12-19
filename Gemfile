@@ -1,7 +1,6 @@
 source 'https://rubygems.org'
 
 gem "parseconfig"
-gem "data_mapper"
-gem 'dm-sqlite-adapter'
+gem 'deepsort'
 gem 'sinatra'
 gem 'slim'
