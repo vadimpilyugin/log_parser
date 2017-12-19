@@ -123,7 +123,7 @@ var app = new Vue ({
       function () {
         var vm = this
         var regexp = vm.regexp.length === 0 ? this.DEFAULT_REGEX : vm.regexp;
-        axios.get('http://localhost:4567/loglines/no_template_found?regexp='+
+        axios.get('/loglines/no_template_found?regexp='+
           encodeURIComponent(regexp)+'&service_group='+vm.current_service_group)
           .then(function (response) {
             if (response.data["ok"] === true) {
@@ -148,7 +148,7 @@ var app = new Vue ({
     escapeAndChange: function (logline) {
       var vm = this;
       var logline = encodeURIComponent (logline);
-      axios.get(`http://localhost:4567/string/escape?string=${logline}`)
+      axios.get(`/string/escape?string=${logline}`)
         .then(function (response) {
           if (response.data["ok"] === true) {
             console.log("escapeAndChange[data].ok", response.data);
@@ -166,7 +166,7 @@ var app = new Vue ({
     // загружает сервисы, у которых есть не подошедшие к шаблонам строки
     loadServiceGroups: function () {
       var vm = this
-      axios.get(`http://localhost:4567/services/no_template_found`)
+      axios.get(`/services/no_template_found`)
         .then(function (response) {
           if (response.data["ok"] === true) {
             console.log("loadServiceGroups[data].ok", response.data);
@@ -184,7 +184,7 @@ var app = new Vue ({
     loadCategories: function () {
       var vm = this;
       var service_group = encodeURIComponent (this.current_service_group)
-      axios.get(`http://localhost:4567/service/categories?service_group=${service_group}`)
+      axios.get(`/service/categories?service_group=${service_group}`)
         .then(function (response) {
           if (response.data["ok"] === true) {
             console.log("loadCategories[data].ok", response.data);
